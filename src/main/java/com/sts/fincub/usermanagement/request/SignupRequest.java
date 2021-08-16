@@ -10,7 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class SignupRequest {
+public class    SignupRequest {
     String name;
     String userId;
     String password;

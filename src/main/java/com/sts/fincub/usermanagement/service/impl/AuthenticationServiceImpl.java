@@ -24,6 +24,8 @@ import javax.swing.text.html.Option;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.sts.fincub.usermanagement.constants.RestMappingConstants.SUCCESS;
+
 @Service
 public class AuthenticationServiceImpl implements AuthenticationService {
 
@@ -67,6 +69,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         userRepository.save(signupRequest.toDAO(passwordEncoder));
         return new Response<>("Success",HttpStatus.OK);
+    }
+
+    @Override
+    public Response<UserSession> verify(String authToken) throws ObjectNotFoundException{
+        UserSession userSession = userRedisRepository.findById(authToken)
+                                                    .orElseThrow(
+                                                            ()-> new ObjectNotFoundException("User session not found, " +
+                                                                    "Please login again!",HttpStatus.NOT_FOUND));
+
+        return new Response<>(SUCCESS,userSession,HttpStatus.OK);
+
     }
 
 
