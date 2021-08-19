@@ -23,6 +23,7 @@ public class User  implements Serializable {
         String USER_TYPE = "USER_TYPE";
         String PASSWORD = "PASSWORD";
         String IS_ACTIVE= "IS_ACTIVE";
+        String USER_ID = "USER_ID";
     }
 
     private final static long serialVersionUID = -6524768694427900622L;
@@ -34,6 +35,9 @@ public class User  implements Serializable {
 
     @Column(name =  Columns.NAME)
     private String name;
+
+    @Column(name = Columns.USER_ID)
+    private String userId;
 
     @Column(name =  Columns.EMAIL)
     private String email;
@@ -70,6 +74,7 @@ public class User  implements Serializable {
         userSession.setRoles(roles);
         userSession.setName(name);
         userSession.setType(type);
+        userSession.setUserId(userId);
         return userSession;
     }
 

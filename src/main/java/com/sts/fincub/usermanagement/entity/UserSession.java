@@ -21,6 +21,7 @@ public class UserSession implements Serializable {
         String NAME = "NAME";
         String EMAIL = "EMAIL";
         String USER_TYPE = "USER_TYPE";
+        String USER_ID = "USER_ID";
     }
 
     private final static long serialVersionUID = -6524768694427900654L;
@@ -38,6 +39,7 @@ public class UserSession implements Serializable {
 
 
     private Set<Role> roles = new HashSet<>();
+    private String userId;
 
 
 }

@@ -25,6 +25,7 @@ public class    SignupRequest {
         user.setName(name);
         user.setPassword(passwordEncoder,password);
         user.setEmail(email);
+        user.setUserId(userId);
         return user;
     }
 

@@ -44,7 +44,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public LoginResponse login(LoginRequest loginRequest) throws ObjectNotFoundException,BadRequestException{
         LoginResponse loginResponse = new LoginResponse();
         User user = userRepository
-                        .findByName(loginRequest.getUserId())
+                        .findByUserId(loginRequest.getUserId())
                         .orElseThrow(()->new ObjectNotFoundException(
                                                         "Invalid userId - "+loginRequest.getUserId(),
                                                             HttpStatus.NOT_FOUND));
