@@ -1,6 +1,7 @@
 package com.sts.fincub.usermanagement.controller;
 
 import com.sts.fincub.usermanagement.exception.BadRequestException;
+import com.sts.fincub.usermanagement.exception.InternalServerErrorException;
 import com.sts.fincub.usermanagement.exception.ObjectNotFoundException;
 import com.sts.fincub.usermanagement.request.LoginRequest;
 import com.sts.fincub.usermanagement.request.SignupRequest;
@@ -28,7 +29,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("login")
-    public ResponseEntity<Response<LoginResponse>> login(@RequestBody LoginRequest loginRequest) throws BadRequestException, ObjectNotFoundException {
+    public ResponseEntity<Response<LoginResponse>> login(@RequestBody LoginRequest loginRequest) throws InternalServerErrorException,BadRequestException, ObjectNotFoundException {
         if(!loginRequest.isValid()){
             throw new BadRequestException("Invalid values for userId/password",HttpStatus.BAD_REQUEST);
         }
@@ -38,6 +39,7 @@ public class AuthenticationController {
 
     @PostMapping("/api/signup")
     public ResponseEntity<Response> signup(@RequestBody SignupRequest signupRequest) throws BadRequestException {
+        signupRequest.validate();
         return  ResponseEntity.ok(authenticationService.signup(signupRequest));
     }
 
