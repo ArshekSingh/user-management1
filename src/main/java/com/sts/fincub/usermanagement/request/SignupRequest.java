@@ -11,34 +11,20 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class    SignupRequest {
+public class  SignupRequest {
     String name;
-    String userId;
     String password;
-    String role;
+    List<Long> roleList;
     String email;
     String mobile;
     String userType;
 
 
-    public User toDAO(PasswordEncoder passwordEncoder){
-        User user = new User();
-        user.setActive(true);
-        user.setName(name);
-        user.setPassword(passwordEncoder,password);
-        user.setEmail(email);
-        user.setUserId(userId);
-        user.setMobileNumber(mobile);
-        user.setType(userType);
-        user.setPasswordResetDate(LocalDate.now());
-        user.setInsertedOn(LocalDate.now());
-        user.setInsertedBy(name);
-        return user;
-    }
 
 
     public void validate() throws BadRequestException{
@@ -52,10 +38,6 @@ public class    SignupRequest {
             buffer.append("Field : email is mandatory, ");
             isValid = false;
         }
-        if(userId == null || userId.isEmpty()){
-            buffer.append("Field : userId is mandatory, ");
-            isValid = false;
-        }
         if(password == null || password.isEmpty()){
             buffer.append("Field : password is mandatory");
             isValid = false;
@@ -67,17 +49,17 @@ public class    SignupRequest {
         }
 
         if(userType == null || userType.isEmpty()){
-            buffer.append("Field : password is mandatory");
+            buffer.append("Field : userType is mandatory");
             isValid = false;
         }
 
         if(!isValid){
             throw new BadRequestException(buffer.toString(), HttpStatus.BAD_REQUEST);
         }
+    }
 
-
-
-
+    public boolean hasRoles(){
+        return roleList != null && !roleList.isEmpty();
     }
 
 

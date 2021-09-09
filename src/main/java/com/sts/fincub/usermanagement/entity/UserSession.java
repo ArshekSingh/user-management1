@@ -41,7 +41,7 @@ public class UserSession implements Serializable {
     private String type;
 
 
-    private Set<Role> roles = new HashSet<>();
+    private Set<Long> roles = new HashSet<>();
     private String userId;
 
     private Long organisationId;

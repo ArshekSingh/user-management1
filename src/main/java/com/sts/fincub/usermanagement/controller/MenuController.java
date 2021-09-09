@@ -18,8 +18,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@CrossOrigin
 @RequestMapping(value = "/api")
+@CrossOrigin()
 public class MenuController {
 
     private final MenuService menuService;

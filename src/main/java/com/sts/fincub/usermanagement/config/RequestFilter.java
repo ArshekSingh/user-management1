@@ -5,6 +5,7 @@ import com.sts.fincub.authentication.validation.RedisRepository;
 import com.sts.fincub.usermanagement.assembler.UserSessionConverter;
 import com.sts.fincub.usermanagement.constants.RestMappingConstants;
 import com.sts.fincub.usermanagement.entity.UserSession;
+import com.sts.fincub.usermanagement.exception.UnauthorizedException;
 import com.sts.fincub.usermanagement.response.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +47,9 @@ public class RequestFilter implements Filter {
 					String tokenValue = token.split(" ")[1];
 					Object userSessionObject = authTokenValidation.validateToken(tokenValue);
 					UserSession userSession = UserSessionConverter.convert(userSessionObject);
-					setSecurityContext(userSession);
+					if(userSession.getUserId() != null) {
+						setSecurityContext(userSession);
+					}else throw new UnauthorizedException(RestMappingConstants.AUTHENTICATION_FAILED);
 				} catch (Exception exception) {
 					log.warn("Request is not valid - " + exception.getMessage());
 					isValidRequest = false;

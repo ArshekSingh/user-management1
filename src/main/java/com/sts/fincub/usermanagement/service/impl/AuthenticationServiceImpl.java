@@ -1,25 +1,28 @@
 package com.sts.fincub.usermanagement.service.impl;
 
-import com.sts.fincub.authentication.validation.RedisRepository;
-import com.sts.fincub.usermanagement.entity.User;
-import com.sts.fincub.usermanagement.entity.UserSession;
+import com.sts.fincub.usermanagement.assembler.SignUpConverter;
+import com.sts.fincub.usermanagement.entity.*;
 import com.sts.fincub.usermanagement.exception.BadRequestException;
 import com.sts.fincub.usermanagement.exception.InternalServerErrorException;
 import com.sts.fincub.usermanagement.exception.ObjectNotFoundException;
-import com.sts.fincub.usermanagement.repository.UserRedisRepository;
-import com.sts.fincub.usermanagement.repository.UserRepository;
+import com.sts.fincub.usermanagement.repository.*;
 import com.sts.fincub.usermanagement.request.LoginRequest;
 import com.sts.fincub.usermanagement.request.SignupRequest;
 import com.sts.fincub.usermanagement.response.LoginResponse;
 import com.sts.fincub.usermanagement.response.Response;
+import com.sts.fincub.usermanagement.response.SignupResponse;
 import com.sts.fincub.usermanagement.service.AuthenticationService;
+import com.sts.fincub.usermanagement.service.UserCredentialService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.sts.fincub.usermanagement.constants.RestMappingConstants.SUCCESS;
 
@@ -30,13 +33,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final UserRedisRepository userRedisRepository;
+    private final UserRoleMappingRepository userRoleMappingRepository;
+    private final UserCredentialService userCredentialService;
+    private final UserOrganisationMappingRepository userOrganisationMappingRepository;
 
     @Autowired
     public AuthenticationServiceImpl(UserRepository userRepository,BCryptPasswordEncoder passwordEncoder,
-                                     UserRedisRepository userRedisRepository){
+                                     UserRedisRepository userRedisRepository,UserRoleMappingRepository userRoleMappingRepository,
+                                     UserCredentialService userCredentialService,UserOrganisationMappingRepository userOrganisationMappingRepository){
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userRedisRepository = userRedisRepository;
+        this.userRoleMappingRepository = userRoleMappingRepository;
+        this.userCredentialService = userCredentialService;
+        this.userOrganisationMappingRepository = userOrganisationMappingRepository;
     }
 
     @Override
@@ -68,15 +78,30 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 
     @Override
-    public Response<String> signup(SignupRequest signupRequest) throws BadRequestException{
-        Optional<User> userQuery = userRepository.findByUserId(signupRequest.getName());
+    public SignupResponse signup(SignupRequest signupRequest) throws BadRequestException{
 
-        if(userQuery.isPresent()){
-            throw new BadRequestException("User with name -"+ signupRequest.getName()+" already exists", HttpStatus.BAD_REQUEST);
+        User newUser = SignUpConverter.convertToUser(signupRequest);
+
+        newUser.setPassword(passwordEncoder,signupRequest.getPassword());
+
+        newUser.setUserId(userRepository.getGeneratedUserId());
+
+        newUser = userRepository.save(newUser);
+        String operationUserName = userCredentialService.getUserData().getName();
+        final Long organisationId =  userCredentialService.getUserData().getOrganisationId();
+        UserOrganisationMapping userOrganisationMapping = new UserOrganisationMapping(organisationId,newUser.getUserId(),operationUserName);
+        userOrganisationMappingRepository.save(userOrganisationMapping);
+
+
+        if(signupRequest.hasRoles()) {
+            final String userId = newUser.getUserId();
+
+            userRoleMappingRepository.saveAll(signupRequest.getRoleList()
+                                                .stream()
+                                                .map(id -> new UserRoleMapping(userId,id,organisationId,operationUserName))
+                                                .collect(Collectors.toSet()));
         }
-
-        userRepository.save(signupRequest.toDAO(passwordEncoder));
-        return new Response<>("Success",HttpStatus.OK);
+        return SignUpConverter.convertToResponse(newUser);
     }
 
     @Override

@@ -1,15 +1,19 @@
 package com.sts.fincub.usermanagement.entity;
 
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import javax.persistence.*;
 import java.time.LocalDate;
 
 
 @Entity
-@Table(name = "")
+@NoArgsConstructor
+@AllArgsConstructor
+@Data
+@Table(name = UserOrganisationMapping.Columns.TABLE_NAME)
 public class UserOrganisationMapping {
     public interface Columns{
         String TABLE_NAME = "USER_ORG_MAPPING";
@@ -23,18 +27,14 @@ public class UserOrganisationMapping {
         String UPDATED_BY = "UPDATED_BY";
     }
 
-    @Id
-    @Column(name = Columns.ORG_ID)
-    private Long organisationId;
-
-    @Column(name = Columns.USER_ID)
-    private String userId;
+    @EmbeddedId
+    private UserOrganisationLinkId id;
 
     @Column(name = Columns.ACTIVE)
     private String active;
 
     @Column(name = Columns.IS_ADMIN)
-    private String isActive;
+    private String isAdmin;
 
     @Column(name = Columns.INSERTED_ON)
     private LocalDate insertedOn;
@@ -46,5 +46,18 @@ public class UserOrganisationMapping {
     private LocalDate updatedOn;
 
     @Column(name = Columns.UPDATED_BY)
-    private String updatedBy;   
+    private String updatedBy;
+
+    public UserOrganisationMapping(Long organisationId,String userId,String userName){
+        UserOrganisationLinkId id = new UserOrganisationLinkId();
+        id.setOrganisationId(organisationId);
+        id.setUserId(userId);
+        this.id= id;
+        insertedOn = LocalDate.now();
+        updatedOn = LocalDate.now();
+        active = "Y";
+        insertedBy= userName;
+        updatedBy = userName;
+    }
+
 }

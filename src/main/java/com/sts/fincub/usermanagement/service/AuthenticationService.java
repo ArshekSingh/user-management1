@@ -12,7 +12,7 @@ import com.sts.fincub.usermanagement.response.SignupResponse;
 
 public interface AuthenticationService {
     LoginResponse login(LoginRequest loginRequest) throws ObjectNotFoundException,BadRequestException, InternalServerErrorException;
-    Response signup(SignupRequest signupRequest) throws BadRequestException;
+    SignupResponse signup(SignupRequest signupRequest) throws BadRequestException;
     Response<UserSession> verify(String authToken) throws ObjectNotFoundException;
 
 }

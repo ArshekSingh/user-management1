@@ -1,5 +1,6 @@
 package com.sts.fincub.usermanagement.config;
 
+import com.sts.fincub.authentication.config.RedisConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,32 +17,6 @@ import java.util.Arrays;
 import java.util.List;
 
 @Configuration
-
+@Import(RedisConfig.class)
 public class AuthRedisConfig {
-
-    @Value("${redis.host}")
-    private String host;
-
-    @Value("${redis.port}")
-    private String port;
-
-    @Value("${redis.nodes}")
-    private String nodes;
-
-
-
-    @Bean
-    JedisConnectionFactory jedisConnectionFactory() {
-        List<String> nodeList = List.of(nodes.split(","));
-//        RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration(host, Integer.parseInt(port));
-        RedisClusterConfiguration redisClusterConfiguration = new RedisClusterConfiguration(nodeList);
-        return new JedisConnectionFactory(redisClusterConfiguration);
-    }
-
-    @Bean
-    public RedisTemplate<String, Object> redisTemplate() {
-        RedisTemplate<String, Object> template = new RedisTemplate<>();
-        template.setConnectionFactory(jedisConnectionFactory());
-        return template;
-    }
 }

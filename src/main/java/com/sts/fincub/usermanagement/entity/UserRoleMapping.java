@@ -1,15 +1,16 @@
 package com.sts.fincub.usermanagement.entity;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.time.LocalDate;
 
 @Entity
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = UserRoleMapping.Columns.TABLE_NAME)
 public class UserRoleMapping {
     public interface Columns{
@@ -23,15 +24,8 @@ public class UserRoleMapping {
         String UPDATED_BY = "UPDATED_BY";
     }
 
-    @Id
-    @Column(name = Columns.ORG_ID)
-    private Long organisationId;
-
-    @Column(name = Columns.USER_ID)
-    private String userId;
-
-    @Column(name = Columns.ROLE_ID)
-    private String roleId;
+   @EmbeddedId
+   private UserRoleOrganisationLinkId id;
 
     @Column(name = Columns.INSERTED_ON)
     private LocalDate insertedOn;
@@ -44,4 +38,18 @@ public class UserRoleMapping {
 
     @Column(name = Columns.UPDATED_BY)
     private String updatedBy;
+
+
+    public UserRoleMapping(String userId,Long organisationId,Long roleId,String userName){
+        UserRoleOrganisationLinkId id = new UserRoleOrganisationLinkId();
+        id.setRoleId(roleId);
+        id.setOrganisationId(organisationId);
+        id.setUserId(userId);
+        this.id = id;
+        this.insertedOn = LocalDate.now();
+        this.updatedOn = LocalDate.now();
+        this.insertedBy = userName;
+        this.updatedBy = userName;
+    }
+
 }

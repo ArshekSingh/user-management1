@@ -1,5 +1,6 @@
 package com.sts.fincub.usermanagement.controller;
 
+import com.sts.fincub.usermanagement.constants.RestMappingConstants;
 import com.sts.fincub.usermanagement.exception.BadRequestException;
 import com.sts.fincub.usermanagement.exception.InternalServerErrorException;
 import com.sts.fincub.usermanagement.exception.ObjectNotFoundException;
@@ -38,9 +39,9 @@ public class AuthenticationController {
 
 
     @PostMapping("/api/signup")
-    public ResponseEntity<Response> signup(@RequestBody SignupRequest signupRequest) throws BadRequestException {
+    public ResponseEntity<Response<SignupResponse>> signup(@RequestBody SignupRequest signupRequest) throws BadRequestException {
         signupRequest.validate();
-        return  ResponseEntity.ok(authenticationService.signup(signupRequest));
+        return  ResponseEntity.ok(new Response<>(RestMappingConstants.SUCCESS,authenticationService.signup(signupRequest),HttpStatus.OK));
     }
 
 

@@ -50,6 +50,7 @@ public class MenuResponseConverter {
         dto.setMenuName(menu.getMenuName());
         dto.setTo(menu.getAction());
         dto.setDisplaySequence(menu.getDisplaySequence());
+        dto.setContent(new ArrayList<>());
         return dto;
     }
 }

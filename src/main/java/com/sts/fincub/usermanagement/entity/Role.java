@@ -5,6 +5,8 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Data
@@ -16,7 +18,7 @@ public class Role implements Serializable {
 
     interface Columns {
         String TABLE_NAME = "ROLE_MASTER";
-        String ID = "ID";
+        String ID = "ROLE_ID";
         String ROLE_NAME="ROLE_NAME";
     }
     @Id
@@ -26,6 +28,7 @@ public class Role implements Serializable {
 
     @Column(name = Columns.ROLE_NAME)
     private String roleName;
+
 
 
 

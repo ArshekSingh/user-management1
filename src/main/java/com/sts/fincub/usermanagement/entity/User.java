@@ -11,6 +11,7 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Data
 @NoArgsConstructor
@@ -55,13 +56,14 @@ public class User  implements Serializable {
     @Column(name=  Columns.USER_TYPE)
     private String type;
 
-//    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-//    @JoinTable(
-//            name = "users_roles",
-//            joinColumns = @JoinColumn(name = "user_id"),
-//            inverseJoinColumns = @JoinColumn(name = "role_id")
-//    )
-//    private Set<Role> roles = new HashSet<>();
+
+    @OneToMany
+    @JoinColumn(name = Columns.USER_ID,referencedColumnName = UserOrganisationMapping.Columns.USER_ID)
+    private Set<UserOrganisationMapping> userOrganisationMapping;
+
+    @OneToMany
+    @JoinColumn(name = Columns.USER_ID,referencedColumnName = UserRoleMapping.Columns.USER_ID)
+    private Set<UserRoleMapping> userRoleMapping;
 
     @Column(name =  Columns.PASSWORD)
     private String password;
@@ -114,13 +116,28 @@ public class User  implements Serializable {
     public UserSession toSessionObject(){
         UserSession userSession = new UserSession();
         userSession.setEmail(email);
-//        userSession.setRoles(roles);
+        if(userRoleMapping != null && !userRoleMapping.isEmpty()) {
+            userSession.setRoles(userRoleMapping
+                                    .stream()
+                                    .map(mapping -> mapping.getId().getRoleId())
+                                    .collect(Collectors.toSet()));
+        }
         userSession.setName(name);
         userSession.setType(type);
         userSession.setUserId(userId);
+        userSession.setOrganisationId(getActiveOrganisationId());
         return userSession;
     }
 
+    public Long getActiveOrganisationId(){
+        Long activeOrgId = null;
+        for(UserOrganisationMapping orgMapping:userOrganisationMapping){
+            if("Y".equalsIgnoreCase(orgMapping.getActive())){
+                activeOrgId = orgMapping.getId().getOrganisationId();
+            }
+        }
+        return activeOrgId;
+    }
 
 
 }
