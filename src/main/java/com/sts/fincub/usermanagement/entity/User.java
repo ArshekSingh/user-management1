@@ -1,5 +1,6 @@
 package com.sts.fincub.usermanagement.entity;
 
+import com.sts.fincub.usermanagement.entity.enums.UserType;
 import com.sts.fincub.usermanagement.response.LoginResponse;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -53,8 +54,9 @@ public class User  implements Serializable {
     @Column(name =  Columns.EMAIL_ID)
     private String email;
 
+    @Enumerated(value = EnumType.STRING)
     @Column(name=  Columns.USER_TYPE)
-    private String type;
+    private UserType type;
 
 
     @OneToMany
@@ -123,7 +125,7 @@ public class User  implements Serializable {
                                     .collect(Collectors.toSet()));
         }
         userSession.setName(name);
-        userSession.setType(type);
+        userSession.setType(type.name());
         userSession.setUserId(userId);
         userSession.setOrganisationId(getActiveOrganisationId());
         return userSession;

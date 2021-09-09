@@ -10,8 +10,8 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User,Long> {
 
-    @Query(value = "select SEQ_USER_ID.nextval from DUAL",nativeQuery = true)
-    String  getGeneratedUserId();
+    @Query(value = "SELECT pkg_user_management.fn_get_user_id(:orgId,:userType) USER_ID FROM DUAL",nativeQuery = true)
+    String getGeneratedUserEmployeeId(Long orgId,String userType);
 
     Optional<User> findByName(String userName);
 

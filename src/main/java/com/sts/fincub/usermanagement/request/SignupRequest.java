@@ -1,6 +1,7 @@
 package com.sts.fincub.usermanagement.request;
 
 import com.sts.fincub.usermanagement.entity.User;
+import com.sts.fincub.usermanagement.entity.enums.UserType;
 import com.sts.fincub.usermanagement.exception.BadRequestException;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -54,7 +55,12 @@ public class  SignupRequest {
         if(userType == null || userType.isEmpty()){
             buffer.append("Field : userType is mandatory");
             isValid = false;
+        }else if (!(UserType.EMP.name().equals(userType) || UserType.NEMP.name().equals(userType))){
+            buffer.append("Invalid value for UserType - Accepted value => (EMP,NEMP)");
+            isValid = false;
         }
+
+
 
         if(!isValid){
             throw new BadRequestException(buffer.toString(), HttpStatus.BAD_REQUEST);

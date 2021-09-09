@@ -18,10 +18,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.sts.fincub.usermanagement.constants.RestMappingConstants.SUCCESS;
@@ -36,17 +34,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final UserRoleMappingRepository userRoleMappingRepository;
     private final UserCredentialService userCredentialService;
     private final UserOrganisationMappingRepository userOrganisationMappingRepository;
+    private final EmployeeRepository employeeRepository;
 
     @Autowired
     public AuthenticationServiceImpl(UserRepository userRepository,BCryptPasswordEncoder passwordEncoder,
                                      UserRedisRepository userRedisRepository,UserRoleMappingRepository userRoleMappingRepository,
-                                     UserCredentialService userCredentialService,UserOrganisationMappingRepository userOrganisationMappingRepository){
+                                     UserCredentialService userCredentialService,UserOrganisationMappingRepository userOrganisationMappingRepository,
+                                     EmployeeRepository employeeRepository){
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userRedisRepository = userRedisRepository;
         this.userRoleMappingRepository = userRoleMappingRepository;
         this.userCredentialService = userCredentialService;
         this.userOrganisationMappingRepository = userOrganisationMappingRepository;
+        this.employeeRepository = employeeRepository;
     }
 
     @Override
@@ -67,7 +68,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             String authToken = saveToken(user.toSessionObject());
             log.info("User session saved with id -"+authToken);
             loginResponse.setAuthToken(authToken);
-            loginResponse.setUserType(user.getType());
+            loginResponse.setUserType(user.getType().name());
         }catch (Exception e){
             log.error("Exception- {}",e);
             throw new InternalServerErrorException("Exception while saving token - "+e.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
@@ -79,30 +80,34 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     }
 
-
+    @Transactional
     @Override
     public SignupResponse signup(SignupRequest signupRequest) throws BadRequestException{
 
         User newUser = SignUpConverter.convertToUser(signupRequest);
+        String operationUserName = userCredentialService.getUserData().getName();
+        final Long organisationId =  userCredentialService.getUserData().getOrganisationId();
 
         newUser.setPassword(passwordEncoder,signupRequest.getPassword());
 
-        newUser.setUserId(userRepository.getGeneratedUserId());
-
+        String userEmployeeId = userRepository.getGeneratedUserEmployeeId(organisationId,signupRequest.getUserType());
+        final String userId = userEmployeeId.split(",")[0];
+        final String employeeId = userEmployeeId.split(",")[1];
+        newUser.setUserId(userId);
         log.info("Generated user Id -"+newUser.getUserId());
 
         newUser = userRepository.save(newUser);
-        String operationUserName = userCredentialService.getUserData().getName();
+
         log.info("Operation user name - "+operationUserName);
-        final Long organisationId =  userCredentialService.getUserData().getOrganisationId();
+
 
         log.info("Operation user organisationId"+organisationId);
         UserOrganisationMapping userOrganisationMapping = new UserOrganisationMapping(organisationId,newUser.getUserId(),operationUserName);
         userOrganisationMappingRepository.save(userOrganisationMapping);
         log.info("New user saved to db");
+        employeeRepository.save(new Employee(organisationId,employeeId,userId));
 
         if(signupRequest.hasRoles()) {
-            final String userId = newUser.getUserId();
             log.info("Setting roles for userId - "+userId);
 
             userRoleMappingRepository.saveAll(signupRequest.getRoleList()

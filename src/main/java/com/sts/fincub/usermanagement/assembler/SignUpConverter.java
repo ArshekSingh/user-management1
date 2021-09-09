@@ -2,6 +2,7 @@ package com.sts.fincub.usermanagement.assembler;
 
 import com.sts.fincub.usermanagement.entity.Role;
 import com.sts.fincub.usermanagement.entity.User;
+import com.sts.fincub.usermanagement.entity.enums.UserType;
 import com.sts.fincub.usermanagement.request.SignupRequest;
 import com.sts.fincub.usermanagement.response.SignupResponse;
 
@@ -18,7 +19,7 @@ public class SignUpConverter {
         user.setName(signupRequest.getName());
         user.setEmail(signupRequest.getEmail());
         user.setMobileNumber(signupRequest.getMobile());
-        user.setType(signupRequest.getUserType());
+        user.setType(UserType.valueOf(signupRequest.getUserType()));
         user.setPasswordResetDate(LocalDate.now());
         user.setInsertedOn(LocalDate.now());
         user.setInsertedBy(signupRequest.getName());
@@ -29,7 +30,7 @@ public class SignUpConverter {
         SignupResponse response = new SignupResponse();
         response.setName(user.getName());
         response.setUserId(user.getUserId());
-        response.setUserType(user.getType());
+        response.setUserType(user.getType().name());
         return response;
     }
 }

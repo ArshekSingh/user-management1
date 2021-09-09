@@ -9,7 +9,7 @@ public class UserProfileConverter {
         response.setUserId(user.getUserId());
         response.setEmail(user.getEmail());
         response.setUserName(user.getName());
-        response.setUserType(user.getType());
+        response.setUserType(user.getType().name());
         response.setEmail(user.getEmail());
         return response;
     }
