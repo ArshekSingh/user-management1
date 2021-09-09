@@ -53,6 +53,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public LoginResponse login(LoginRequest loginRequest) throws ObjectNotFoundException,BadRequestException, InternalServerErrorException {
         LoginResponse loginResponse = new LoginResponse();
 
+        log.info("Request received for userId -"+loginRequest.getUserId());
+
         User user = userRepository
                         .findByUserId(loginRequest.getUserId())
                         .orElseThrow(()->new ObjectNotFoundException(
@@ -63,6 +65,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
         try {
             String authToken = saveToken(user.toSessionObject());
+            log.info("User session saved with id -"+authToken);
             loginResponse.setAuthToken(authToken);
             loginResponse.setUserType(user.getType());
         }catch (Exception e){
@@ -86,20 +89,27 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         newUser.setUserId(userRepository.getGeneratedUserId());
 
+        log.info("Generated user Id -"+newUser.getUserId());
+
         newUser = userRepository.save(newUser);
         String operationUserName = userCredentialService.getUserData().getName();
+        log.info("Operation user name - "+operationUserName);
         final Long organisationId =  userCredentialService.getUserData().getOrganisationId();
+
+        log.info("Operation user organisationId"+organisationId);
         UserOrganisationMapping userOrganisationMapping = new UserOrganisationMapping(organisationId,newUser.getUserId(),operationUserName);
         userOrganisationMappingRepository.save(userOrganisationMapping);
-
+        log.info("New user saved to db");
 
         if(signupRequest.hasRoles()) {
             final String userId = newUser.getUserId();
+            log.info("Setting roles for userId - "+userId);
 
             userRoleMappingRepository.saveAll(signupRequest.getRoleList()
                                                 .stream()
                                                 .map(id -> new UserRoleMapping(userId,id,organisationId,operationUserName))
                                                 .collect(Collectors.toSet()));
+            log.info("Roles saved to db");
         }
         return SignUpConverter.convertToResponse(newUser);
     }
@@ -117,6 +127,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 
     private String saveToken(UserSession userSession) {
+        log.info("saving user session");
         return userRedisRepository.save(userSession).getId();
     }
 

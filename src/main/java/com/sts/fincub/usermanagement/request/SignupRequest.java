@@ -5,6 +5,7 @@ import com.sts.fincub.usermanagement.exception.BadRequestException;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -13,6 +14,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
@@ -28,6 +30,7 @@ public class  SignupRequest {
 
 
     public void validate() throws BadRequestException{
+        log.info("Validating signup request data");
         boolean isValid = true;
         StringBuffer buffer = new StringBuffer();
         if (name == null || name.isEmpty()) {

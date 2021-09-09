@@ -17,9 +17,9 @@ public interface MenuRepository extends JpaRepository<Menu, Long> {
             "" +
             "    FROM USER_MASTER U, USER_ROLE_MAPPING URM, MENU_ROLE_MAPPING MRM, MENU_MASTER MM, MENU_MASTER MM2, MENU_MASTER MM3" +
             "" +
-            "    WHERE U.USER_ID = '0002'" +
+            "    WHERE U.USER_ID = :userId" +
             "" +
-            "    AND URM.ORG_ID = 1" +
+            "    AND URM.ORG_ID = :orgId" +
             "" +
             "    AND U.USER_ID = URM.USER_ID" +
             "" +
@@ -35,9 +35,9 @@ public interface MenuRepository extends JpaRepository<Menu, Long> {
             "" +
             "    FROM USER_MASTER U, USER_ROLE_MAPPING URM, MENU_ROLE_MAPPING MRM, MENU_MASTER MM, MENU_MASTER MM2" +
             "" +
-            "    WHERE U.USER_ID = '0002'" +
+            "    WHERE U.USER_ID = :userId" +
             "" +
-            "    AND URM.ORG_ID = 1" +
+            "    AND URM.ORG_ID = :orgId" +
             "" +
             "    AND U.USER_ID = URM.USER_ID" +
             "" +
@@ -53,9 +53,9 @@ public interface MenuRepository extends JpaRepository<Menu, Long> {
             "" +
             "    FROM USER_MASTER U, USER_ROLE_MAPPING URM, MENU_ROLE_MAPPING MRM, MENU_MASTER MM" +
             "" +
-            "    WHERE U.USER_ID = '0002'" +
+            "    WHERE U.USER_ID = :userId" +
             "" +
-            "    AND URM.ORG_ID = 1" +
+            "    AND URM.ORG_ID = :orgId" +
             "" +
             "    AND U.USER_ID = URM.USER_ID" +
             "" +

@@ -9,6 +9,7 @@ import com.sts.fincub.usermanagement.response.LoginResponse;
 import com.sts.fincub.usermanagement.response.MenuResponse;
 import com.sts.fincub.usermanagement.response.Response;
 import com.sts.fincub.usermanagement.service.MenuService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,7 @@ import java.util.Map;
 @RestController
 @RequestMapping(value = "/api")
 @CrossOrigin()
+@Slf4j
 public class MenuController {
 
     private final MenuService menuService;
@@ -31,6 +33,7 @@ public class MenuController {
 
     @GetMapping("menu")
     public ResponseEntity<Response<MenuResponse>> menu() throws  ObjectNotFoundException {
+        log.info("Request received to fetch menus");
         MenuResponse response = menuService.fetchMenus();
         return  ResponseEntity.ok(new Response<>(RestMappingConstants.SUCCESS,response,HttpStatus.OK));
     }

@@ -35,10 +35,13 @@ public class MenuServiceImpl implements MenuService {
     public MenuResponse fetchMenus() throws ObjectNotFoundException {
         UserSession userSession = userCredentialService.getUserData();
         log.info("User found with details - {}",userSession.toString());
-        List<MenuView> menuList = menuRepository.findMenuList("0002",1L);
+
+        log.info("Fetcing menus for userId -"+userSession.getUserId() +"and organisationId -"+userSession.getOrganisationId());
+        List<MenuView> menuList = menuRepository.findMenuList(userSession.getUserId(), userSession.getOrganisationId());
         if(menuList == null || menuList.isEmpty()){
             throw  new ObjectNotFoundException("No menu found for user -"+userSession.getName(), HttpStatus.NOT_FOUND);
         }
+        log.info(menuList.size()+" Menu(s) found");
         return MenuResponseConverter.convert(menuList);
 
     }
