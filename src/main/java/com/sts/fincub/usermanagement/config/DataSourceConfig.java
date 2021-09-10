@@ -5,6 +5,7 @@ import oracle.ucp.jdbc.PoolDataSourceFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 
 import javax.sql.DataSource;
@@ -18,11 +19,7 @@ public class DataSourceConfig {
     private String username;
     @Value("${spring.datasource.password}")
     private String password;
-//    @Value("${oracle.ucp.minPoolSize}")
-//    private String minPoolSize;
-//
-//    @Value("${oracle.ucp.maxPoolSize}")
-//    private String maxPoolSize;
+
 
     @Value("${spring.datasource.driver-class-name:oracle.jdbc.pool.OracleDataSource}")
     private String driverClassName;

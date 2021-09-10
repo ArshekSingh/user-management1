@@ -1,5 +1,7 @@
 package com.sts.fincub.usermanagement.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,6 +24,7 @@ public class UserSession implements Serializable {
         String EMAIL = "EMAIL";
         String USER_TYPE = "USER_TYPE";
         String USER_ID = "USER_ID";
+        String ORG_ID = "ORG_ID";
     }
 
     private final static long serialVersionUID = -6524768694427900654L;
@@ -38,8 +41,10 @@ public class UserSession implements Serializable {
     private String type;
 
 
-    private Set<Role> roles = new HashSet<>();
+    private Set<Long> roles = new HashSet<>();
     private String userId;
+
+    private Long organisationId;
 
 
 }

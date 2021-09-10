@@ -42,6 +42,13 @@ public class GlobalExceptionHandler {
 		logger.info("ObjectNotFoundException occurs => {}", ex.getMessage());
 		return new ResponseEntity<>(new Response(ex.getMessage(), ex.getHttpStatus()), HttpStatus.OK);
 	}
+
+	@ExceptionHandler(value = InternalServerErrorException.class)
+	@ResponseBody
+	public ResponseEntity<Object> handleInternalServerErrorException(InternalServerErrorException ex) {
+		logger.info("InternalServerException occurs => {}", ex.getMessage());
+		return new ResponseEntity<>(new Response(ex.getMessage(), ex.getHttpStatus()), HttpStatus.OK);
+	}
 	@ExceptionHandler(value = MissingPathVariableException.class)
 	@ResponseBody
 	public ResponseEntity<Object> handleMissingPathVariableException(MissingPathVariableException ex) {
