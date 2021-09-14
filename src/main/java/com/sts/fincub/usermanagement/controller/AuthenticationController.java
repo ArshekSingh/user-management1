@@ -20,7 +20,7 @@ import java.util.ArrayList;
 
 @Slf4j
 @RestController
-@CrossOrigin()
+@CrossOrigin(origins = "*")
 public class AuthenticationController {
 
     private final AuthenticationService authenticationService;
@@ -31,14 +31,28 @@ public class AuthenticationController {
     }
 
     @PostMapping("login")
-    public ResponseEntity<Response<LoginResponse>> login(@RequestBody LoginRequest loginRequest) throws InternalServerErrorException,BadRequestException, ObjectNotFoundException {
+    public ResponseEntity<Response<LoginResponse>> login(@RequestBody LoginRequest loginRequest) {
+
+        Response<LoginResponse> response = new Response<>();
 
 
-        if(!loginRequest.isValid()){
-            throw new BadRequestException("Invalid values for userId/password",HttpStatus.BAD_REQUEST);
+        try{
+            if(!loginRequest.isValid()){
+                throw new BadRequestException("Invalid values for userId/password",HttpStatus.BAD_REQUEST);
+            }
+            log.info("Request is valid");
+            response.setResponseObject(authenticationService.login(loginRequest));
+            response.setCode(HttpStatus.OK.value());
+            response.setStatus(HttpStatus.OK);
+            response.setMessage(RestMappingConstants.SUCCESS);
+        }catch (Exception e){
+            response.setMessage(e.getMessage());
+            response.setStatus(HttpStatus.OK);
+            response.setCode(HttpStatus.OK.value());
+
         }
-        log.info("Request is valid");
-        return ResponseEntity.ok(new Response<>("Success",authenticationService.login(loginRequest), HttpStatus.OK));
+
+        return ResponseEntity.ok(response);
     }
 
 

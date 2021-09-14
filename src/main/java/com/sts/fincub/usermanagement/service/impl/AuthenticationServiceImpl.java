@@ -2,6 +2,7 @@ package com.sts.fincub.usermanagement.service.impl;
 
 import com.sts.fincub.usermanagement.assembler.SignUpConverter;
 import com.sts.fincub.usermanagement.entity.*;
+import com.sts.fincub.usermanagement.entity.enums.UserType;
 import com.sts.fincub.usermanagement.exception.BadRequestException;
 import com.sts.fincub.usermanagement.exception.InternalServerErrorException;
 import com.sts.fincub.usermanagement.exception.ObjectNotFoundException;
@@ -104,8 +105,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         log.info("Operation user organisationId"+organisationId);
         UserOrganisationMapping userOrganisationMapping = new UserOrganisationMapping(organisationId,newUser.getUserId(),operationUserName);
         userOrganisationMappingRepository.save(userOrganisationMapping);
-        log.info("New user saved to db");
-        employeeRepository.save(new Employee(organisationId,employeeId,userId));
+        if(signupRequest.getUserType().equals(UserType.EMP.name())) {
+            log.info("New user saved to db");
+            employeeRepository.save(new Employee(organisationId, employeeId, userId));
+        }
 
         if(signupRequest.hasRoles()) {
             log.info("Setting roles for userId - "+userId);
