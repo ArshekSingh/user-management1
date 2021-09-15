@@ -55,8 +55,8 @@ public class  SignupRequest {
         if(userType == null || userType.isEmpty()){
             buffer.append("Field : userType is mandatory");
             isValid = false;
-        }else if (!(UserType.EMP.name().equals(userType) || UserType.NEMP.name().equals(userType))){
-            buffer.append("Invalid value for UserType - Accepted value => (EMP,NEMP)");
+        }else if (!(UserType.EMP.name().equals(userType))){
+            buffer.append("Invalid value for UserType - Accepted value => (EMP)");
             isValid = false;
         }
 
