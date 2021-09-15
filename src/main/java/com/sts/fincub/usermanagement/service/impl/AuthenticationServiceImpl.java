@@ -20,6 +20,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
 import static com.sts.fincub.usermanagement.constants.RestMappingConstants.SUCCESS;
@@ -61,11 +62,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                         .orElseThrow(()->new ObjectNotFoundException(
                                                         "Invalid userId - "+loginRequest.getUserId(),
                                                             HttpStatus.NOT_FOUND));
+
         if(!user.isPasswordCorrect(loginRequest.getPassword())){
             throw new BadRequestException("Invalid password",HttpStatus.BAD_REQUEST);
         }
         try {
-            String authToken = saveToken(user.toSessionObject());
+           Employee employee = employeeRepository.findByUserId(user.getUserId());
+            String authToken = saveToken(user.toSessionObject(),employee.getBranchId());
             log.info("User session saved with id -"+authToken);
             loginResponse.setAuthToken(authToken);
             loginResponse.setUserType(user.getType().name());
@@ -83,7 +86,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Transactional
     @Override
     public SignupResponse signup(SignupRequest signupRequest) throws BadRequestException{
-
+        UserSession userSession = userCredentialService.getUserData();
         User newUser = SignUpConverter.convertToUser(signupRequest);
         String operationUserName = userCredentialService.getUserData().getName();
         final Long organisationId =  userCredentialService.getUserData().getOrganisationId();
@@ -92,11 +95,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         String userEmployeeId = userRepository.getGeneratedUserEmployeeId(organisationId,signupRequest.getUserType());
         final String userId = userEmployeeId.split(",")[0];
-        final String employeeId = userEmployeeId.split(",")[1];
+        final String employeeCode = userEmployeeId.split(",")[1];
         newUser.setUserId(userId);
         log.info("Generated user Id -"+newUser.getUserId());
 
         newUser = userRepository.save(newUser);
+        Employee employee =setValueEmployee(organisationId, userId, employeeCode,userSession,signupRequest);
+
 
         log.info("Operation user name - "+operationUserName);
 
@@ -105,7 +110,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         UserOrganisationMapping userOrganisationMapping = new UserOrganisationMapping(organisationId,newUser.getUserId(),operationUserName);
         userOrganisationMappingRepository.save(userOrganisationMapping);
         log.info("New user saved to db");
-        employeeRepository.save(new Employee(organisationId,employeeId,userId));
+
+        employeeRepository.save(employee);
 
         if(signupRequest.hasRoles()) {
             log.info("Setting roles for userId - "+userId);
@@ -117,6 +123,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             log.info("Roles saved to db");
         }
         return SignUpConverter.convertToResponse(newUser);
+    }
+
+    private Employee setValueEmployee(Long organisationId, String userId, String employeeCode,UserSession userSession,SignupRequest request) {
+        Employee employee = new Employee();
+        employee.setOrganisationId(organisationId);
+        employee.setEmployeeCode(employeeCode);
+        employee.setUserId(userId);
+        employee.setGender(request.getGender());
+        employee.setFirstName(request.getFirstName());
+        employee.setStatus("Y");
+        employee.setInsertionOn(LocalDateTime.now());
+        employee.setInsertionBy(userSession.getName());
+        return  employee;
     }
 
     @Override
@@ -131,8 +150,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
 
-    private String saveToken(UserSession userSession) {
+    private String saveToken(UserSession userSession,Integer branchId) {
         log.info("saving user session");
+        userSession.setBranchId(branchId);
         return userRedisRepository.save(userSession).getId();
     }
 

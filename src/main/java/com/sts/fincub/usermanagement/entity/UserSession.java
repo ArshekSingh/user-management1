@@ -25,6 +25,7 @@ public class UserSession implements Serializable {
         String USER_TYPE = "USER_TYPE";
         String USER_ID = "USER_ID";
         String ORG_ID = "ORG_ID";
+        String BRANCH_ID = "BRANCH_ID";
     }
 
     private final static long serialVersionUID = -6524768694427900654L;
@@ -45,6 +46,9 @@ public class UserSession implements Serializable {
     private String userId;
 
     private Long organisationId;
+
+    private Integer branchId;
+
 
 
 }
