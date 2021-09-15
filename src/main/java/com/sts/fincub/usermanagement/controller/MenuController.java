@@ -20,7 +20,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping(value = "/api")
-@CrossOrigin()
+@CrossOrigin(origins = "*")
 @Slf4j
 public class MenuController {
 
@@ -34,7 +34,13 @@ public class MenuController {
     @GetMapping("menu")
     public ResponseEntity<Response<MenuResponse>> menu() throws  ObjectNotFoundException {
         log.info("Request received to fetch menus");
-        MenuResponse response = menuService.fetchMenus();
+        MenuResponse response  = null;
+        try {
+             response = menuService.fetchMenus();
+        }catch(Exception e){
+            log.error("Exception -{}",e);
+        }
+
         return  ResponseEntity.ok(new Response<>(RestMappingConstants.SUCCESS,response,HttpStatus.OK));
     }
 }

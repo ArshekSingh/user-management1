@@ -14,6 +14,9 @@ import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
+
 @Configuration
 @EnableSwagger2
 public class SwaggerConfig implements WebMvcConfigurer {
@@ -42,7 +45,10 @@ public class SwaggerConfig implements WebMvcConfigurer {
 
 	@Override
 	public void addCorsMappings(CorsRegistry registry) {
-		registry.addMapping("/**");
+		registry.addMapping("/*")
+				.allowedOrigins("*")
+				.allowedMethods("*")
+				.allowedHeaders("*").exposedHeaders("*");
 	}
 
 }

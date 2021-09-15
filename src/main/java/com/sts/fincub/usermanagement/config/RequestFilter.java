@@ -2,6 +2,7 @@ package com.sts.fincub.usermanagement.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sts.fincub.authentication.validation.RedisRepository;
+import com.sts.fincub.authentication.validation.RedisRepository;
 import com.sts.fincub.usermanagement.assembler.UserSessionConverter;
 import com.sts.fincub.usermanagement.constants.RestMappingConstants;
 import com.sts.fincub.usermanagement.entity.UserSession;
@@ -39,9 +40,10 @@ public class RequestFilter implements Filter {
 
 		boolean isValidRequest = true;
 		if (servletRequest instanceof HttpServletRequest
-				&& ((HttpServletRequest) servletRequest).getRequestURI().contains("/api/")) {
+				&& ((HttpServletRequest) servletRequest).getRequestURI().contains("/api")) {
 			HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
 			String token = httpServletRequest.getHeader("Authorization");
+			log.info("Headers - {}",httpServletRequest.getHeaderNames());
 			if (token != null && !token.isEmpty()) {
 				try {
 					String tokenValue = token.split(" ")[1];
@@ -51,10 +53,11 @@ public class RequestFilter implements Filter {
 						setSecurityContext(userSession);
 					}else throw new UnauthorizedException(RestMappingConstants.AUTHENTICATION_FAILED);
 				} catch (Exception exception) {
-					log.warn("Request is not valid - " + exception.getMessage());
+					log.warn("Request is not valid - exception {}" + exception.getMessage());
 					isValidRequest = false;
 				}
 			} else {
+				log.info("Token not found - value- {}",token);
 				log.warn("Request is not valid - ");
 				isValidRequest = false;
 			}
