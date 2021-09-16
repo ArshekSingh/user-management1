@@ -1,12 +1,12 @@
 package com.sts.finncub.usermanagement.service.impl;
 
 import com.sts.finncub.usermanagement.assembler.SignUpConverter;
-import com.sts.fincub.usermanagement.entity.*;
+import com.sts.finncub.usermanagement.constants.RestMappingConstants;
 import com.sts.finncub.usermanagement.entity.*;
 import com.sts.finncub.usermanagement.exception.BadRequestException;
 import com.sts.finncub.usermanagement.exception.InternalServerErrorException;
 import com.sts.finncub.usermanagement.exception.ObjectNotFoundException;
-import com.sts.fincub.usermanagement.repository.*;
+import com.sts.finncub.usermanagement.repository.*;
 import com.sts.finncub.usermanagement.request.LoginRequest;
 import com.sts.finncub.usermanagement.request.SignupRequest;
 import com.sts.finncub.usermanagement.response.LoginResponse;
@@ -14,8 +14,6 @@ import com.sts.finncub.usermanagement.response.Response;
 import com.sts.finncub.usermanagement.response.SignupResponse;
 import com.sts.finncub.usermanagement.service.AuthenticationService;
 import com.sts.finncub.usermanagement.service.UserCredentialService;
-import com.sts.finncub.usermanagement.constants.RestMappingConstants;
-import com.sts.finncub.usermanagement.repository.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

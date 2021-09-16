@@ -8,7 +8,7 @@
 		<version>2.5.3</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.sts.fincub.</groupId>
+	<groupId>com.sts.finncub.</groupId>
 	<artifactId>ums</artifactId>
 	<version>1.0.0</version>
 	<name>ums</name>
