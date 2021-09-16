@@ -19,18 +19,18 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class  SignupRequest {
+public class SignupRequest {
     String name;
     String password;
     List<Long> roleList;
     String email;
     String mobile;
     String userType;
+    String firstName;
+    String gender;
 
 
-
-
-    public void validate() throws BadRequestException{
+    public void validate() throws BadRequestException {
         log.info("Validating signup request data");
         boolean isValid = true;
         StringBuffer buffer = new StringBuffer();
@@ -38,36 +38,43 @@ public class  SignupRequest {
             buffer.append("Field : name is mandatory, ");
             isValid = false;
         }
-        if(email == null || email.isEmpty()){
+        if (email == null || email.isEmpty()) {
             buffer.append("Field : email is mandatory, ");
             isValid = false;
         }
-        if(password == null || password.isEmpty()){
+        if (password == null || password.isEmpty()) {
             buffer.append("Field : password is mandatory");
             isValid = false;
         }
 
-        if(password == null || password.isEmpty()){
+        if (password == null || password.isEmpty()) {
             buffer.append("Field : password is mandatory");
             isValid = false;
         }
-
-        if(userType == null || userType.isEmpty()){
+        if (gender == null || gender.isEmpty()) {
+            buffer.append("Field : gender is mandatory");
+            isValid = false;
+        }
+        if (firstName == null || gender.isEmpty()) {
+            buffer.append("Field : firstName is mandatory");
+            isValid = false;
+        }
+        if (userType == null || userType.isEmpty()) {
             buffer.append("Field : userType is mandatory");
             isValid = false;
-        }else if (!(UserType.EMP.name().equals(userType))){
-            buffer.append("Invalid value for UserType - Accepted value => (EMP)");
+        } else if (!(UserType.EMP.name().equals(userType) || UserType.EMP.name().equals(userType))) {
+            buffer.append("Invalid value for UserType - Accepted value => (EMP,NEMP)");
+
             isValid = false;
         }
 
 
-
-        if(!isValid){
+        if (!isValid) {
             throw new BadRequestException(buffer.toString(), HttpStatus.BAD_REQUEST);
         }
     }
 
-    public boolean hasRoles(){
+    public boolean hasRoles() {
         return roleList != null && !roleList.isEmpty();
     }
 
