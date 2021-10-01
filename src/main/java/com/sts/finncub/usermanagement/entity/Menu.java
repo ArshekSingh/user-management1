@@ -12,18 +12,19 @@ import java.time.LocalDate;
 @Data
 @Table(name = Menu.Columns.TABLE_NAME)
 public class Menu {
-    interface Columns{
+    interface Columns {
         String MENU_ID = "MENU_ID";
         String MENU_NAME = "MENU_NAME";
         String ACTION = "ACTION";
         String LABEL = "LABEL";
         String DISPLAY_SEQUENCE = "DISPLAY_SEQUENCE";
         String PARENT_ID = "PARENT_ID";
-        String INSERTED_ON = "INSERTED_ON" ;
+        String INSERTED_ON = "INSERTED_ON";
         String INSERTED_BY = "INSERTED_BY";
         String UPDATED_ON = "UPDATED_ON";
         String UPDATED_BY = "UPDATED_BY";
-        String TABLE_NAME ="MENU_MASTER";
+        String ICON = "ICON";
+        String TABLE_NAME = "MENU_MASTER";
     }
 
     @Id
@@ -49,5 +50,7 @@ public class Menu {
     private LocalDate updatedOn;
     @Column(name = Columns.UPDATED_BY)
     private String updatedBy;
+    @Column(name = Columns.ICON)
+    private String icon;
 
 }
