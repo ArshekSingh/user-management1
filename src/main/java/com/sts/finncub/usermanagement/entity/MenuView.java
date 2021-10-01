@@ -18,6 +18,9 @@ public interface MenuView {
     @Value("#{target.DISPLAY_SEQUENCE}")
     Long getDisplaySequence();
 
+    @Value("#{target.ICON}")
+    String getIcon();
+
     @Value("#{target.PARENT_ID}")
     Long getParentId();
 

@@ -10,10 +10,10 @@ import java.util.List;
 
 public interface MenuRepository extends JpaRepository<Menu, Long> {
 
-    @Query(value ="SELECT MENU_ID, MENU_NAME, ACTION, LABEL, DISPLAY_SEQUENCE, PARENT_ID" +
+    @Query(value ="SELECT MENU_ID, MENU_NAME, ACTION, LABEL, DISPLAY_SEQUENCE, PARENT_ID,ICON" +
             " FROM (" +
             "" +
-            "    SELECT DISTINCT MM3.MENU_ID, MM3.MENU_NAME, MM3.ACTION, MM3.LABEL, MM3.DISPLAY_SEQUENCE, MM3.PARENT_ID, 1 LVL" +
+            "    SELECT DISTINCT MM3.MENU_ID, MM3.MENU_NAME, MM3.ACTION, MM3.LABEL, MM3.DISPLAY_SEQUENCE, MM3.PARENT_ID,MM3.ICON, 1 LVL" +
             "" +
             "    FROM USER_MASTER U, USER_ROLE_MAPPING URM, MENU_ROLE_MAPPING MRM, MENU_MASTER MM, MENU_MASTER MM2, MENU_MASTER MM3" +
             "" +
@@ -31,7 +31,7 @@ public interface MenuRepository extends JpaRepository<Menu, Long> {
             "" +
             "    AND MM2.PARENT_ID = MM3.MENU_ID  UNION ALL" +
             "" +
-            "    SELECT DISTINCT MM2.MENU_ID, MM2.MENU_NAME, MM2.ACTION, MM2.LABEL, MM2.DISPLAY_SEQUENCE, MM2.PARENT_ID, 2 LVL" +
+            "    SELECT DISTINCT MM2.MENU_ID, MM2.MENU_NAME, MM2.ACTION, MM2.LABEL, MM2.DISPLAY_SEQUENCE, MM2.PARENT_ID,MM2.ICON, 2 LVL" +
             "" +
             "    FROM USER_MASTER U, USER_ROLE_MAPPING URM, MENU_ROLE_MAPPING MRM, MENU_MASTER MM, MENU_MASTER MM2" +
             "" +
@@ -49,7 +49,7 @@ public interface MenuRepository extends JpaRepository<Menu, Long> {
             "" +
             "    UNION ALL" +
             "" +
-            "    SELECT MM.MENU_ID, MM.MENU_NAME, MM.ACTION, MM.LABEL, MM.DISPLAY_SEQUENCE, MM.PARENT_ID, 3 LVL" +
+            "    SELECT MM.MENU_ID, MM.MENU_NAME, MM.ACTION, MM.LABEL, MM.DISPLAY_SEQUENCE, MM.PARENT_ID,MM.ICON, 3 LVL" +
             "" +
             "    FROM USER_MASTER U, USER_ROLE_MAPPING URM, MENU_ROLE_MAPPING MRM, MENU_MASTER MM" +
             "" +

@@ -65,12 +65,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (!user.isPasswordCorrect(loginRequest.getPassword())) {
             throw new BadRequestException("Invalid password", HttpStatus.BAD_REQUEST);
         }
+
         try {
             Employee employee = employeeRepository.findByUserId(user.getUserId());
-            String authToken = saveToken(user.toSessionObject(), employee.getBranchId());
-            log.info("User session saved with id -" + authToken);
-            loginResponse.setAuthToken(authToken);
-            loginResponse.setUserType(user.getType().name());
+            log.info("Employee Details Fetch Using UserId {}", user.getUserId());
+                String authToken = saveToken(user.toSessionObject(), employee.getBranchId());
+                log.info("User session saved with id -" + authToken);
+                loginResponse.setAuthToken(authToken);
+                loginResponse.setUserType(user.getType().name());
         } catch (Exception e) {
             log.error("Exception- {}", e);
             throw new InternalServerErrorException("Exception while saving token - " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);

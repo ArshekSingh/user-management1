@@ -13,6 +13,7 @@ public class MenuDTO {
     private String menuName;
     private String label;
     private Long displaySequence;
+    private String icon;
     private String to;
     private List<MenuDTO> content;
 }
