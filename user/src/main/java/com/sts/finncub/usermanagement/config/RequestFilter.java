@@ -1,12 +1,12 @@
 package com.sts.finncub.usermanagement.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sts.fincub.authentication.validation.RedisRepository;
-import com.sts.finncub.usermanagement.assembler.UserSessionConverter;
-import com.sts.finncub.usermanagement.response.Response;
 import com.sts.finncub.core.constants.RestMappingConstants;
 import com.sts.finncub.core.entity.UserSession;
 import com.sts.finncub.core.exception.UnauthorizedException;
+import com.sts.finncub.core.util.TokenValidator;
+import com.sts.finncub.usermanagement.assembler.UserSessionConverter;
+import com.sts.finncub.usermanagement.response.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
@@ -23,11 +23,11 @@ import java.io.IOException;
 
 @Slf4j
 @Component
-@Import(RedisRepository.class)
+@Import(TokenValidator.class)
 public class RequestFilter implements Filter {
 
 	@Autowired
-	RedisRepository authTokenValidation;
+	TokenValidator tokenValidator;
 
 	@Override
 	public void init(FilterConfig filterConfig) throws ServletException {
@@ -46,7 +46,7 @@ public class RequestFilter implements Filter {
 			if (token != null && !token.isEmpty()) {
 				try {
 					String tokenValue = token.split(" ")[1];
-					Object userSessionObject = authTokenValidation.validateToken(tokenValue);
+					Object userSessionObject = tokenValidator.validateToken(tokenValue);
 					UserSession userSession = UserSessionConverter.convert(userSessionObject);
 					if(userSession.getUserId() != null) {
 						setSecurityContext(userSession);

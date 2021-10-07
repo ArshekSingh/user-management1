@@ -1,8 +1,8 @@
 package com.sts.finncub.usermanagement.assembler;
 
-import com.sts.finncub.usermanagement.response.MenuResponse;
-import com.sts.finncub.core.dto.MenuDTO;
+import com.sts.finncub.core.dto.MenuDto;
 import com.sts.finncub.core.entity.MenuView;
+import com.sts.finncub.usermanagement.response.MenuResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,16 +11,16 @@ public class MenuResponseConverter {
 
     public static MenuResponse convert(List<MenuView> menuList){
         MenuResponse response = new MenuResponse();
-        List<MenuDTO> menuDTOList = new ArrayList<>();
+        List<MenuDto> menuDtoList = new ArrayList<>();
         for(MenuView menu: menuList){
             if(menu.getParentId() == null){
-                MenuDTO menuDTO = convert(menu);
-                List<MenuDTO> subMenuList = new ArrayList<>();
+                MenuDto menuDTO = convert(menu);
+                List<MenuDto> subMenuList = new ArrayList<>();
                 for(MenuView subMenu:menuList){
-                    MenuDTO subMenuDTO = convert(subMenu);
+                    MenuDto subMenuDTO = convert(subMenu);
 
                     if(menu.getMenuId().equals(subMenu.getParentId())){
-                        List<MenuDTO> pageList = new ArrayList<>();
+                        List<MenuDto> pageList = new ArrayList<>();
                         for(MenuView page: menuList) {
                             if(subMenu.getMenuId().equals(page.getParentId())){
                                 pageList.add(convert(page));
@@ -34,17 +34,17 @@ public class MenuResponseConverter {
                     }
 
                 }
-                menuDTOList.add(menuDTO);
+                menuDtoList.add(menuDTO);
 
             }
         }
 
-        response.setMenuDTOList(menuDTOList);
+        response.setMenuDTOList(menuDtoList);
         return response;
     }
 
-    public static MenuDTO convert(MenuView menu){
-        MenuDTO dto = new MenuDTO();
+    public static MenuDto convert(MenuView menu){
+        MenuDto dto = new MenuDto();
         dto.setLabel(menu.getLabel());
         dto.setMenuName(menu.getMenuName());
         dto.setTo(menu.getAction());
