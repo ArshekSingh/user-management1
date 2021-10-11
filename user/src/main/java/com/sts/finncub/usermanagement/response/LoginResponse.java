@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 @Data
 @AllArgsConstructor
@@ -14,5 +14,6 @@ public class LoginResponse {
     private String authToken;
     private String userType;
     private List<String> userRoles;
+    private Map<Integer, String> branchDetails;
 
 }
