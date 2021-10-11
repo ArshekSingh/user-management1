@@ -14,6 +14,7 @@ public class LoginResponse {
     private String authToken;
     private String userType;
     private List<String> userRoles;
-    private Map<Integer, String> branchDetails;
+    private Map<Integer, String> branchMap;
+    private Map<Integer, String> divisionMap;
 
 }

@@ -73,7 +73,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             String authToken = saveToken(userSession);
             log.info("User session saved with id -" + authToken);
             loginResponse.setAuthToken(authToken);
-            loginResponse.setBranchDetails(userSession.getBranchId());
+            loginResponse.setBranchMap(userSession.getBranchMap());
+            //TODO set user region map.
+            loginResponse.setDivisionMap(userSession.getDivisionMap());
             loginResponse.setUserType(user.getType().name());
         } catch (Exception e) {
             log.error("Exception- {}", e);
