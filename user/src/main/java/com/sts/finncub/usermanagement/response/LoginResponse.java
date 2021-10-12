@@ -1,20 +1,17 @@
 package com.sts.finncub.usermanagement.response;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.sts.finncub.core.entity.UserSession;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-import java.util.Map;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class LoginResponse {
     private String authToken;
-    private String userType;
-    private List<String> userRoles;
-    private Map<Integer, String> branchMap;
-    private Map<Integer, String> divisionMap;
+    private UserSession userSession;
 
 }

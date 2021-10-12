@@ -16,12 +16,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping(value = "api")
 @Slf4j
-public class UserProfileController {
+public class UserController {
 
     private final UserProfileService userProfileService;
 
     @Autowired
-    UserProfileController(UserProfileService userProfileService){
+    UserController(UserProfileService userProfileService){
         this.userProfileService = userProfileService;
     }
 

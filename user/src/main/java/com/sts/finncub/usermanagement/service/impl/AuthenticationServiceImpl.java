@@ -1,5 +1,6 @@
 package com.sts.finncub.usermanagement.service.impl;
 
+import com.google.gson.Gson;
 import com.sts.finncub.core.constants.RestMappingConstants;
 import com.sts.finncub.core.entity.*;
 import com.sts.finncub.core.enums.UserType;
@@ -21,7 +22,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -55,10 +61,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public LoginResponse login(LoginRequest loginRequest) throws ObjectNotFoundException, BadRequestException, InternalServerErrorException {
+        Gson gson = new Gson();
         LoginResponse loginResponse = new LoginResponse();
-
         log.info("Request received for userId -" + loginRequest.getUserId());
-
         User user = userRepository
                 .findByUserId(loginRequest.getUserId())
                 .orElseThrow(() -> new ObjectNotFoundException(
@@ -68,23 +73,60 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             throw new BadRequestException("Invalid password", HttpStatus.BAD_REQUEST);
         }
 
+        UserSession userSession = toSessionObject(user);
         try {
-            UserSession userSession = user.toSessionObject();
             String authToken = saveToken(userSession);
             log.info("User session saved with id -" + authToken);
             loginResponse.setAuthToken(authToken);
-            loginResponse.setBranchMap(userSession.getBranchMap());
-            //TODO set user region map.
-            loginResponse.setDivisionMap(userSession.getDivisionMap());
-            loginResponse.setUserType(user.getType().name());
+            loginResponse.setUserSession(gson.fromJson(userSession.getUserSessionJSON(), UserSession.class));
         } catch (Exception e) {
             log.error("Exception- {}", e);
             throw new InternalServerErrorException("Exception while saving token - " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-//        loginResponse.setUserRoles(user.getRoles().stream().map(Role::getRoleName).collect(Collectors.toList()));
-
         return loginResponse;
 
+    }
+
+    public UserSession toSessionObject(User user) throws InternalServerErrorException {
+        UserSession userSession = new UserSession();
+        try {
+            List<Integer> branchIdList = new ArrayList<>();
+            Map<Integer, String> branchIdMap = new HashMap<>();
+            userSession.setEmail(user.getEmail());
+            if (user.getUserRoleMapping() != null && !user.getUserRoleMapping().isEmpty()) {
+                userSession.setRoles(user.getUserRoleMapping()
+                        .stream()
+                        .map(mapping -> mapping.getId().getRoleId())
+                        .collect(Collectors.toSet()));
+            }
+            if (user.getUserBranchMapping() != null && !user.getUserBranchMapping().isEmpty()) {
+                for (UserBranchMapping userBranchMapping : user.getUserBranchMapping()) {
+                    branchIdList.add(userBranchMapping.getBranchMaster().getBranchId());
+                    branchIdMap.put(userBranchMapping.getBranchMaster().getBranchId(), StringUtils.hasText(userBranchMapping.getBranchMaster().getBranchCode()) ? userBranchMapping.getBranchMaster().getBranchCode() : "");
+                }
+
+            }
+            userSession.setName(user.getName());
+            userSession.setType(user.getType().name());
+            userSession.setUserId(user.getUserId());
+            userSession.setOrganisationId(getActiveOrganisationId(user));
+            userSession.setBranchMap(branchIdMap);
+
+        } catch (Exception ex) {
+            log.error("Exception- {}", ex);
+            throw new InternalServerErrorException("Exception while set data in userSession object" + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return userSession;
+    }
+
+    public Long getActiveOrganisationId(User user) {
+        Long activeOrgId = null;
+        for (UserOrganisationMapping orgMapping : user.getUserOrganisationMapping()) {
+            if ("Y".equalsIgnoreCase(orgMapping.getActive())) {
+                activeOrgId = orgMapping.getId().getOrganisationId();
+            }
+        }
+        return activeOrgId;
     }
 
     @Transactional
@@ -141,7 +183,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 
     private String saveToken(UserSession userSession) {
+        Gson gson = new Gson();
         log.info("saving user session");
+        userSession.setUserSessionJSON(gson.toJson(userSession));
         return userRedisRepository.save(userSession).getId();
     }
 
