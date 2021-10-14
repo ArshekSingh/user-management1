@@ -53,12 +53,6 @@
             <artifactId>hibernate-envers</artifactId>
             <version>5.5.3.Final</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/oracle/ojdbc6 -->
-        <dependency>
-            <groupId>oracle</groupId>
-            <artifactId>ojdbc6</artifactId>
-            <version>11.2.0.4</version>
-        </dependency>
         <!-- https://mvnrepository.com/artifact/com.zaxxer/HikariCP -->
         <dependency>
             <groupId>com.zaxxer</groupId>
