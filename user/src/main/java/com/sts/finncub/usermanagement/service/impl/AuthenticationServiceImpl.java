@@ -109,8 +109,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             }
             if (!CollectionUtils.isEmpty(parentIdList)) {
                 divisionList = branchMasterRepository.findByBranchIdIn(parentIdList);
-            }
-            if (!CollectionUtils.isEmpty(divisionList)) {
                 for (BranchMaster branchMaster : divisionList) {
                     divisionMap.put(branchMaster.getBranchId(), StringUtils.hasText(branchMaster.getBranchCode()) ? branchMaster.getBranchCode() : "");
                 }
