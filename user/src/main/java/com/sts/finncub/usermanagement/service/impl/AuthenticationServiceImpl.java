@@ -2,6 +2,7 @@ package com.sts.finncub.usermanagement.service.impl;
 
 import com.google.gson.Gson;
 import com.sts.finncub.core.constants.RestMappingConstants;
+import com.sts.finncub.core.dto.DivisionDto;
 import com.sts.finncub.core.entity.*;
 import com.sts.finncub.core.enums.UserType;
 import com.sts.finncub.core.exception.BadRequestException;
@@ -22,12 +23,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -84,14 +83,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             throw new InternalServerErrorException("Exception while saving token - " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return loginResponse;
-
     }
 
     public UserSession toSessionObject(User user) throws InternalServerErrorException {
         UserSession userSession = new UserSession();
         try {
-            List<Integer> branchIdList = new ArrayList<>();
+            Set<Integer> parentIdList = new HashSet<>();
             Map<Integer, String> branchIdMap = new HashMap<>();
+            Map<Integer, String> divisionMap = new HashMap<>();
+            List<BranchMaster> divisionList = new ArrayList<>();
             userSession.setEmail(user.getEmail());
             if (user.getUserRoleMapping() != null && !user.getUserRoleMapping().isEmpty()) {
                 userSession.setRoles(user.getUserRoleMapping()
@@ -101,16 +101,24 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             }
             if (user.getUserBranchMapping() != null && !user.getUserBranchMapping().isEmpty()) {
                 for (UserBranchMapping userBranchMapping : user.getUserBranchMapping()) {
-                    branchIdList.add(userBranchMapping.getBranchMaster().getBranchId());
+                    if (userBranchMapping.getBranchMaster().getParentId() != null) {
+                        parentIdList.add(userBranchMapping.getBranchMaster().getParentId());
+                    }
                     branchIdMap.put(userBranchMapping.getBranchMaster().getBranchId(), StringUtils.hasText(userBranchMapping.getBranchMaster().getBranchCode()) ? userBranchMapping.getBranchMaster().getBranchCode() : "");
                 }
-
+            }
+            if (!CollectionUtils.isEmpty(parentIdList)) {
+                divisionList = branchMasterRepository.findByBranchIdIn(parentIdList);
+                for (BranchMaster branchMaster : divisionList) {
+                    divisionMap.put(branchMaster.getBranchId(), StringUtils.hasText(branchMaster.getBranchCode()) ? branchMaster.getBranchCode() : "");
+                }
             }
             userSession.setName(user.getName());
             userSession.setType(user.getType().name());
             userSession.setUserId(user.getUserId());
             userSession.setOrganisationId(getActiveOrganisationId(user));
             userSession.setBranchMap(branchIdMap);
+            userSession.setDivisionMap(divisionMap);
 
         } catch (Exception ex) {
             log.error("Exception- {}", ex);
