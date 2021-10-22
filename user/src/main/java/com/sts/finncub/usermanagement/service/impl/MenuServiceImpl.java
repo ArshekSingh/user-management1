@@ -1,13 +1,13 @@
 package com.sts.finncub.usermanagement.service.impl;
 
-import com.sts.finncub.usermanagement.assembler.MenuResponseConverter;
-import com.sts.finncub.usermanagement.response.MenuResponse;
-import com.sts.finncub.usermanagement.service.MenuService;
-import com.sts.finncub.usermanagement.service.UserCredentialService;
 import com.sts.finncub.core.entity.MenuView;
 import com.sts.finncub.core.entity.UserSession;
 import com.sts.finncub.core.exception.ObjectNotFoundException;
 import com.sts.finncub.core.repository.MenuRepository;
+import com.sts.finncub.usermanagement.assembler.MenuResponseConverter;
+import com.sts.finncub.usermanagement.response.MenuResponse;
+import com.sts.finncub.usermanagement.service.MenuService;
+import com.sts.finncub.usermanagement.service.UserCredentialService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -33,8 +33,8 @@ public class MenuServiceImpl implements MenuService {
         UserSession userSession = userCredentialService.getUserData();
         log.info("User found with details - {}",userSession.toString());
 
-        log.info("Fetcing menus for userId -"+userSession.getUserId() +"and organisationId -"+userSession.getOrganisationId());
-        List<MenuView> menuList = menuRepository.findMenuList(userSession.getUserId(), userSession.getOrganisationId());
+        log.info("Fetcing menus for userId -"+userSession.getUserId() +"and organizationId -"+userSession.getOrganizationId());
+        List<MenuView> menuList = menuRepository.findMenuList(userSession.getUserId(), userSession.getOrganizationId());
         if(menuList == null || menuList.isEmpty()){
             throw  new ObjectNotFoundException("No menu found for user -"+userSession.getName(), HttpStatus.NOT_FOUND);
         }

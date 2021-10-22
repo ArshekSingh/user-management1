@@ -2,7 +2,6 @@ package com.sts.finncub.usermanagement.service.impl;
 
 import com.google.gson.Gson;
 import com.sts.finncub.core.constants.RestMappingConstants;
-import com.sts.finncub.core.dto.DivisionDto;
 import com.sts.finncub.core.entity.*;
 import com.sts.finncub.core.enums.UserType;
 import com.sts.finncub.core.exception.BadRequestException;
@@ -39,21 +38,21 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final UserRedisRepository userRedisRepository;
     private final UserRoleMappingRepository userRoleMappingRepository;
     private final UserCredentialService userCredentialService;
-    private final UserOrganisationMappingRepository userOrganisationMappingRepository;
+    private final UserOrganizationMappingRepository userOrganizationMappingRepository;
     private final EmployeeRepository employeeRepository;
     private final BranchMasterRepository branchMasterRepository;
 
     @Autowired
     public AuthenticationServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder,
                                      UserRedisRepository userRedisRepository, UserRoleMappingRepository userRoleMappingRepository,
-                                     UserCredentialService userCredentialService, UserOrganisationMappingRepository userOrganisationMappingRepository,
+                                     UserCredentialService userCredentialService, UserOrganizationMappingRepository userOrganizationMappingRepository,
                                      EmployeeRepository employeeRepository, BranchMasterRepository branchMasterRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userRedisRepository = userRedisRepository;
         this.userRoleMappingRepository = userRoleMappingRepository;
         this.userCredentialService = userCredentialService;
-        this.userOrganisationMappingRepository = userOrganisationMappingRepository;
+        this.userOrganizationMappingRepository = userOrganizationMappingRepository;
         this.employeeRepository = employeeRepository;
         this.branchMasterRepository = branchMasterRepository;
     }
@@ -116,7 +115,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             userSession.setName(user.getName());
             userSession.setType(user.getType().name());
             userSession.setUserId(user.getUserId());
-            userSession.setOrganisationId(getActiveOrganisationId(user));
+            userSession.setOrganizationId(getActiveOrganizationId(user));
             userSession.setBranchMap(branchIdMap);
             userSession.setDivisionMap(divisionMap);
 
@@ -127,11 +126,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return userSession;
     }
 
-    public Long getActiveOrganisationId(User user) {
+    public Long getActiveOrganizationId(User user) {
         Long activeOrgId = null;
-        for (UserOrganisationMapping orgMapping : user.getUserOrganisationMapping()) {
+        for (UserOrganizationMapping orgMapping : user.getUserOrganizationMapping()) {
             if ("Y".equalsIgnoreCase(orgMapping.getActive())) {
-                activeOrgId = orgMapping.getId().getOrganisationId();
+                activeOrgId = orgMapping.getId().getOrganizationId();
             }
         }
         return activeOrgId;
@@ -143,11 +142,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         User newUser = SignUpConverter.convertToUser(signupRequest);
         String operationUserName = userCredentialService.getUserData().getName();
-        final Long organisationId = userCredentialService.getUserData().getOrganisationId();
+        final Long organizationId = userCredentialService.getUserData().getOrganizationId();
 
         newUser.setPassword(passwordEncoder, signupRequest.getPassword());
 
-        String userEmployeeId = userRepository.getGeneratedUserEmployeeId(organisationId, signupRequest.getUserType());
+        String userEmployeeId = userRepository.getGeneratedUserEmployeeId(organizationId, signupRequest.getUserType());
         final String userId = userEmployeeId.split(",")[0];
         final String employeeId = userEmployeeId.split(",")[1];
         newUser.setUserId(userId);
@@ -158,12 +157,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         log.info("Operation user name - " + operationUserName);
 
 
-        log.info("Operation user organisationId" + organisationId);
-        UserOrganisationMapping userOrganisationMapping = new UserOrganisationMapping(organisationId, newUser.getUserId(), operationUserName);
-        userOrganisationMappingRepository.save(userOrganisationMapping);
+        log.info("Operation user organizationId" + organizationId);
+        UserOrganizationMapping userOrganizationMapping = new UserOrganizationMapping(organizationId, newUser.getUserId(), operationUserName);
+        userOrganizationMappingRepository.save(userOrganizationMapping);
         if (signupRequest.getUserType().equals(UserType.EMP.name())) {
             log.info("New user saved to db");
-            employeeRepository.save(new Employee(organisationId, employeeId, userId));
+            employeeRepository.save(new Employee(organizationId, employeeId, userId));
         }
 
         if (signupRequest.hasRoles()) {
@@ -171,7 +170,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
             userRoleMappingRepository.saveAll(signupRequest.getRoleList()
                     .stream()
-                    .map(id -> new UserRoleMapping(userId, id, organisationId, operationUserName))
+                    .map(id -> new UserRoleMapping(userId, id, organizationId, operationUserName))
                     .collect(Collectors.toSet()));
             log.info("Roles saved to db");
         }
