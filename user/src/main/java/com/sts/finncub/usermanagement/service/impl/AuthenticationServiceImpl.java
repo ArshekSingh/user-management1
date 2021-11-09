@@ -78,7 +78,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             loginResponse.setAuthToken(authToken);
             loginResponse.setUserSession(gson.fromJson(userSession.getUserSessionJSON(), UserSession.class));
         } catch (Exception e) {
-            log.error("Exception- {}", e);
+            log.error("Exception- {}", e.getMessage());
             throw new InternalServerErrorException("Exception while saving token - " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return loginResponse;
@@ -90,12 +90,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             Set<Integer> parentIdList = new HashSet<>();
             Map<Integer, String> branchIdMap = new HashMap<>();
             Map<Integer, String> divisionMap = new HashMap<>();
-            List<BranchMaster> divisionList = new ArrayList<>();
+            List<BranchMaster> divisionList;
             userSession.setEmail(user.getEmail());
             if (user.getUserRoleMapping() != null && !user.getUserRoleMapping().isEmpty()) {
                 userSession.setRoles(user.getUserRoleMapping()
                         .stream()
-                        .map(mapping -> mapping.getId().getRoleId())
+                        .map(mapping -> mapping.getRoleMaster().getRoleName())
                         .collect(Collectors.toSet()));
             }
             if (user.getUserBranchMapping() != null && !user.getUserBranchMapping().isEmpty()) {
@@ -120,7 +120,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             userSession.setDivisionMap(divisionMap);
 
         } catch (Exception ex) {
-            log.error("Exception- {}", ex);
+            log.error("Exception- {}", ex.getMessage());
             throw new InternalServerErrorException("Exception while set data in userSession object" + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return userSession;
