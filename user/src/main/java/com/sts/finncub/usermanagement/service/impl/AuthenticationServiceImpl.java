@@ -162,7 +162,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         userOrganizationMappingRepository.save(userOrganizationMapping);
         if (signupRequest.getUserType().equals(UserType.EMP.name())) {
             log.info("New user saved to db");
-            employeeRepository.save(new Employee(organizationId, employeeId, userId));
+//            employeeRepository.save(new Employee(organizationId, employeeId, userId));
         }
 
         if (signupRequest.hasRoles()) {
