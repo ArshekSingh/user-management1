@@ -39,7 +39,7 @@ public class AuthenticationController {
             throw new BadRequestException("Invalid userId / password", HttpStatus.BAD_REQUEST);
         }
         log.info("Request is valid");
-        response.setResponseObject(authenticationService.login(loginRequest));
+        response.setData(authenticationService.login(loginRequest));
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);
         response.setMessage(RestMappingConstants.SUCCESS);

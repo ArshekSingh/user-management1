@@ -14,7 +14,7 @@ public class Response<T> {
 	private int code;
 	private String message;
 	private HttpStatus status;
-	private T responseObject;
+	private T data;
 
 	public Response(String message, HttpStatus status) {
 		this.message = message;
@@ -26,7 +26,7 @@ public class Response<T> {
 		this.message = message;
 		this.status = status;
 		this.code = status.value();
-		this.responseObject = responseObject;
+		this.data = responseObject;
 	}
 
 }
