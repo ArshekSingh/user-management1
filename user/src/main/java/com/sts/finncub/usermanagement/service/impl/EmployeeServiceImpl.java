@@ -7,11 +7,11 @@ import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.EmployeeRepository;
 import com.sts.finncub.core.repository.UserRepository;
 import com.sts.finncub.core.repository.dao.EmployeeDao;
+import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.request.EmployeeRequest;
 import com.sts.finncub.usermanagement.response.Response;
 import com.sts.finncub.usermanagement.service.EmployeeService;
-import com.sts.finncub.usermanagement.service.UserCredentialService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -52,9 +52,9 @@ public class EmployeeServiceImpl implements EmployeeService {
         validateRequest(request);
         Employee employee = new Employee();
         EmployeePK employeePK = new EmployeePK();
-        String userEmployeeId = userRepository.getGeneratedUserEmployeeId(userCredentialService.getUserData().getOrganizationId(), "EMP");
+        String userEmployeeId = userRepository.getGeneratedUserEmployeeId(userCredentialService.getUserSession().getOrganizationId(), "EMP");
         final String employeeId = userEmployeeId.split(",")[1];
-        employeePK.setOrganizationId(userCredentialService.getUserData().getOrganizationId());
+        employeePK.setOrganizationId(userCredentialService.getUserSession().getOrganizationId());
         employeePK.setEmployeeCode(employeeId);
         employee.setEmployeePK(employeePK);
         // save value in employee master table
@@ -137,10 +137,10 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setReligion(request.getReligion());
         if (employeeId == null) {
             employee.setInsertedOn(LocalDateTime.now());
-            employee.setInsertedBy(userCredentialService.getUserData().getUserId());
+            employee.setInsertedBy(userCredentialService.getUserSession().getUserId());
         } else {
             employee.setUpdatedOn(LocalDateTime.now());
-            employee.setUpdatedBy(userCredentialService.getUserData().getUserId());
+            employee.setUpdatedBy(userCredentialService.getUserSession().getUserId());
         }
         employeeRepository.save(employee);
     }
@@ -168,7 +168,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         List<EmployeeDto> employeeDtoList = new ArrayList<>();
         // fetch employee detail list using organizationId
         List<Employee> employeeList = employeeDao.fetchAllEmployeeDetails(
-                userCredentialService.getUserData().getOrganizationId());
+                userCredentialService.getUserSession().getOrganizationId());
         if (CollectionUtils.isEmpty(employeeList)) {
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         }
@@ -191,7 +191,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         EmployeeDto employeeDto = new EmployeeDto();
         // fetch employee detail using organizationId and employeeId
         Employee employee = employeeRepository.findByEmployeePK_OrganizationIdAndEmployeeId
-                (userCredentialService.getUserData().getOrganizationId(), employeeId);
+                (userCredentialService.getUserSession().getOrganizationId(), employeeId);
         if (employee == null) {
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         }
@@ -211,7 +211,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         // fetch employee detail using organizationId and employeeId
         if (request.getEmployeeId() != null) {
             Employee employee = employeeRepository.findByEmployeePK_OrganizationIdAndEmployeeId
-                    (userCredentialService.getUserData().getOrganizationId(), request.getEmployeeId());
+                    (userCredentialService.getUserSession().getOrganizationId(), request.getEmployeeId());
             if (employee != null) {
                 // save value in employee master table
                 saveValueEmployeeMaster(request, employee, request.getEmployeeId());
