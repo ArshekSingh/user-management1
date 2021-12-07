@@ -4,10 +4,10 @@ import com.sts.finncub.core.dto.EmployeeSubDepartmentDto;
 import com.sts.finncub.core.entity.EmployeeSubDepartment;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.EmployeeSubDepartmentRepository;
+import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.usermanagement.request.EmployeeSubDepartmentRequest;
 import com.sts.finncub.usermanagement.response.Response;
 import com.sts.finncub.usermanagement.service.SubDepartmentService;
-import com.sts.finncub.usermanagement.service.UserCredentialService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -38,7 +38,7 @@ public class SubDepartmentServiceImpl implements SubDepartmentService {
         Response response = new Response();
         List<EmployeeSubDepartmentDto> employeeSubDepartmentDtos = new ArrayList<>();
         List<EmployeeSubDepartment> employeeSubDepartmentList = employeeSubDepartmentRepository.findByOrgId
-                (userCredentialService.getUserData().getOrganizationId());
+                (userCredentialService.getUserSession().getOrganizationId());
         if (CollectionUtils.isEmpty(employeeSubDepartmentList)) {
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         }
@@ -59,7 +59,7 @@ public class SubDepartmentServiceImpl implements SubDepartmentService {
         Response response = new Response();
         EmployeeSubDepartmentDto employeeSubDepartmentDto = new EmployeeSubDepartmentDto();
         EmployeeSubDepartment employeeDepartmentMaster = employeeSubDepartmentRepository.
-                findByEmpSubDepartmentIdAndOrgId(empSubDepartmentId, userCredentialService.getUserData().getOrganizationId());
+                findByEmpSubDepartmentIdAndOrgId(empSubDepartmentId, userCredentialService.getUserSession().getOrganizationId());
         if (employeeDepartmentMaster == null) {
             throw new BadRequestException("Invalid Employee Department Id", HttpStatus.BAD_REQUEST);
         }
@@ -81,8 +81,8 @@ public class SubDepartmentServiceImpl implements SubDepartmentService {
             throw new BadRequestException("Invalid Request Parameters", HttpStatus.BAD_REQUEST);
         }
         EmployeeSubDepartment employeeSubDepartment = new EmployeeSubDepartment();
-        employeeSubDepartment.setOrgId(userCredentialService.getUserData().getOrganizationId());
-        employeeSubDepartment.setInsertedBy(userCredentialService.getUserData().getUserId());
+        employeeSubDepartment.setOrgId(userCredentialService.getUserSession().getOrganizationId());
+        employeeSubDepartment.setInsertedBy(userCredentialService.getUserSession().getUserId());
         employeeSubDepartment.setInsertedOn(LocalDateTime.now());
         BeanUtils.copyProperties(request, employeeSubDepartment);
         employeeSubDepartmentRepository.save(employeeSubDepartment);
@@ -102,11 +102,11 @@ public class SubDepartmentServiceImpl implements SubDepartmentService {
             throw new BadRequestException("Invalid Request Parameters", HttpStatus.BAD_REQUEST);
         }
         EmployeeSubDepartment employeeSubDepartment = employeeSubDepartmentRepository.
-                findByEmpSubDepartmentIdAndOrgId(request.getEmpSubDepartmentId(), userCredentialService.getUserData().getOrganizationId());
+                findByEmpSubDepartmentIdAndOrgId(request.getEmpSubDepartmentId(), userCredentialService.getUserSession().getOrganizationId());
         if (employeeSubDepartment == null) {
             throw new BadRequestException("Invalid Employee Department Id", HttpStatus.BAD_REQUEST);
         }
-        employeeSubDepartment.setUpdatedBy(userCredentialService.getUserData().getUserId());
+        employeeSubDepartment.setUpdatedBy(userCredentialService.getUserSession().getUserId());
         employeeSubDepartment.setUpdatedOn(LocalDateTime.now());
         BeanUtils.copyProperties(employeeSubDepartment, request);
         employeeSubDepartmentRepository.save(employeeSubDepartment);
