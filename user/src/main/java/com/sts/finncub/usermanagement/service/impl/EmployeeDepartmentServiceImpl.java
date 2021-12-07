@@ -4,10 +4,10 @@ import com.sts.finncub.core.dto.EmployeeDepartmentDto;
 import com.sts.finncub.core.entity.EmployeeDepartmentMaster;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.EmployeeDepartmentRepository;
+import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.usermanagement.request.EmployeeDepartmentRequest;
 import com.sts.finncub.usermanagement.response.Response;
 import com.sts.finncub.usermanagement.service.EmployeeDepartmentService;
-import com.sts.finncub.usermanagement.service.UserCredentialService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -38,7 +38,7 @@ public class EmployeeDepartmentServiceImpl implements EmployeeDepartmentService 
         Response response = new Response();
         List<EmployeeDepartmentDto> employeeDepartmentDtos = new ArrayList<>();
         List<EmployeeDepartmentMaster> employeeDepartmentMaster = employeeDepartmentRepository.findByOrgId
-                (userCredentialService.getUserData().getOrganizationId());
+                (userCredentialService.getUserSession().getOrganizationId());
         if (CollectionUtils.isEmpty(employeeDepartmentMaster)) {
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         }
@@ -59,7 +59,7 @@ public class EmployeeDepartmentServiceImpl implements EmployeeDepartmentService 
         Response response = new Response();
         EmployeeDepartmentDto employeeDepartmentDto = new EmployeeDepartmentDto();
         EmployeeDepartmentMaster employeeDepartmentMaster = employeeDepartmentRepository.findByOrgIdAndEmpDepartmentId
-                (userCredentialService.getUserData().getOrganizationId(), departmentId);
+                (userCredentialService.getUserSession().getOrganizationId(), departmentId);
         if (employeeDepartmentMaster == null) {
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         }
@@ -77,8 +77,8 @@ public class EmployeeDepartmentServiceImpl implements EmployeeDepartmentService 
         validateRequest(request);
         EmployeeDepartmentMaster employeeDepartmentMaster = new EmployeeDepartmentMaster();
         BeanUtils.copyProperties(request, employeeDepartmentMaster);
-        employeeDepartmentMaster.setOrgId(userCredentialService.getUserData().getOrganizationId());
-        employeeDepartmentMaster.setInsertedBy(userCredentialService.getUserData().getUserId());
+        employeeDepartmentMaster.setOrgId(userCredentialService.getUserSession().getOrganizationId());
+        employeeDepartmentMaster.setInsertedBy(userCredentialService.getUserSession().getUserId());
         employeeDepartmentMaster.setInsertedOn(LocalDateTime.now());
         employeeDepartmentRepository.save(employeeDepartmentMaster);
         response.setCode(HttpStatus.OK.value());
@@ -101,12 +101,12 @@ public class EmployeeDepartmentServiceImpl implements EmployeeDepartmentService 
         validateRequest(request);
         if (request.getEmpDepartmentId() != null) {
             EmployeeDepartmentMaster employeeDepartmentMaster = employeeDepartmentRepository.
-                    findByOrgIdAndEmpDepartmentId(userCredentialService.getUserData().getOrganizationId(),
+                    findByOrgIdAndEmpDepartmentId(userCredentialService.getUserSession().getOrganizationId(),
                             request.getEmpDepartmentId());
             if (employeeDepartmentMaster == null) {
                 throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
             }
-            employeeDepartmentMaster.setUpdatedBy(userCredentialService.getUserData().getUserId());
+            employeeDepartmentMaster.setUpdatedBy(userCredentialService.getUserSession().getUserId());
             employeeDepartmentMaster.setUpdatedOn(LocalDateTime.now());
             BeanUtils.copyProperties(request, employeeDepartmentMaster);
 

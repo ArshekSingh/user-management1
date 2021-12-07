@@ -8,6 +8,7 @@ import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.exception.InternalServerErrorException;
 import com.sts.finncub.core.exception.ObjectNotFoundException;
 import com.sts.finncub.core.repository.*;
+import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.usermanagement.assembler.SignUpConverter;
 import com.sts.finncub.usermanagement.request.LoginRequest;
 import com.sts.finncub.usermanagement.request.SignupRequest;
@@ -15,7 +16,6 @@ import com.sts.finncub.usermanagement.response.LoginResponse;
 import com.sts.finncub.usermanagement.response.Response;
 import com.sts.finncub.usermanagement.response.SignupResponse;
 import com.sts.finncub.usermanagement.service.AuthenticationService;
-import com.sts.finncub.usermanagement.service.UserCredentialService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -141,8 +141,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public SignupResponse signup(SignupRequest signupRequest) throws BadRequestException {
 
         User newUser = SignUpConverter.convertToUser(signupRequest);
-        String operationUserName = userCredentialService.getUserData().getName();
-        final Long organizationId = userCredentialService.getUserData().getOrganizationId();
+        String operationUserName = userCredentialService.getUserSession().getName();
+        final Long organizationId = userCredentialService.getUserSession().getOrganizationId();
 
         newUser.setPassword(passwordEncoder, signupRequest.getPassword());
 
