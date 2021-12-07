@@ -2,7 +2,6 @@ package com.sts.finncub.usermanagement.service.impl;
 
 import com.sts.finncub.core.dto.EmployeeDesignationDto;
 import com.sts.finncub.core.entity.EmployeeDesignationMaster;
-import com.sts.finncub.core.entity.EmployeeDesignationMasterPk;
 import com.sts.finncub.core.entity.UserSession;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.EmployeeDesignationMasterRepository;
@@ -38,13 +37,10 @@ public class DesignationServiceImpl implements DesignationService {
         Response response = new Response();
         List<EmployeeDesignationDto> employeeDesignationDtos = new ArrayList<>();
         List<EmployeeDesignationMaster> employeeDesignationMasters = employeeDesignationMasterRepository.
-                findByEmployeeDesignationMasterPk_OrgId(userCredentialService.getUserSession().getOrganizationId());
+                findByOrgId(userCredentialService.getUserSession().getOrganizationId());
         for (EmployeeDesignationMaster employeeDesignationMaster : employeeDesignationMasters) {
             EmployeeDesignationDto employeeDesignationDto = new EmployeeDesignationDto();
             BeanUtils.copyProperties(employeeDesignationMaster, employeeDesignationDto);
-            employeeDesignationDto.setEmpDesignationId(employeeDesignationMaster.getEmployeeDesignationMasterPk()
-                    .getEmpDesignationId());
-            employeeDesignationDto.setOrgId(employeeDesignationMaster.getEmployeeDesignationMasterPk().getOrgId());
             employeeDesignationDtos.add(employeeDesignationDto);
         }
         response.setCode(HttpStatus.OK.value());
@@ -59,15 +55,12 @@ public class DesignationServiceImpl implements DesignationService {
         Response response = new Response();
         EmployeeDesignationDto employeeDesignationDto = new EmployeeDesignationDto();
         EmployeeDesignationMaster employeeDesignationMaster = employeeDesignationMasterRepository.
-                findByEmployeeDesignationMasterPk_OrgIdAndEmployeeDesignationMasterPk_EmpDesignationId(
+                findByOrgIdAndEmpDesignationId(
                         userCredentialService.getUserSession().getOrganizationId(), designationId);
         if (employeeDesignationMaster == null) {
             throw new BadRequestException("Invalid Employee Designation Id", HttpStatus.BAD_REQUEST);
         }
         BeanUtils.copyProperties(employeeDesignationMaster, employeeDesignationDto);
-        employeeDesignationDto.setEmpDesignationId(employeeDesignationMaster.getEmployeeDesignationMasterPk()
-                .getEmpDesignationId());
-        employeeDesignationDto.setOrgId(employeeDesignationMaster.getEmployeeDesignationMasterPk().getOrgId());
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);
         response.setData(employeeDesignationDto);
@@ -81,14 +74,12 @@ public class DesignationServiceImpl implements DesignationService {
         UserSession userSession = userCredentialService.getUserSession();
         if (request == null || !StringUtils.hasText(request.getEmpDesignationName()) ||
                 !StringUtils.hasText(request.getEmpDesignationType()) || !StringUtils.hasText(request.getStatus()) ||
-                request.getConfNotice() == null || request.getOnPobNotice() == null) {
+                request.getConfNoticePeriod() == null || request.getOnProbNoticePeriod() == null) {
             throw new BadRequestException("Invalid Request Parameters", HttpStatus.BAD_REQUEST);
         }
         EmployeeDesignationMaster employeeDesignationMaster = new EmployeeDesignationMaster();
-        EmployeeDesignationMasterPk employeeDesignationMasterPk = new EmployeeDesignationMasterPk();
-        employeeDesignationMasterPk.setOrgId(userSession.getOrganizationId());
-        employeeDesignationMaster.setEmployeeDesignationMasterPk(employeeDesignationMasterPk);
         BeanUtils.copyProperties(request, employeeDesignationMaster);
+        employeeDesignationMaster.setOrgId(userSession.getOrganizationId());
         employeeDesignationMaster.setInsertedBy(userSession.getUserId());
         employeeDesignationMaster.setInsertedOn(LocalDateTime.now());
         employeeDesignationMasterRepository.save(employeeDesignationMaster);
@@ -105,11 +96,11 @@ public class DesignationServiceImpl implements DesignationService {
         if (request == null || request.getEmpDesignationId() == null ||
                 !StringUtils.hasText(request.getEmpDesignationName()) ||
                 !StringUtils.hasText(request.getEmpDesignationType()) || !StringUtils.hasText(request.getStatus()) ||
-                request.getConfNotice() == null || request.getOnPobNotice() == null) {
+                request.getConfNoticePeriod() == null || request.getOnProbNoticePeriod() == null) {
             throw new BadRequestException("Invalid Request Parameters", HttpStatus.BAD_REQUEST);
         }
         EmployeeDesignationMaster employeeDesignationMaster = employeeDesignationMasterRepository.
-                findByEmployeeDesignationMasterPk_OrgIdAndEmployeeDesignationMasterPk_EmpDesignationId(
+                findByOrgIdAndEmpDesignationId(
                         userCredentialService.getUserSession().getOrganizationId(), request.getEmpDesignationId());
         if (employeeDesignationMaster == null) {
             throw new BadRequestException("Invalid Employee Designation Id", HttpStatus.BAD_REQUEST);
@@ -118,6 +109,9 @@ public class DesignationServiceImpl implements DesignationService {
         employeeDesignationMaster.setUpdatedOn(LocalDateTime.now());
         BeanUtils.copyProperties(request, employeeDesignationMaster);
         employeeDesignationMasterRepository.save(employeeDesignationMaster);
+        response.setCode(HttpStatus.OK.value());
+        response.setStatus(HttpStatus.OK);
+        response.setMessage("Transaction completed successfully.");
         return response;
     }
 }

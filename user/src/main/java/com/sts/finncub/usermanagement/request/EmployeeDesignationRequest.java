@@ -11,8 +11,8 @@ public class EmployeeDesignationRequest {
     private String empDesignationName;
     private String empDesignationType;
     private String status;
-    private Long confNotice;
-    private Long onPobNotice;
+    private Long confNoticePeriod;
+    private Long onProbNoticePeriod;
 
 
 }
