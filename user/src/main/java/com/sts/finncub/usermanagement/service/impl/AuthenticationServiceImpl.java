@@ -63,7 +63,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         LoginResponse loginResponse = new LoginResponse();
         log.info("Request received for userId -" + loginRequest.getUserId());
         User user = userRepository
-                .findByUserId(loginRequest.getUserId())
+                .findByUserIdIgnoreCase(loginRequest.getUserId())
                 .orElseThrow(() -> new ObjectNotFoundException(
                         "Invalid userId - " + loginRequest.getUserId(),
                         HttpStatus.NOT_FOUND));
