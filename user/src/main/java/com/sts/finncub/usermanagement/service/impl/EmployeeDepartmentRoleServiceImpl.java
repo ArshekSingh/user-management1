@@ -6,6 +6,7 @@ import com.sts.finncub.core.entity.UserSession;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.EmployeeDepartmentRoleRepository;
 import com.sts.finncub.core.service.UserCredentialService;
+import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.request.EmployeeDepartmentRoleRequest;
 import com.sts.finncub.usermanagement.response.Response;
 import com.sts.finncub.usermanagement.service.EmployeeDepartmentRoleService;
@@ -43,6 +44,8 @@ public class EmployeeDepartmentRoleServiceImpl implements EmployeeDepartmentRole
                 findByOrgId(userCredentialService.getUserSession().getOrganizationId());
         for (EmployeeDepartmentRole employeeDepartmentRole : employeeDepartmentRoles) {
             EmployeeDepartmentRoleDto employeeDepartmentRoleDto = new EmployeeDepartmentRoleDto();
+            employeeDepartmentRoleDto.setInsertedOn(DateTimeUtil.dateTimeToString(employeeDepartmentRole.getInsertedOn()));
+            employeeDepartmentRoleDto.setUpdatedOn(DateTimeUtil.dateTimeToString(employeeDepartmentRole.getUpdatedOn()));
             BeanUtils.copyProperties(employeeDepartmentRole, employeeDepartmentRoleDto);
             employeeDepartmentRoleDtos.add(employeeDepartmentRoleDto);
         }
@@ -65,6 +68,8 @@ public class EmployeeDepartmentRoleServiceImpl implements EmployeeDepartmentRole
         if (employeeDepartmentRole == null) {
             throw new BadRequestException("No Data Found", HttpStatus.BAD_REQUEST);
         }
+        employeeDepartmentRoleDto.setInsertedOn(DateTimeUtil.dateTimeToString(employeeDepartmentRole.getInsertedOn()));
+        employeeDepartmentRoleDto.setUpdatedOn(DateTimeUtil.dateTimeToString(employeeDepartmentRole.getUpdatedOn()));
         BeanUtils.copyProperties(employeeDepartmentRole, employeeDepartmentRoleDto);
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);

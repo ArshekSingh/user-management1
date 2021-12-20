@@ -5,6 +5,7 @@ import com.sts.finncub.core.entity.EmployeeSubDepartment;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.EmployeeSubDepartmentRepository;
 import com.sts.finncub.core.service.UserCredentialService;
+import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.request.EmployeeSubDepartmentRequest;
 import com.sts.finncub.usermanagement.response.Response;
 import com.sts.finncub.usermanagement.service.SubDepartmentService;
@@ -44,6 +45,8 @@ public class SubDepartmentServiceImpl implements SubDepartmentService {
         }
         for (EmployeeSubDepartment employeeDepartmentMaster : employeeSubDepartmentList) {
             EmployeeSubDepartmentDto employeeSubDepartmentDto = new EmployeeSubDepartmentDto();
+            employeeSubDepartmentDto.setInsertedOn(DateTimeUtil.dateTimeToString(employeeDepartmentMaster.getInsertedOn()));
+            employeeSubDepartmentDto.setUpdatedOn(DateTimeUtil.dateTimeToString(employeeDepartmentMaster.getUpdatedOn()));
             BeanUtils.copyProperties(employeeDepartmentMaster, employeeSubDepartmentDto);
             employeeSubDepartmentDtos.add(employeeSubDepartmentDto);
         }
@@ -63,6 +66,8 @@ public class SubDepartmentServiceImpl implements SubDepartmentService {
         if (employeeDepartmentMaster == null) {
             throw new BadRequestException("Invalid Employee Department Id", HttpStatus.BAD_REQUEST);
         }
+        employeeSubDepartmentDto.setInsertedOn(DateTimeUtil.dateTimeToString(employeeDepartmentMaster.getInsertedOn()));
+        employeeSubDepartmentDto.setUpdatedOn(DateTimeUtil.dateTimeToString(employeeDepartmentMaster.getUpdatedOn()));
         BeanUtils.copyProperties(employeeDepartmentMaster, employeeSubDepartmentDto);
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);

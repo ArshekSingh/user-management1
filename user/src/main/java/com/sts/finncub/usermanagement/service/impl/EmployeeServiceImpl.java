@@ -175,7 +175,14 @@ public class EmployeeServiceImpl implements EmployeeService {
         for (Employee employee : employeeList) {
             EmployeeDto employeeDto = new EmployeeDto();
             BeanUtils.copyProperties(employee, employeeDto);
+            employeeDto.setJoiningDate(DateTimeUtil.dateToString(employee.getJoiningDate()));
+            employeeDto.setConfirmationDate(DateTimeUtil.dateToString(employee.getConfirmationDate()));
+            employeeDto.setRelievingDate(DateTimeUtil.dateToString(employee.getRelievingDate()));
+            employeeDto.setPromotionDate(DateTimeUtil.dateToString(employee.getPromotionDate()));
+            employeeDto.setBranchJoinDate(DateTimeUtil.dateToString(employee.getBranchJoinDate()));
             employeeDto.setEmployeeCode(employee.getEmployeePK().getEmployeeCode());
+            employeeDto.setInsertedOn(DateTimeUtil.dateTimeToString(employee.getInsertedOn()));
+            employeeDto.setUpdatedOn(DateTimeUtil.dateTimeToString(employee.getUpdatedOn()));
             employeeDtoList.add(employeeDto);
         }
         response.setCode(HttpStatus.OK.value());
@@ -196,6 +203,13 @@ public class EmployeeServiceImpl implements EmployeeService {
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         }
         BeanUtils.copyProperties(employee, employeeDto);
+        employeeDto.setJoiningDate(DateTimeUtil.dateToString(employee.getJoiningDate()));
+        employeeDto.setConfirmationDate(DateTimeUtil.dateToString(employee.getConfirmationDate()));
+        employeeDto.setRelievingDate(DateTimeUtil.dateToString(employee.getRelievingDate()));
+        employeeDto.setPromotionDate(DateTimeUtil.dateToString(employee.getPromotionDate()));
+        employeeDto.setBranchJoinDate(DateTimeUtil.dateToString(employee.getBranchJoinDate()));
+        employeeDto.setInsertedOn(DateTimeUtil.dateTimeToString(employee.getInsertedOn()));
+        employeeDto.setUpdatedOn(DateTimeUtil.dateTimeToString(employee.getUpdatedOn()));
         employeeDto.setEmployeeCode(employee.getEmployeePK().getEmployeeCode());
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);
