@@ -1,34 +1,44 @@
 package com.sts.finncub.usermanagement.controller;
 
-import com.sts.finncub.core.constants.RestMappingConstants;
-import com.sts.finncub.core.exception.ObjectNotFoundException;
+
+import com.sts.finncub.core.exception.BadRequestException;
+import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.response.Response;
-import com.sts.finncub.usermanagement.response.UserProfileResponse;
-import com.sts.finncub.usermanagement.service.UserProfileService;
-import lombok.extern.slf4j.Slf4j;
+import com.sts.finncub.usermanagement.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping(value = "api")
-@Slf4j
 public class UserController {
 
-    private final UserProfileService userProfileService;
+    private final UserService userService;
 
     @Autowired
-    UserController(UserProfileService userProfileService){
-        this.userProfileService = userProfileService;
+    public UserController(UserService userService) {
+        this.userService = userService;
     }
 
-    @GetMapping("profile")
-    public ResponseEntity<Response<UserProfileResponse>> getProfile() throws ObjectNotFoundException {
-        log.info("Request to fetch user profile received");
-        UserProfileResponse response = userProfileService.getProfile();
-        return  ResponseEntity.ok(new Response<>(RestMappingConstants.SUCCESS,response, HttpStatus.OK));
+
+    @GetMapping("/fetchAllUsers")
+    public Response getAllUserDetails() throws BadRequestException {
+        return userService.getAllUserDetails();
     }
+
+    @GetMapping("/getUserDetail/{userId}")
+    public Response getUserDetail(@PathVariable String userId) throws BadRequestException {
+        return userService.getUserDetail(userId);
+    }
+
+    @PostMapping("/add")
+    public Response addUser(@RequestBody UserRequest request) throws BadRequestException {
+        return userService.addUser(request);
+    }
+
+    @PostMapping("/update")
+    public Response updateUserDetails(@RequestBody UserRequest request) throws BadRequestException {
+        return userService.updateUserDetails(request);
+    }
+
 }
+

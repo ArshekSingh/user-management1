@@ -6,6 +6,7 @@ import com.sts.finncub.core.entity.UserSession;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.EmployeeFunctionalTitleRepository;
 import com.sts.finncub.core.service.UserCredentialService;
+import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.request.FunctionalTitleRequest;
 import com.sts.finncub.usermanagement.response.Response;
 import com.sts.finncub.usermanagement.service.FunctionalTitleService;
@@ -34,7 +35,6 @@ public class FunctionalTitleServiceImpl implements FunctionalTitleService {
     }
 
 
-
     @Override
     public Response getAllFunctionalTitle() {
         Response response = new Response();
@@ -43,6 +43,8 @@ public class FunctionalTitleServiceImpl implements FunctionalTitleService {
                 findByOrgId(userCredentialService.getUserSession().getOrganizationId());
         for (EmployeeFunctionalTitle employeeFunctionalTitle : employeeFunctionalTitleList) {
             EmployeeFunctionalTitleDto employeeFunctionalTitleDto = new EmployeeFunctionalTitleDto();
+            employeeFunctionalTitleDto.setInsertedOn(DateTimeUtil.dateTimeToString(employeeFunctionalTitle.getInsertedOn()));
+            employeeFunctionalTitleDto.setUpdatedOn(DateTimeUtil.dateTimeToString(employeeFunctionalTitle.getUpdatedOn()));
             BeanUtils.copyProperties(employeeFunctionalTitle, employeeFunctionalTitleDto);
             functionalTitleDtoList.add(employeeFunctionalTitleDto);
         }
@@ -65,6 +67,8 @@ public class FunctionalTitleServiceImpl implements FunctionalTitleService {
             throw new BadRequestException("No Data Found", HttpStatus.BAD_REQUEST);
         }
         EmployeeFunctionalTitleDto employeeFunctionalTitleDto = new EmployeeFunctionalTitleDto();
+        employeeFunctionalTitleDto.setInsertedOn(DateTimeUtil.dateTimeToString(employeeFunctionalTitle.getInsertedOn()));
+        employeeFunctionalTitleDto.setUpdatedOn(DateTimeUtil.dateTimeToString(employeeFunctionalTitle.getUpdatedOn()));
         BeanUtils.copyProperties(employeeFunctionalTitle, employeeFunctionalTitleDto);
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);

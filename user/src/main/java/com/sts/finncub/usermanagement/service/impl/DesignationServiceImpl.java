@@ -7,6 +7,7 @@ import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.EmployeeDesignationMasterRepository;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.core.service.UserCredentialService;
+import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.request.EmployeeDesignationRequest;
 import com.sts.finncub.usermanagement.service.DesignationService;
 import org.springframework.beans.BeanUtils;
@@ -40,6 +41,8 @@ public class DesignationServiceImpl implements DesignationService {
                 findByOrgId(userCredentialService.getUserSession().getOrganizationId());
         for (EmployeeDesignationMaster employeeDesignationMaster : employeeDesignationMasters) {
             EmployeeDesignationDto employeeDesignationDto = new EmployeeDesignationDto();
+            employeeDesignationDto.setInsertedOn(DateTimeUtil.dateTimeToString(employeeDesignationMaster.getInsertedOn()));
+            employeeDesignationDto.setUpdatedOn(DateTimeUtil.dateTimeToString(employeeDesignationMaster.getUpdatedOn()));
             BeanUtils.copyProperties(employeeDesignationMaster, employeeDesignationDto);
             employeeDesignationDtos.add(employeeDesignationDto);
         }
@@ -60,6 +63,8 @@ public class DesignationServiceImpl implements DesignationService {
         if (employeeDesignationMaster == null) {
             throw new BadRequestException("Invalid Employee Designation Id", HttpStatus.BAD_REQUEST);
         }
+        employeeDesignationDto.setInsertedOn(DateTimeUtil.dateTimeToString(employeeDesignationMaster.getInsertedOn()));
+        employeeDesignationDto.setUpdatedOn(DateTimeUtil.dateTimeToString(employeeDesignationMaster.getUpdatedOn()));
         BeanUtils.copyProperties(employeeDesignationMaster, employeeDesignationDto);
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);

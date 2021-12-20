@@ -5,6 +5,7 @@ import com.sts.finncub.core.entity.EmployeeDepartmentMaster;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.EmployeeDepartmentRepository;
 import com.sts.finncub.core.service.UserCredentialService;
+import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.request.EmployeeDepartmentRequest;
 import com.sts.finncub.usermanagement.response.Response;
 import com.sts.finncub.usermanagement.service.EmployeeDepartmentService;
@@ -44,6 +45,8 @@ public class EmployeeDepartmentServiceImpl implements EmployeeDepartmentService 
         }
         for (EmployeeDepartmentMaster employeeDepartment : employeeDepartmentMaster) {
             EmployeeDepartmentDto employeeDepartmentDto = new EmployeeDepartmentDto();
+            employeeDepartmentDto.setInsertedOn(DateTimeUtil.dateTimeToString(employeeDepartment.getInsertedOn()));
+            employeeDepartmentDto.setUpdatedOn(DateTimeUtil.dateTimeToString(employeeDepartment.getUpdatedOn()));
             BeanUtils.copyProperties(employeeDepartment, employeeDepartmentDto);
             employeeDepartmentDtos.add(employeeDepartmentDto);
         }
@@ -63,6 +66,8 @@ public class EmployeeDepartmentServiceImpl implements EmployeeDepartmentService 
         if (employeeDepartmentMaster == null) {
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         }
+        employeeDepartmentDto.setInsertedOn(DateTimeUtil.dateTimeToString(employeeDepartmentMaster.getInsertedOn()));
+        employeeDepartmentDto.setUpdatedOn(DateTimeUtil.dateTimeToString(employeeDepartmentMaster.getUpdatedOn()));
         BeanUtils.copyProperties(employeeDepartmentMaster, employeeDepartmentDto);
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);
@@ -109,7 +114,6 @@ public class EmployeeDepartmentServiceImpl implements EmployeeDepartmentService 
             employeeDepartmentMaster.setUpdatedBy(userCredentialService.getUserSession().getUserId());
             employeeDepartmentMaster.setUpdatedOn(LocalDateTime.now());
             BeanUtils.copyProperties(request, employeeDepartmentMaster);
-
             employeeDepartmentRepository.save(employeeDepartmentMaster);
             response.setCode(HttpStatus.OK.value());
             response.setStatus(HttpStatus.OK);
