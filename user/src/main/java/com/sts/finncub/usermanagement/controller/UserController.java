@@ -1,5 +1,6 @@
 package com.sts.finncub.usermanagement.controller;
 
+
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.response.Response;
@@ -17,6 +18,7 @@ public class UserController {
     public UserController(UserService userService) {
         this.userService = userService;
     }
+
 
     @GetMapping("/fetchAllUsers")
     public Response getAllUserDetails() throws BadRequestException {
@@ -39,3 +41,4 @@ public class UserController {
     }
 
 }
+
