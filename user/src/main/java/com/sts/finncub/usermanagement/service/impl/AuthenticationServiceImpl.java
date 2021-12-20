@@ -19,12 +19,14 @@ import com.sts.finncub.usermanagement.service.AuthenticationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -188,7 +190,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     }
 
-
     private String saveToken(UserSession userSession) {
         Gson gson = new Gson();
         log.info("saving user session");
@@ -196,5 +197,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return userRedisRepository.save(userSession).getId();
     }
 
-
+    @Override
+    public ResponseEntity<Response> logout(HttpServletRequest request) {
+        Response response = new Response();
+        String tokenString = request.getHeader("Authorization");
+        String token = tokenString.split(" ")[1];
+        userRedisRepository.deleteById(token);
+        return ResponseEntity.ok(response);
+    }
 }
