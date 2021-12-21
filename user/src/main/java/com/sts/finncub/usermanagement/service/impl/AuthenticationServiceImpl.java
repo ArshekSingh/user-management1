@@ -3,7 +3,6 @@ package com.sts.finncub.usermanagement.service.impl;
 import com.google.gson.Gson;
 import com.sts.finncub.core.constants.RestMappingConstants;
 import com.sts.finncub.core.entity.*;
-import com.sts.finncub.core.enums.UserType;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.exception.InternalServerErrorException;
 import com.sts.finncub.core.exception.ObjectNotFoundException;
@@ -115,7 +114,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 }
             }
             userSession.setName(user.getName());
-            userSession.setType(user.getType().name());
+            userSession.setType(user.getType());
             userSession.setUserId(user.getUserId());
             userSession.setOrganizationId(getActiveOrganizationId(user));
             userSession.setBranchMap(branchIdMap);
@@ -162,10 +161,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         log.info("Operation user organizationId" + organizationId);
         UserOrganizationMapping userOrganizationMapping = new UserOrganizationMapping(organizationId, newUser.getUserId(), operationUserName);
         userOrganizationMappingRepository.save(userOrganizationMapping);
-        if (signupRequest.getUserType().equals(UserType.EMP.name())) {
-            log.info("New user saved to db");
-//            employeeRepository.save(new Employee(organizationId, employeeId, userId));
-        }
+//        if (signupRequest.getUserType().equals(UserType.EMP.name())) {
+//            log.info("New user saved to db");
+////            employeeRepository.save(new Employee(organizationId, employeeId, userId));
+//        }
 
         if (signupRequest.hasRoles()) {
             log.info("Setting roles for userId - " + userId);

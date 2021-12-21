@@ -3,6 +3,7 @@ package com.sts.finncub.usermanagement.service.impl;
 import com.sts.finncub.core.dto.EmployeeDto;
 import com.sts.finncub.core.entity.Employee;
 import com.sts.finncub.core.entity.EmployeePK;
+import com.sts.finncub.core.entity.UserSession;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.EmployeeRepository;
 import com.sts.finncub.core.repository.UserRepository;
@@ -10,12 +11,16 @@ import com.sts.finncub.core.repository.dao.EmployeeDao;
 import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.request.EmployeeRequest;
+import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.response.Response;
 import com.sts.finncub.usermanagement.service.EmployeeService;
+import com.sts.finncub.usermanagement.service.UserService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -36,33 +41,60 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     private final UserRepository userRepository;
 
+    private final BCryptPasswordEncoder passwordEncoder;
+
+    private final UserService userService;
+
+
     @Autowired
     public EmployeeServiceImpl(UserCredentialService userCredentialService,
                                EmployeeRepository employeeRepository, EmployeeDao employeeDao
-            , UserRepository userRepository) {
+            , UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserService userService) {
         this.userCredentialService = userCredentialService;
         this.employeeRepository = employeeRepository;
         this.employeeDao = employeeDao;
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.userService = userService;
     }
 
     @Override
+    @Transactional
     public Response addEmployee(EmployeeRequest request) throws BadRequestException {
         Response response = new Response();
+        UserSession userSession = userCredentialService.getUserSession();
         validateRequest(request);
         Employee employee = new Employee();
         EmployeePK employeePK = new EmployeePK();
-        String userEmployeeId = userRepository.getGeneratedUserEmployeeId(userCredentialService.getUserSession().getOrganizationId(), "EMP");
+        String userEmployeeId = userRepository.getGeneratedUserEmployeeId
+                (userCredentialService.getUserSession().getOrganizationId(), "EMP");
+        final String userId = userEmployeeId.split(",")[0];
         final String employeeId = userEmployeeId.split(",")[1];
-        employeePK.setOrganizationId(userCredentialService.getUserSession().getOrganizationId());
+        employeePK.setOrganizationId(userSession.getOrganizationId());
         employeePK.setEmployeeCode(employeeId);
         employee.setEmployeePK(employeePK);
-        // save value in employee master table
+        // save value in employee master
         saveValueEmployeeMaster(request, employee, request.getEmployeeId());
+        // create  employee user details in user master
+        SaveValueInUserMaster(userId, request);
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);
         response.setMessage("Transaction completed successfully.");
         return response;
+    }
+
+    private void SaveValueInUserMaster(String userId, EmployeeRequest employeeRequest) throws BadRequestException {
+        UserRequest request = new UserRequest();
+        request.setPassword(userId);
+        request.setUserId(userId);
+        request.setEmail(employeeRequest.getOfficialEmail());
+        request.setName(employeeRequest.getFirstName());
+        request.setMobileNumber(request.getMobileNumber());
+        request.setType("EMP");
+        request.setIsActive("Y");
+        request.setEmployeeCreate(true);
+        userService.addUser(request);
+
     }
 
     private void saveValueEmployeeMaster(EmployeeRequest request, Employee employee, Long employeeId) {
