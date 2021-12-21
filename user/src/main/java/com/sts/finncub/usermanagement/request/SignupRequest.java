@@ -1,6 +1,5 @@
 package com.sts.finncub.usermanagement.request;
 
-import com.sts.finncub.core.enums.UserType;
 import com.sts.finncub.core.exception.BadRequestException;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,7 +21,8 @@ public class SignupRequest {
     String mobile;
     String userType;
 
-    public void validate() throws BadRequestException{
+
+    public void validate() throws BadRequestException {
         log.info("Validating signup request data");
         boolean isValid = true;
         StringBuffer buffer = new StringBuffer();
@@ -30,22 +30,31 @@ public class SignupRequest {
             buffer.append("Field : name is mandatory, ");
             isValid = false;
         }
-        if(email == null || email.isEmpty()) {
+        if (email == null || email.isEmpty()) {
             buffer.append("Field : email is mandatory, ");
             isValid = false;
         }
-        if(password == null || password.isEmpty()) {
+        if (password == null || password.isEmpty()) {
             buffer.append("Field : password is mandatory");
             isValid = false;
         }
-        if(userType == null || userType.isEmpty()) {
-            buffer.append("Field : userType is mandatory");
-            isValid = false;
-        } else if (!(UserType.EMP.name().equals(userType))) {
-            buffer.append("Invalid value for UserType - Accepted value => (EMP)");
+
+        if (password == null || password.isEmpty()) {
+            buffer.append("Field : password is mandatory");
             isValid = false;
         }
-        if(!isValid) {
+
+        if (userType == null || userType.isEmpty()) {
+            buffer.append("Field : userType is mandatory");
+            isValid = false;
+//        }else if (!(UserType.EMP.name().equals(userType))){
+//            buffer.append("Invalid value for UserType - Accepted value => (EMP)");
+//            isValid = false;
+//        }
+        }
+
+
+        if (!isValid) {
             throw new BadRequestException(buffer.toString(), HttpStatus.BAD_REQUEST);
         }
     }
@@ -53,4 +62,6 @@ public class SignupRequest {
     public boolean hasRoles() {
         return roleList != null && !roleList.isEmpty();
     }
+
+
 }

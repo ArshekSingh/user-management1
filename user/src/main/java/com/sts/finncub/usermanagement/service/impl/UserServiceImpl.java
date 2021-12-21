@@ -2,8 +2,11 @@ package com.sts.finncub.usermanagement.service.impl;
 
 import com.sts.finncub.core.dto.UserDetailDto;
 import com.sts.finncub.core.entity.User;
+import com.sts.finncub.core.entity.UserOrganizationLinkId;
+import com.sts.finncub.core.entity.UserOrganizationMapping;
 import com.sts.finncub.core.entity.UserSession;
 import com.sts.finncub.core.exception.BadRequestException;
+import com.sts.finncub.core.repository.UserOrganizationMappingRepository;
 import com.sts.finncub.core.repository.UserRepository;
 import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.core.util.DateTimeUtil;
@@ -14,11 +17,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -29,11 +34,16 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserCredentialService userCredentialService;
+    private final BCryptPasswordEncoder passwordEncoder;
+    private final UserOrganizationMappingRepository userOrganizationMappingRepository;
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository, UserCredentialService userCredentialService) {
+    public UserServiceImpl(UserRepository userRepository, UserCredentialService userCredentialService
+            , BCryptPasswordEncoder passwordEncoder, UserOrganizationMappingRepository userOrganizationMappingRepository) {
         this.userRepository = userRepository;
         this.userCredentialService = userCredentialService;
+        this.passwordEncoder = passwordEncoder;
+        this.userOrganizationMappingRepository = userOrganizationMappingRepository;
     }
 
     @Override
@@ -71,7 +81,6 @@ public class UserServiceImpl implements UserService {
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         }
         UserDetailDto userDetailDto = new UserDetailDto();
-
         BeanUtils.copyProperties(user.get(), userDetailDto);
         userDetailDto.setDisabledOn(DateTimeUtil.dateToString(user.get().getDisabledOn()));
         userDetailDto.setApprovedOn(DateTimeUtil.dateToString(user.get().getApprovedOn()));
@@ -88,23 +97,57 @@ public class UserServiceImpl implements UserService {
     public Response addUser(UserRequest request) throws BadRequestException {
         Response response = new Response();
         validateRequest(request);
-        User user = new User();
-        user.setPasswordResetDate(DateTimeUtil.stringToDate(request.getPasswordResetDate()));
-        user.setDisabledOn(DateTimeUtil.stringToDate(request.getDisabledOn()));
-        user.setApprovedOn(DateTimeUtil.stringToDate(request.getApprovedOn()));
-        user.setInsertedOn(DateTimeUtil.stringToDate(request.getInsertedOn()));
-        user.setInsertedBy(userCredentialService.getUserSession().getUserId());
-        BeanUtils.copyProperties(request, user);
-        userRepository.save(user);
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setMessage("Transaction completed successfully.");
+        UserSession userSession = userCredentialService.getUserSession();
+        if (!request.isEmployeeCreate()) {
+            if (request.getType().equalsIgnoreCase("EMP")) {
+                throw new BadRequestException("Please create Employee", HttpStatus.BAD_REQUEST);
+            }
+        }
+        Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
+        if (existingUser.isEmpty()) {
+            if (!request.isEmployeeCreate()) {
+                String userEmployeeId = userRepository.getGeneratedUserEmployeeId(
+                        userSession.getOrganizationId(), request.getType());
+                final String userId = userEmployeeId.split(",")[0];
+                request.setUserId(userId);
+            }
+            User user = new User();
+            BeanUtils.copyProperties(request, user);
+            user.setPasswordResetDate(LocalDate.now());
+            user.setType(request.getType());
+            user.setUserId(request.getUserId());
+            user.setPassword(passwordEncoder, request.getPassword());
+            user.setInsertedOn(LocalDate.now());
+            user.setInsertedBy(userSession.getUserId());
+            user.setIsTemporaryPassword("Y");
+            user.setIsFrozenBookFlag('N');
+            userRepository.save(user);
+            saveValueInUserOrganizationMapping(request.getUserId(), userSession.getOrganizationId(), "Y");
+            response.setCode(HttpStatus.OK.value());
+            response.setStatus(HttpStatus.OK);
+            response.setMessage("Transaction completed successfully.");
+        } else {
+            throw new BadRequestException("User Email Id Already Exists in Our System", HttpStatus.BAD_REQUEST);
+        }
         return response;
+    }
+
+    private void saveValueInUserOrganizationMapping(String userId, Long organizationId, String isActive) {
+        UserOrganizationLinkId userOrganizationLinkId = new UserOrganizationLinkId();
+        userOrganizationLinkId.setOrganizationId(organizationId);
+        userOrganizationLinkId.setUserId(userId);
+        UserOrganizationMapping userOrganizationMapping = new UserOrganizationMapping();
+        userOrganizationMapping.setId(userOrganizationLinkId);
+        userOrganizationMapping.setActive(isActive);
+        userOrganizationMapping.setInsertedOn(LocalDateTime.now());
+        userOrganizationMapping.setInsertedBy(userCredentialService.getUserSession().getUserId());
+        userOrganizationMappingRepository.save(userOrganizationMapping);
     }
 
     private void validateRequest(UserRequest request) throws BadRequestException {
         if (request == null || !StringUtils.hasText(request.getName())
-                || !StringUtils.hasText(request.getEmail()) || !StringUtils.hasText(request.getIsFrozenBookFlag())) {
+                || !StringUtils.hasText(request.getEmail()) || request.getType() == null ||
+                !StringUtils.hasText(request.getPassword())) {
             throw new BadRequestException("Invalid Request Parameters", HttpStatus.BAD_REQUEST);
         }
     }
@@ -120,17 +163,31 @@ public class UserServiceImpl implements UserService {
         if (user.get() == null) {
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         }
-        User userDetail = user.get();
-        userDetail.setPasswordResetDate(DateTimeUtil.stringToDate(request.getPasswordResetDate()));
-        userDetail.setDisabledOn(DateTimeUtil.stringToDate(request.getDisabledOn()));
-        userDetail.setApprovedOn(DateTimeUtil.stringToDate(request.getApprovedOn()));
-        userDetail.setUpdatedBy(userSession.getUserId());
-        userDetail.setUpdatedOn(LocalDate.now());
-        BeanUtils.copyProperties(request, userDetail);
-        userRepository.save(userDetail);
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setMessage("Transaction completed successfully.");
+        if (user.get().getEmail().equalsIgnoreCase(request.getEmail())) {
+            updateUser(request, response, userSession, user);
+        } else {
+            updateUser(request, response, userSession, user);
+        }
         return response;
+    }
+
+    private void updateUser(UserRequest request, Response response,
+                            UserSession userSession, Optional<User> user) throws BadRequestException {
+        Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
+        if (existingUser.isEmpty()) {
+            User userDetail = user.get();
+            userDetail.setName(request.getName());
+            userDetail.setMobileNumber(request.getMobileNumber());
+            userDetail.setType(request.getType());
+            userDetail.setIsActive(request.getIsActive());
+            userDetail.setUpdatedBy(userSession.getUserId());
+            userDetail.setUpdatedOn(LocalDate.now());
+            userRepository.save(userDetail);
+            response.setCode(HttpStatus.OK.value());
+            response.setStatus(HttpStatus.OK);
+            response.setMessage("Transaction completed successfully.");
+        } else {
+            throw new BadRequestException("User Email Id Already Exists in Our System", HttpStatus.BAD_REQUEST);
+        }
     }
 }
