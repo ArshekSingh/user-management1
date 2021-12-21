@@ -53,7 +53,7 @@ public class AuthenticationController {
         return ResponseEntity.ok(response);
     }
 
-    // API replace with User Controller Add user API
+    // API replaces with User Controller Add user API
     @PostMapping("/api/signup")
     public ResponseEntity<Response<SignupResponse>> signup(@RequestBody SignupRequest signupRequest) throws BadRequestException {
         signupRequest.validate();
