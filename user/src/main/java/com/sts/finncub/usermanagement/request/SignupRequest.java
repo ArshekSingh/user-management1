@@ -1,5 +1,6 @@
 package com.sts.finncub.usermanagement.request;
 
+import com.sts.finncub.core.enums.UserType;
 import com.sts.finncub.core.exception.BadRequestException;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -13,7 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class SignupRequest {
+public class  SignupRequest {
     String name;
     String password;
     List<Long> roleList;
@@ -22,7 +23,9 @@ public class SignupRequest {
     String userType;
 
 
-    public void validate() throws BadRequestException {
+
+
+    public void validate() throws BadRequestException{
         log.info("Validating signup request data");
         boolean isValid = true;
         StringBuffer buffer = new StringBuffer();
@@ -30,21 +33,21 @@ public class SignupRequest {
             buffer.append("Field : name is mandatory, ");
             isValid = false;
         }
-        if (email == null || email.isEmpty()) {
+        if(email == null || email.isEmpty()){
             buffer.append("Field : email is mandatory, ");
             isValid = false;
         }
-        if (password == null || password.isEmpty()) {
+        if(password == null || password.isEmpty()){
             buffer.append("Field : password is mandatory");
             isValid = false;
         }
 
-        if (password == null || password.isEmpty()) {
+        if(password == null || password.isEmpty()){
             buffer.append("Field : password is mandatory");
             isValid = false;
         }
 
-        if (userType == null || userType.isEmpty()) {
+        if(userType == null || userType.isEmpty()){
             buffer.append("Field : userType is mandatory");
             isValid = false;
 //        }else if (!(UserType.EMP.name().equals(userType))){
@@ -59,7 +62,7 @@ public class SignupRequest {
         }
     }
 
-    public boolean hasRoles() {
+    public boolean hasRoles(){
         return roleList != null && !roleList.isEmpty();
     }
 

@@ -71,4 +71,14 @@ public class AuthenticationController {
         response.setMessage(RestMappingConstants.LOGGED_OUT);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/api/changePassword")
+    public ResponseEntity<Response> changePassword(@RequestBody String password) throws ObjectNotFoundException {
+        Response response = new Response();
+        authenticationService.changePassword(password);
+        response.setCode(HttpStatus.OK.value());
+        response.setStatus(HttpStatus.OK);
+        response.setMessage(RestMappingConstants.CHANGED_PASSWORD);
+        return ResponseEntity.ok(response);
+    }
 }

@@ -26,6 +26,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -40,21 +41,18 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final UserRoleMappingRepository userRoleMappingRepository;
     private final UserCredentialService userCredentialService;
     private final UserOrganizationMappingRepository userOrganizationMappingRepository;
-    private final EmployeeRepository employeeRepository;
     private final BranchMasterRepository branchMasterRepository;
 
     @Autowired
-    public AuthenticationServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder,
-                                     UserRedisRepository userRedisRepository, UserRoleMappingRepository userRoleMappingRepository,
-                                     UserCredentialService userCredentialService, UserOrganizationMappingRepository userOrganizationMappingRepository,
-                                     EmployeeRepository employeeRepository, BranchMasterRepository branchMasterRepository) {
+    public AuthenticationServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserRedisRepository userRedisRepository,
+                                     UserRoleMappingRepository userRoleMappingRepository, UserCredentialService userCredentialService,
+                                     UserOrganizationMappingRepository userOrganizationMappingRepository, BranchMasterRepository branchMasterRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userRedisRepository = userRedisRepository;
         this.userRoleMappingRepository = userRoleMappingRepository;
         this.userCredentialService = userCredentialService;
         this.userOrganizationMappingRepository = userOrganizationMappingRepository;
-        this.employeeRepository = employeeRepository;
         this.branchMasterRepository = branchMasterRepository;
     }
 
@@ -202,6 +200,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         String tokenString = request.getHeader("Authorization");
         String token = tokenString.split(" ")[1];
         userRedisRepository.deleteById(token);
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    public ResponseEntity<Response> changePassword(String password) throws ObjectNotFoundException {
+        Response response = new Response();
+        UserSession userSession = userCredentialService.getUserSession();
+        User user = userRepository.findByUserIdIgnoreCase(userSession.getUserId()).orElseThrow(() -> new ObjectNotFoundException(
+                "Invalid userId - " + userSession.getUserId(), HttpStatus.NOT_FOUND));
+        user.setPassword(passwordEncoder, password);
+        user.setUpdatedOn(LocalDate.now());
+        user.setUpdatedBy(userSession.getUserId());
+        userRepository.save(user);
         return ResponseEntity.ok(response);
     }
 }

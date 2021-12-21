@@ -18,4 +18,5 @@ public interface AuthenticationService {
     SignupResponse signup(SignupRequest signupRequest) throws BadRequestException;
     Response<UserSession> verify(String authToken) throws ObjectNotFoundException;
     ResponseEntity<Response> logout(HttpServletRequest request);
+    ResponseEntity<Response> changePassword(String password) throws ObjectNotFoundException;
 }
