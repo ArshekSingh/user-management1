@@ -1,13 +1,14 @@
 package com.sts.finncub.usermanagement.service.impl;
 
+import com.sts.finncub.core.dto.ServerSideDropDownDto;
 import com.sts.finncub.core.dto.UserDetailDto;
-import com.sts.finncub.core.entity.User;
-import com.sts.finncub.core.entity.UserOrganizationLinkId;
-import com.sts.finncub.core.entity.UserOrganizationMapping;
-import com.sts.finncub.core.entity.UserSession;
+import com.sts.finncub.core.dto.UserRoleMappingDto;
+import com.sts.finncub.core.entity.*;
 import com.sts.finncub.core.exception.BadRequestException;
+import com.sts.finncub.core.repository.RoleMasterRepository;
 import com.sts.finncub.core.repository.UserOrganizationMappingRepository;
 import com.sts.finncub.core.repository.UserRepository;
+import com.sts.finncub.core.repository.UserRoleMappingRepository;
 import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.request.UserRequest;
@@ -36,14 +37,19 @@ public class UserServiceImpl implements UserService {
     private final UserCredentialService userCredentialService;
     private final BCryptPasswordEncoder passwordEncoder;
     private final UserOrganizationMappingRepository userOrganizationMappingRepository;
+    private final UserRoleMappingRepository userRoleMappingRepository;
+    private final RoleMasterRepository roleMasterRepository;
 
     @Autowired
     public UserServiceImpl(UserRepository userRepository, UserCredentialService userCredentialService
-            , BCryptPasswordEncoder passwordEncoder, UserOrganizationMappingRepository userOrganizationMappingRepository) {
+            , BCryptPasswordEncoder passwordEncoder, UserOrganizationMappingRepository userOrganizationMappingRepository,
+                           UserRoleMappingRepository userRoleMappingRepository, RoleMasterRepository roleMasterRepository) {
         this.userRepository = userRepository;
         this.userCredentialService = userCredentialService;
         this.passwordEncoder = passwordEncoder;
         this.userOrganizationMappingRepository = userOrganizationMappingRepository;
+        this.userRoleMappingRepository = userRoleMappingRepository;
+        this.roleMasterRepository = roleMasterRepository;
     }
 
     @Override
@@ -189,5 +195,80 @@ public class UserServiceImpl implements UserService {
         } else {
             throw new BadRequestException("User Email Id Already Exists in Our System", HttpStatus.BAD_REQUEST);
         }
+    }
+
+    @Override
+    public Response getUserSearchable(String userSearchableKey) {
+        Response response = new Response();
+        User user = userRepository.findByUserIdContainingIgnoreCaseOrNameContainingIgnoreCase(userSearchableKey, userSearchableKey);
+        ServerSideDropDownDto serverSideDropDownDto = new ServerSideDropDownDto();
+        serverSideDropDownDto.setId(user.getUserId());
+        serverSideDropDownDto.setLabel(user.getUserId() + "-" + user.getName());
+        response.setCode(HttpStatus.OK.value());
+        response.setStatus(HttpStatus.OK);
+        response.setData(serverSideDropDownDto);
+        response.setMessage("Transaction completed successfully.");
+        return response;
+    }
+
+    @Override
+    public Response getUserRoleListAssignedOrAvailable(String userId) {
+        Response response = new Response();
+        List<UserRoleMapping> userRoleMappingList = userRoleMappingRepository.findById_UserIdContainingIgnoreCase(userId);
+        UserRoleMappingDto userRoleMappingDto = new UserRoleMappingDto();
+        List<ServerSideDropDownDto> userAssignedRolesList = new ArrayList<>();
+        List<ServerSideDropDownDto> userAvailableRolesList = new ArrayList<>();
+        List<Long> roleList = new ArrayList<>();
+
+        for(UserRoleMapping userRoleMapping : userRoleMappingList) {
+            userRoleMappingDto.setUserId(userId);
+            ServerSideDropDownDto userAssignedRoles = new ServerSideDropDownDto();
+            userAssignedRoles.setId(userRoleMapping.getRoleMaster().getId().toString());
+            userAssignedRoles.setLabel(userRoleMapping.getRoleMaster().getRoleName());
+            userAssignedRolesList.add(userAssignedRoles);
+            roleList.add(userRoleMapping.getRoleMaster().getId());
+        }
+        List<RoleMaster> roleMasterList = roleMasterRepository.findByIdNotIn(roleList);
+        for(RoleMaster roleMaster : roleMasterList) {
+            ServerSideDropDownDto userAvailableRoles = new ServerSideDropDownDto();
+            userAvailableRoles.setId(roleMaster.getId().toString());
+            userAvailableRoles.setLabel(roleMaster.getRoleName());
+            userAvailableRolesList.add(userAvailableRoles);
+        }
+        userRoleMappingDto.setAssignedRoles(userAssignedRolesList);
+        userRoleMappingDto.setAvailableRoles(userAvailableRolesList);
+
+        response.setCode(HttpStatus.OK.value());
+        response.setStatus(HttpStatus.OK);
+        response.setData(userRoleMappingDto);
+        response.setMessage("Transaction completed successfully.");
+        return response;
+    }
+
+    @Override
+    public Response assignRolesToUser(UserRoleMappingDto userRoleMappingDto) {
+        Response response = new Response();
+        UserSession userSession = userCredentialService.getUserSession();
+        List<UserRoleMapping> userRoleMappingList = userRoleMappingRepository.findById_UserIdContainingIgnoreCase(userRoleMappingDto.getUserId());
+        if (!CollectionUtils.isEmpty(userRoleMappingList)) {
+            userRoleMappingRepository.deleteAll(userRoleMappingList);
+        }
+        List<ServerSideDropDownDto> assignedRoleList = userRoleMappingDto.getAssignedRoles();
+        for(ServerSideDropDownDto assignedRole : assignedRoleList) {
+            UserRoleMapping userRoleMapping = new UserRoleMapping();
+            UserRoleOrganizationLinkId userRoleOrganizationLinkId = new UserRoleOrganizationLinkId();
+            userRoleOrganizationLinkId.setUserId(userRoleMappingDto.getUserId());
+            userRoleOrganizationLinkId.setRoleId(Long.valueOf(assignedRole.getId()));
+            userRoleOrganizationLinkId.setOrganizationId(userSession.getOrganizationId());
+            userRoleMapping.setId(userRoleOrganizationLinkId);
+            userRoleMapping.setInsertedOn(LocalDate.now());
+            userRoleMapping.setInsertedBy(userSession.getUserId());
+            userRoleMappingRepository.save(userRoleMapping);
+        }
+
+        response.setCode(HttpStatus.OK.value());
+        response.setStatus(HttpStatus.OK);
+        response.setMessage("Transaction completed successfully.");
+        return response;
     }
 }

@@ -1,6 +1,6 @@
 package com.sts.finncub.usermanagement.controller;
 
-
+import com.sts.finncub.core.dto.UserRoleMappingDto;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.response.Response;
@@ -18,7 +18,6 @@ public class UserController {
     public UserController(UserService userService) {
         this.userService = userService;
     }
-
 
     @GetMapping("/fetchAllUsers")
     public Response getAllUserDetails() throws BadRequestException {
@@ -40,5 +39,18 @@ public class UserController {
         return userService.updateUserDetails(request);
     }
 
-}
+    @GetMapping(value = "/{userSearchableKey}")
+    public Response getUserSearchable(@PathVariable String userSearchableKey) {
+        return userService.getUserSearchable(userSearchableKey);
+    }
 
+    @GetMapping(value = "getUserRoleList/{userId}")
+    public Response getUserRoleListAssignedOrAvailable(@PathVariable String userId) {
+        return userService.getUserRoleListAssignedOrAvailable(userId);
+    }
+
+    @PostMapping(value = "assignRolesToUser")
+    public Response assignRolesToUser(@RequestBody UserRoleMappingDto userRoleMappingDto) {
+        return userService.assignRolesToUser(userRoleMappingDto);
+    }
+}
