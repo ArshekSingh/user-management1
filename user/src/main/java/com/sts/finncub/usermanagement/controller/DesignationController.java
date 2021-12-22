@@ -13,9 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping(value = "/api/designation")
 public class DesignationController {
 
-
     private final DesignationService designationService;
-
 
     @Autowired
     public DesignationController(DesignationService designationService) {
