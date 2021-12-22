@@ -1,5 +1,6 @@
 package com.sts.finncub.usermanagement.service;
 
+import com.sts.finncub.core.dto.UserRoleMappingDto;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.response.Response;
@@ -13,4 +14,10 @@ public interface UserService {
     Response addUser(UserRequest request) throws BadRequestException;
 
     Response updateUserDetails(UserRequest request) throws BadRequestException;
+
+    Response getUserSearchable(String userSearchableKey);
+
+    Response getUserRoleListAssignedOrAvailable(String userId);
+
+    Response assignRolesToUser(UserRoleMappingDto userRoleMappingDto);
 }
