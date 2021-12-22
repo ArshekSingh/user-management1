@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping(value = "/api/functionTitle")
 public class FunctionalTitleController {
 

@@ -1,7 +1,6 @@
 package com.sts.finncub.usermanagement.controller;
 
 import com.sts.finncub.core.exception.BadRequestException;
-import com.sts.finncub.usermanagement.request.EmployeeDepartmentRequest;
 import com.sts.finncub.usermanagement.request.EmployeeSubDepartmentRequest;
 import com.sts.finncub.usermanagement.response.Response;
 import com.sts.finncub.usermanagement.service.SubDepartmentService;
@@ -11,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping(value = "/api/subDepartment")
 public class SubDepartmentController {
 
