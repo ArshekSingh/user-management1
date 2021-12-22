@@ -200,13 +200,17 @@ public class UserServiceImpl implements UserService {
     @Override
     public Response getUserSearchable(String userSearchableKey) {
         Response response = new Response();
-        User user = userRepository.findByUserIdContainingIgnoreCaseOrNameContainingIgnoreCase(userSearchableKey, userSearchableKey);
-        ServerSideDropDownDto serverSideDropDownDto = new ServerSideDropDownDto();
-        serverSideDropDownDto.setId(user.getUserId());
-        serverSideDropDownDto.setLabel(user.getUserId() + "-" + user.getName());
+        List<ServerSideDropDownDto> serverSideDropDownDtoList = new ArrayList<>();
+        List<User> userList = userRepository.findByUserIdContainingIgnoreCaseOrNameContainingIgnoreCase(userSearchableKey, userSearchableKey);
+        for(User user : userList) {
+            ServerSideDropDownDto serverSideDropDownDto = new ServerSideDropDownDto();
+            serverSideDropDownDto.setId(user.getUserId());
+            serverSideDropDownDto.setLabel(user.getUserId() + "-" + user.getName());
+            serverSideDropDownDtoList.add(serverSideDropDownDto);
+        }
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);
-        response.setData(serverSideDropDownDto);
+        response.setData(serverSideDropDownDtoList);
         response.setMessage("Transaction completed successfully.");
         return response;
     }
