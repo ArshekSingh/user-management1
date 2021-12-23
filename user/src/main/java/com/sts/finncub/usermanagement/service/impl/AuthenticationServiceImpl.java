@@ -204,12 +204,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public ResponseEntity<Response> changePassword(String password) throws ObjectNotFoundException {
+    public ResponseEntity<Response> changePassword(LoginRequest request) throws ObjectNotFoundException {
         Response response = new Response();
         UserSession userSession = userCredentialService.getUserSession();
         User user = userRepository.findByUserIdIgnoreCase(userSession.getUserId()).orElseThrow(() -> new ObjectNotFoundException(
                 "Invalid userId - " + userSession.getUserId(), HttpStatus.NOT_FOUND));
-        user.setPassword(passwordEncoder, password);
+        user.setPassword(passwordEncoder, request.getPassword());
         user.setUpdatedOn(LocalDate.now());
         user.setUpdatedBy(userSession.getUserId());
         userRepository.save(user);
