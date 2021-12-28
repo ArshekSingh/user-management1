@@ -1,5 +1,6 @@
 package com.sts.finncub.usermanagement.controller;
 
+import com.sts.finncub.core.dto.UserBranchMappingDto;
 import com.sts.finncub.core.dto.UserRoleMappingDto;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.usermanagement.request.UserRequest;
@@ -52,5 +53,15 @@ public class UserController {
     @PostMapping(value = "assignRolesToUser")
     public Response assignRolesToUser(@RequestBody UserRoleMappingDto userRoleMappingDto) {
         return userService.assignRolesToUser(userRoleMappingDto);
+    }
+
+    @GetMapping(value = "getUserBranchList/{userId}")
+    public Response getUserAssignedAndAvailableBranchList(@PathVariable String userId) {
+        return userService.getUserAssignedAndAvailableBranchList(userId);
+    }
+
+    @PostMapping(value = "assignBranchesToUser")
+    public Response assignBranchesToUser(@RequestBody UserBranchMappingDto userRoleMappingDto) {
+        return userService.assignBranchesToUser(userRoleMappingDto);
     }
 }

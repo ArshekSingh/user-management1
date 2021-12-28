@@ -1,5 +1,6 @@
 package com.sts.finncub.usermanagement.service;
 
+import com.sts.finncub.core.dto.UserBranchMappingDto;
 import com.sts.finncub.core.dto.UserRoleMappingDto;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.usermanagement.request.UserRequest;
@@ -20,4 +21,8 @@ public interface UserService {
     Response getUserRoleListAssignedOrAvailable(String userId);
 
     Response assignRolesToUser(UserRoleMappingDto userRoleMappingDto);
+
+    Response getUserAssignedAndAvailableBranchList(String userId);
+
+    Response assignBranchesToUser(UserBranchMappingDto userRoleMappingDto);
 }

@@ -1,14 +1,12 @@
 package com.sts.finncub.usermanagement.service.impl;
 
 import com.sts.finncub.core.dto.ServerSideDropDownDto;
+import com.sts.finncub.core.dto.UserBranchMappingDto;
 import com.sts.finncub.core.dto.UserDetailDto;
 import com.sts.finncub.core.dto.UserRoleMappingDto;
 import com.sts.finncub.core.entity.*;
 import com.sts.finncub.core.exception.BadRequestException;
-import com.sts.finncub.core.repository.RoleMasterRepository;
-import com.sts.finncub.core.repository.UserOrganizationMappingRepository;
-import com.sts.finncub.core.repository.UserRepository;
-import com.sts.finncub.core.repository.UserRoleMappingRepository;
+import com.sts.finncub.core.repository.*;
 import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.request.UserRequest;
@@ -39,17 +37,22 @@ public class UserServiceImpl implements UserService {
     private final UserOrganizationMappingRepository userOrganizationMappingRepository;
     private final UserRoleMappingRepository userRoleMappingRepository;
     private final RoleMasterRepository roleMasterRepository;
+    private final UserBranchMappingRepository userBranchMappingRepository;
+    private final BranchMasterRepository branchMasterRepository;
 
     @Autowired
     public UserServiceImpl(UserRepository userRepository, UserCredentialService userCredentialService
             , BCryptPasswordEncoder passwordEncoder, UserOrganizationMappingRepository userOrganizationMappingRepository,
-                           UserRoleMappingRepository userRoleMappingRepository, RoleMasterRepository roleMasterRepository) {
+                           UserRoleMappingRepository userRoleMappingRepository, RoleMasterRepository roleMasterRepository,
+                           UserBranchMappingRepository userBranchMappingRepository, BranchMasterRepository branchMasterRepository) {
         this.userRepository = userRepository;
         this.userCredentialService = userCredentialService;
         this.passwordEncoder = passwordEncoder;
         this.userOrganizationMappingRepository = userOrganizationMappingRepository;
         this.userRoleMappingRepository = userRoleMappingRepository;
         this.roleMasterRepository = roleMasterRepository;
+        this.userBranchMappingRepository = userBranchMappingRepository;
+        this.branchMasterRepository = branchMasterRepository;
     }
 
     @Override
@@ -270,6 +273,64 @@ public class UserServiceImpl implements UserService {
             userRoleMappingRepository.save(userRoleMapping);
         }
 
+        response.setCode(HttpStatus.OK.value());
+        response.setStatus(HttpStatus.OK);
+        response.setMessage("Transaction completed successfully.");
+        return response;
+    }
+
+    @Override
+    public Response getUserAssignedAndAvailableBranchList(String userId) {
+        Response response = new Response();
+        List<UserBranchMapping> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_UserIdContainingIgnoreCase(userId);
+        UserBranchMappingDto userBranchMappingDto = new UserBranchMappingDto();
+        List<ServerSideDropDownDto> userAssignedBranchesList = new ArrayList<>();
+        List<ServerSideDropDownDto> userAvailableBranchesList = new ArrayList<>();
+        List<Integer> branchList = new ArrayList<>();
+        for(UserBranchMapping userBranchMapping : userBranchMappingList) {
+            userBranchMappingDto.setUserId(userId);
+            ServerSideDropDownDto userAssignedBranches = new ServerSideDropDownDto();
+            userAssignedBranches.setId(userBranchMapping.getBranchMaster().getBranchId().toString());
+            userAssignedBranches.setLabel(userBranchMapping.getBranchMaster().getBranchName());
+            userAssignedBranchesList.add(userAssignedBranches);
+            branchList.add(userBranchMapping.getBranchMaster().getBranchId());
+        }
+        List<BranchMaster> branchMasterList = branchMasterRepository.findByBranchIdNotIn(branchList);
+        for(BranchMaster branchMaster : branchMasterList) {
+            ServerSideDropDownDto userAvailableBranches = new ServerSideDropDownDto();
+            userAvailableBranches.setId(branchMaster.getBranchId().toString());
+            userAvailableBranches.setLabel(branchMaster.getBranchName());
+            userAvailableBranchesList.add(userAvailableBranches);
+        }
+        userBranchMappingDto.setAssignedBranches(userAssignedBranchesList);
+        userBranchMappingDto.setAvailableBranches(userAvailableBranchesList);
+        response.setCode(HttpStatus.OK.value());
+        response.setStatus(HttpStatus.OK);
+        response.setData(userBranchMappingDto);
+        response.setMessage("Transaction completed successfully.");
+        return response;
+    }
+
+    @Override
+    public Response assignBranchesToUser(UserBranchMappingDto userBranchMappingDto) {
+        Response response = new Response();
+        UserSession userSession = userCredentialService.getUserSession();
+        List<UserBranchMapping> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_UserIdContainingIgnoreCase(userBranchMappingDto.getUserId());
+        if (!CollectionUtils.isEmpty(userBranchMappingList)) {
+            userBranchMappingRepository.deleteAll(userBranchMappingList);
+        }
+        List<ServerSideDropDownDto> assignedBranchesList = userBranchMappingDto.getAssignedBranches();
+        for(ServerSideDropDownDto assignedBranches : assignedBranchesList) {
+            UserBranchMapping userBranchMapping = new UserBranchMapping();
+            UserBranchMappingPK userBranchMappingPK = new UserBranchMappingPK();
+            userBranchMappingPK.setUserId(userBranchMappingDto.getUserId());
+            userBranchMappingPK.setBranchId(Long.valueOf(assignedBranches.getId()));
+            userBranchMappingPK.setOrgId(userSession.getOrganizationId());
+            userBranchMapping.setUserBranchMappingPK(userBranchMappingPK);
+            userBranchMapping.setInsertedOn(LocalDateTime.now());
+            userBranchMapping.setInsertedBy(userSession.getUserId());
+            userBranchMappingRepository.save(userBranchMapping);
+        }
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);
         response.setMessage("Transaction completed successfully.");
