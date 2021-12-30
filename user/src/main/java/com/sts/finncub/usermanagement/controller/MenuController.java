@@ -35,9 +35,4 @@ public class MenuController {
         }
         return  ResponseEntity.ok(new Response<>(RestMappingConstants.SUCCESS,response,HttpStatus.OK));
     }
-
-    @GetMapping(value = "/menu/menuByParentId")
-    public Response getMenuByParentId() {
-        return menuService.getMenuByParentId();
-    }
 }

@@ -52,21 +52,4 @@ public class MenuServiceImpl implements MenuService {
         log.info(menuList.size() + " Menu(s) found");
         return MenuResponseConverter.convert(menuList);
     }
-
-    @Override
-    public Response getMenuByParentId() {
-        Response response = new Response();
-        List<MenuMasterDto> menuMasterDtoList = new ArrayList<>();
-        List<Menu> menuList = menuRepository.findAllByMenuMaster();
-        for (Menu menu : menuList) {
-            MenuMasterDto menuMasterDto = new MenuMasterDto();
-            BeanUtils.copyProperties(menu, menuMasterDto);
-            menuMasterDtoList.add(menuMasterDto);
-        }
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setData(menuMasterDtoList);
-        response.setMessage("Transaction completed successfully.");
-        return response;
-    }
 }
