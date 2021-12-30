@@ -287,6 +287,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public Response getUserAssignedAndAvailableBranchList(String userId) {
         Response response = new Response();
+        UserSession userSession = userCredentialService.getUserSession();
         List<UserBranchMapping> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_UserIdContainingIgnoreCase(userId);
         UserBranchMappingDto userBranchMappingDto = new UserBranchMappingDto();
         List<ServerSideDropDownDto> userAssignedBranchesList = new ArrayList<>();
@@ -304,7 +305,7 @@ public class UserServiceImpl implements UserService {
         if (branchList.isEmpty()) {
             branchMasterList = branchMasterRepository.findAll();
         } else {
-            branchMasterList = branchMasterRepository.findByBranchIdNotIn(branchList);
+            branchMasterList = branchMasterRepository.findByBranchIdNotInAndOrgId(branchList, userSession.getOrganizationId());
         }
         for(BranchMaster branchMaster : branchMasterList) {
             ServerSideDropDownDto userAvailableBranches = new ServerSideDropDownDto();

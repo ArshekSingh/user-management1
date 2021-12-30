@@ -1,7 +1,6 @@
 package com.sts.finncub.usermanagement.controller;
 
 import com.sts.finncub.core.constants.RestMappingConstants;
-import com.sts.finncub.core.exception.ObjectNotFoundException;
 import com.sts.finncub.usermanagement.response.MenuResponse;
 import com.sts.finncub.usermanagement.response.Response;
 import com.sts.finncub.usermanagement.service.MenuService;
@@ -26,15 +25,19 @@ public class MenuController {
     }
 
     @GetMapping("menu")
-    public ResponseEntity<Response<MenuResponse>> menu() throws ObjectNotFoundException {
+    public ResponseEntity<Response<MenuResponse>> menu() {
         log.info("Request received to fetch menus");
         MenuResponse response  = null;
         try {
             response = menuService.fetchMenus();
-        }catch(Exception e){
+        } catch(Exception e){
             log.error("Exception -{}",e);
         }
-
         return  ResponseEntity.ok(new Response<>(RestMappingConstants.SUCCESS,response,HttpStatus.OK));
+    }
+
+    @GetMapping(value = "/menu/menuByParentId")
+    public Response getMenuByParentId() {
+        return menuService.getMenuByParentId();
     }
 }
