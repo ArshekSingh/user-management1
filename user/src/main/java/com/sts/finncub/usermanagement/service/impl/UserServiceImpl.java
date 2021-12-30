@@ -235,7 +235,12 @@ public class UserServiceImpl implements UserService {
             userAssignedRolesList.add(userAssignedRoles);
             roleList.add(userRoleMapping.getRoleMaster().getId());
         }
-        List<RoleMaster> roleMasterList = roleMasterRepository.findByIdNotIn(roleList);
+        List<RoleMaster> roleMasterList;
+        if(roleList.isEmpty()){
+            roleMasterList = roleMasterRepository.findAll();
+        } else{
+            roleMasterList = roleMasterRepository.findByIdNotIn(roleList);
+        }
         for(RoleMaster roleMaster : roleMasterList) {
             ServerSideDropDownDto userAvailableRoles = new ServerSideDropDownDto();
             userAvailableRoles.setId(roleMaster.getId().toString());
