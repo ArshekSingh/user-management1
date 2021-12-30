@@ -236,9 +236,9 @@ public class UserServiceImpl implements UserService {
             roleList.add(userRoleMapping.getRoleMaster().getId());
         }
         List<RoleMaster> roleMasterList;
-        if(roleList.isEmpty()){
+        if (roleList.isEmpty()) {
             roleMasterList = roleMasterRepository.findAll();
-        } else{
+        } else {
             roleMasterList = roleMasterRepository.findByIdNotIn(roleList);
         }
         for(RoleMaster roleMaster : roleMasterList) {
@@ -300,7 +300,12 @@ public class UserServiceImpl implements UserService {
             userAssignedBranchesList.add(userAssignedBranches);
             branchList.add(userBranchMapping.getBranchMaster().getBranchId());
         }
-        List<BranchMaster> branchMasterList = branchMasterRepository.findByBranchIdNotIn(branchList);
+        List<BranchMaster> branchMasterList;
+        if (branchList.isEmpty()) {
+            branchMasterList = branchMasterRepository.findAll();
+        } else {
+            branchMasterList = branchMasterRepository.findByBranchIdNotIn(branchList);
+        }
         for(BranchMaster branchMaster : branchMasterList) {
             ServerSideDropDownDto userAvailableBranches = new ServerSideDropDownDto();
             userAvailableBranches.setId(branchMaster.getBranchId().toString());
