@@ -17,8 +17,10 @@ import com.sts.finncub.usermanagement.response.SignupResponse;
 import com.sts.finncub.usermanagement.service.AuthenticationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +36,11 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class AuthenticationServiceImpl implements AuthenticationService {
+
+    @Value("${old.password.count}")
+    private Integer oldPasswordCount;
+
+    private final String PASSWORD_SEPARATOR = ",,";
 
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
@@ -204,15 +211,52 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public ResponseEntity<Response> changePassword(LoginRequest request) throws ObjectNotFoundException {
+    public ResponseEntity<Response> changePassword(LoginRequest request) throws ObjectNotFoundException, BadRequestException {
         Response response = new Response();
         UserSession userSession = userCredentialService.getUserSession();
+        //Validate password (Regrex)
         User user = userRepository.findByUserIdIgnoreCase(userSession.getUserId()).orElseThrow(() -> new ObjectNotFoundException(
                 "Invalid userId - " + userSession.getUserId(), HttpStatus.NOT_FOUND));
-        user.setPassword(passwordEncoder, request.getPassword());
+        //check current password
+        if (!user.isPasswordCorrect(request.getPassword())) {
+            throw new BadRequestException("Invalid current password", HttpStatus.BAD_REQUEST);
+        }
+        //check new password with 5 old password
+        String oldPassword = user.getOldPassword();
+        if(oldPassword == null){
+            oldPassword = user.getPassword();
+        } else{
+            String[] oldPasswordList = oldPassword.split(PASSWORD_SEPARATOR);
+            for(String pass : oldPasswordList){
+                if(BCrypt.checkpw(request.getNewPassword(), pass)){
+                    throw new BadRequestException("New password matches with recent passwords ", HttpStatus.BAD_REQUEST);
+                }
+            }
+            //Maintain old passwords
+            if(oldPasswordList.length < oldPasswordCount){
+                oldPassword = oldPassword +PASSWORD_SEPARATOR+user.getPassword();
+            } else {
+                String updatedOldPassword="";
+                for(int i= 1; i<oldPasswordList.length; i++){
+                    if(updatedOldPassword.isEmpty()){
+                        updatedOldPassword = oldPasswordList[i];
+                    }else{
+                        updatedOldPassword = updatedOldPassword +PASSWORD_SEPARATOR+oldPasswordList[i];
+                    }
+                }
+                oldPassword = updatedOldPassword +PASSWORD_SEPARATOR+user.getPassword();
+            }
+        }
+
+        //update new password
+        user.setOldPassword(oldPassword);
+        user.setPassword(passwordEncoder, request.getNewPassword());
         user.setUpdatedOn(LocalDate.now());
         user.setUpdatedBy(userSession.getUserId());
         userRepository.save(user);
+        response.setCode(HttpStatus.OK.value());
+        response.setStatus(HttpStatus.OK);
+        response.setMessage(RestMappingConstants.CHANGED_PASSWORD);
         return ResponseEntity.ok(response);
     }
 }
