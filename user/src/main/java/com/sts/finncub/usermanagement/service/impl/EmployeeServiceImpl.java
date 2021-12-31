@@ -8,6 +8,7 @@ import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.EmployeeRepository;
 import com.sts.finncub.core.repository.UserRepository;
 import com.sts.finncub.core.repository.dao.EmployeeDao;
+import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.request.EmployeeRequest;
@@ -195,12 +196,12 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public Response getAllEmployeeDetails() throws BadRequestException {
+    public Response getAllEmployeeDetails(FilterRequest request) throws BadRequestException {
         Response response = new Response();
         List<EmployeeDto> employeeDtoList = new ArrayList<>();
         // fetch employee detail list using organizationId
-        List<Employee> employeeList = employeeDao.fetchAllEmployeeDetails(
-                userCredentialService.getUserSession().getOrganizationId());
+        request.setOrganizationId(userCredentialService.getUserSession().getOrganizationId());
+        List<Employee> employeeList = employeeDao.fetchAllEmployeeDetails(request);
         if (CollectionUtils.isEmpty(employeeList)) {
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         }
@@ -235,6 +236,7 @@ public class EmployeeServiceImpl implements EmployeeService {
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         }
         BeanUtils.copyProperties(employee, employeeDto);
+        employeeDto.setDob(DateTimeUtil.dateToString(employee.getDob()));
         employeeDto.setJoiningDate(DateTimeUtil.dateToString(employee.getJoiningDate()));
         employeeDto.setConfirmationDate(DateTimeUtil.dateToString(employee.getConfirmationDate()));
         employeeDto.setRelievingDate(DateTimeUtil.dateToString(employee.getRelievingDate()));
