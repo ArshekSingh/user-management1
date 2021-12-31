@@ -1,6 +1,7 @@
 package com.sts.finncub.usermanagement.controller;
 
 import com.sts.finncub.core.exception.BadRequestException;
+import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.usermanagement.request.EmployeeRequest;
 import com.sts.finncub.usermanagement.response.Response;
 import com.sts.finncub.usermanagement.service.EmployeeService;
@@ -21,9 +22,9 @@ public class EmployeeController {
     }
 
 
-    @GetMapping("/fetchAllEmployee")
-    public Response getAllEmployeeDetails() throws BadRequestException {
-        return employeeService.getAllEmployeeDetails();
+    @PostMapping ("/fetchAllEmployee")
+    public Response getAllEmployeeDetails(@RequestBody FilterRequest request) throws BadRequestException {
+        return employeeService.getAllEmployeeDetails(request);
     }
 
     @GetMapping("/getEmployeeDetail/{employeeId}")

@@ -112,32 +112,29 @@ public class UserServiceImpl implements UserService {
                 throw new BadRequestException("Please create Employee", HttpStatus.BAD_REQUEST);
             }
         }
-        Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
-        if (existingUser.isEmpty()) {
-            if (!request.isEmployeeCreate()) {
-                String userEmployeeId = userRepository.getGeneratedUserEmployeeId(
-                        userSession.getOrganizationId(), request.getType());
-                final String userId = userEmployeeId.split(",")[0];
-                request.setUserId(userId);
-            }
-            User user = new User();
-            BeanUtils.copyProperties(request, user);
-            user.setPasswordResetDate(LocalDate.now());
-            user.setType(request.getType());
-            user.setUserId(request.getUserId());
-            user.setPassword(passwordEncoder, request.getPassword());
-            user.setInsertedOn(LocalDate.now());
-            user.setInsertedBy(userSession.getUserId());
-            user.setIsTemporaryPassword("Y");
-            user.setIsFrozenBookFlag('N');
-            userRepository.save(user);
-            saveValueInUserOrganizationMapping(request.getUserId(), userSession.getOrganizationId(), "Y");
-            response.setCode(HttpStatus.OK.value());
-            response.setStatus(HttpStatus.OK);
-            response.setMessage("Transaction completed successfully.");
-        } else {
-            throw new BadRequestException("User Email Id Already Exists in Our System", HttpStatus.BAD_REQUEST);
+
+        if (!request.isEmployeeCreate()) {
+            String userEmployeeId = userRepository.getGeneratedUserEmployeeId(
+                    userSession.getOrganizationId(), request.getType());
+            final String userId = userEmployeeId.split(",")[0];
+            request.setUserId(userId);
         }
+        User user = new User();
+        BeanUtils.copyProperties(request, user);
+        user.setPasswordResetDate(LocalDate.now());
+        user.setType(request.getType());
+        user.setUserId(request.getUserId());
+        user.setPassword(passwordEncoder, request.getPassword());
+        user.setInsertedOn(LocalDate.now());
+        user.setInsertedBy(userSession.getUserId());
+        user.setIsTemporaryPassword("Y");
+        user.setIsActive(request.getIsActive());
+        user.setIsFrozenBookFlag('N');
+        userRepository.save(user);
+        saveValueInUserOrganizationMapping(request.getUserId(), userSession.getOrganizationId(), "Y");
+        response.setCode(HttpStatus.OK.value());
+        response.setStatus(HttpStatus.OK);
+        response.setMessage("Transaction completed successfully.");
         return response;
     }
 
@@ -172,32 +169,24 @@ public class UserServiceImpl implements UserService {
         if (user.get() == null) {
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         }
-        if (user.get().getEmail().equalsIgnoreCase(request.getEmail())) {
-            updateUser(request, response, userSession, user);
-        } else {
-            updateUser(request, response, userSession, user);
-        }
+        updateUser(request, response, userSession, user);
+
         return response;
     }
 
     private void updateUser(UserRequest request, Response response,
                             UserSession userSession, Optional<User> user) throws BadRequestException {
-        Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
-        if (existingUser.isEmpty()) {
-            User userDetail = user.get();
-            userDetail.setName(request.getName());
-            userDetail.setMobileNumber(request.getMobileNumber());
-            userDetail.setType(request.getType());
-            userDetail.setIsActive(request.getIsActive());
-            userDetail.setUpdatedBy(userSession.getUserId());
-            userDetail.setUpdatedOn(LocalDate.now());
-            userRepository.save(userDetail);
-            response.setCode(HttpStatus.OK.value());
-            response.setStatus(HttpStatus.OK);
-            response.setMessage("Transaction completed successfully.");
-        } else {
-            throw new BadRequestException("User Email Id Already Exists in Our System", HttpStatus.BAD_REQUEST);
-        }
+        User userDetail = user.get();
+        userDetail.setName(request.getName());
+        userDetail.setMobileNumber(request.getMobileNumber());
+        userDetail.setType(request.getType());
+        userDetail.setIsActive(request.getIsActive());
+        userDetail.setUpdatedBy(userSession.getUserId());
+        userDetail.setUpdatedOn(LocalDate.now());
+        userRepository.save(userDetail);
+        response.setCode(HttpStatus.OK.value());
+        response.setStatus(HttpStatus.OK);
+        response.setMessage("Transaction completed successfully.");
     }
 
     @Override
@@ -205,7 +194,7 @@ public class UserServiceImpl implements UserService {
         Response response = new Response();
         List<ServerSideDropDownDto> serverSideDropDownDtoList = new ArrayList<>();
         List<User> userList = userRepository.findByUserIdContainingIgnoreCaseOrNameContainingIgnoreCase(userSearchableKey, userSearchableKey);
-        for(User user : userList) {
+        for (User user : userList) {
             ServerSideDropDownDto serverSideDropDownDto = new ServerSideDropDownDto();
             serverSideDropDownDto.setId(user.getUserId());
             serverSideDropDownDto.setLabel(user.getUserId() + "-" + user.getName());
@@ -227,7 +216,7 @@ public class UserServiceImpl implements UserService {
         List<ServerSideDropDownDto> userAvailableRolesList = new ArrayList<>();
         List<Long> roleList = new ArrayList<>();
 
-        for(UserRoleMapping userRoleMapping : userRoleMappingList) {
+        for (UserRoleMapping userRoleMapping : userRoleMappingList) {
             userRoleMappingDto.setUserId(userId);
             ServerSideDropDownDto userAssignedRoles = new ServerSideDropDownDto();
             userAssignedRoles.setId(userRoleMapping.getRoleMaster().getId().toString());
@@ -241,7 +230,7 @@ public class UserServiceImpl implements UserService {
         } else {
             roleMasterList = roleMasterRepository.findByIdNotIn(roleList);
         }
-        for(RoleMaster roleMaster : roleMasterList) {
+        for (RoleMaster roleMaster : roleMasterList) {
             ServerSideDropDownDto userAvailableRoles = new ServerSideDropDownDto();
             userAvailableRoles.setId(roleMaster.getId().toString());
             userAvailableRoles.setLabel(roleMaster.getRoleName());
@@ -266,7 +255,7 @@ public class UserServiceImpl implements UserService {
             userRoleMappingRepository.deleteAll(userRoleMappingList);
         }
         List<ServerSideDropDownDto> assignedRoleList = userRoleMappingDto.getAssignedRoles();
-        for(ServerSideDropDownDto assignedRole : assignedRoleList) {
+        for (ServerSideDropDownDto assignedRole : assignedRoleList) {
             UserRoleMapping userRoleMapping = new UserRoleMapping();
             UserRoleOrganizationLinkId userRoleOrganizationLinkId = new UserRoleOrganizationLinkId();
             userRoleOrganizationLinkId.setUserId(userRoleMappingDto.getUserId());
