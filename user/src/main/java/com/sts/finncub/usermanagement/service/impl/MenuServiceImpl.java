@@ -23,7 +23,7 @@ public class MenuServiceImpl implements MenuService {
     private final MenuRepository menuRepository;
 
     @Autowired
-    MenuServiceImpl(UserCredentialService userCredentialService,MenuRepository menuRepository){
+    MenuServiceImpl(UserCredentialService userCredentialService, MenuRepository menuRepository) {
         this.userCredentialService = userCredentialService;
         this.menuRepository = menuRepository;
     }
@@ -31,15 +31,13 @@ public class MenuServiceImpl implements MenuService {
     @Override
     public MenuResponse fetchMenus() throws ObjectNotFoundException {
         UserSession userSession = userCredentialService.getUserSession();
-        log.info("User found with details - {}",userSession.toString());
-
-        log.info("Fetcing menus for userId -"+userSession.getUserId() +"and organizationId -"+userSession.getOrganizationId());
+        log.info("User found with details - {}", userSession.toString());
+        log.info("Fetching menus for userId -" + userSession.getUserId() + "and organizationId -" + userSession.getOrganizationId());
         List<MenuView> menuList = menuRepository.findMenuList(userSession.getUserId(), userSession.getOrganizationId());
-        if(menuList == null || menuList.isEmpty()){
-            throw  new ObjectNotFoundException("No menu found for user -"+userSession.getName(), HttpStatus.NOT_FOUND);
+        if (menuList == null || menuList.isEmpty()) {
+            throw new ObjectNotFoundException("No menu found for user -" + userSession.getName(), HttpStatus.NOT_FOUND);
         }
-        log.info(menuList.size()+" Menu(s) found");
+        log.info(menuList.size() + " Menu(s) found");
         return MenuResponseConverter.convert(menuList);
-
     }
 }
