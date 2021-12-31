@@ -303,7 +303,7 @@ public class UserServiceImpl implements UserService {
         }
         List<BranchMaster> branchMasterList;
         if (branchList.isEmpty()) {
-            branchMasterList = branchMasterRepository.findAll();
+            branchMasterList = branchMasterRepository.findAllByOrgId(userSession.getOrganizationId());
         } else {
             branchMasterList = branchMasterRepository.findByBranchIdNotInAndOrgId(branchList, userSession.getOrganizationId());
         }
