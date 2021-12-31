@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 public class LoginRequest {
     private String userId;
     private String password;
+    private String newPassword;
 
     @JsonIgnore
     public boolean isValid(){
