@@ -1,6 +1,7 @@
 package com.sts.finncub.usermanagement.controller;
 
 import com.sts.finncub.core.constants.RestMappingConstants;
+import com.sts.finncub.core.dto.MenuRoleMappingDto;
 import com.sts.finncub.usermanagement.response.MenuResponse;
 import com.sts.finncub.usermanagement.response.Response;
 import com.sts.finncub.usermanagement.service.MenuService;
@@ -8,9 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping(value = "/api")
@@ -34,5 +33,20 @@ public class MenuController {
             log.error("Exception -{}",e);
         }
         return  ResponseEntity.ok(new Response<>(RestMappingConstants.SUCCESS,response,HttpStatus.OK));
+    }
+
+    @GetMapping(value = "/menu/{menuSearchableKey}")
+    public Response getMenuSearchable(@PathVariable String menuSearchableKey) {
+        return menuService.getMenuSearchable(menuSearchableKey);
+    }
+
+    @GetMapping(value = "getMenuRoleList/{id}")
+    public Response getMenuRoleListAssignedOrAvailable(@PathVariable Long id) {
+        return menuService.getMenuRoleListAssignedOrAvailable(id);
+    }
+
+    @PostMapping(value = "assignMenuToRoles")
+    public Response assignMenuToRoles(@RequestBody MenuRoleMappingDto menuRoleMappingDto) {
+        return menuService.assignMenuToRoles(menuRoleMappingDto);
     }
 }
