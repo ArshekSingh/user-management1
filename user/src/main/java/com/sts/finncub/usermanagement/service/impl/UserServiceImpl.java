@@ -292,9 +292,9 @@ public class UserServiceImpl implements UserService {
         }
         List<BranchMaster> branchMasterList;
         if (branchList.isEmpty()) {
-            branchMasterList = branchMasterRepository.findAllByOrgId(userSession.getOrganizationId());
+            branchMasterList = branchMasterRepository.findAllByOrgIdAndBranchType(userSession.getOrganizationId(), "BR");
         } else {
-            branchMasterList = branchMasterRepository.findByBranchIdNotInAndOrgId(branchList, userSession.getOrganizationId());
+            branchMasterList = branchMasterRepository.findByBranchIdNotInAndOrgIdAndBranchType(branchList, userSession.getOrganizationId(), "BR");
         }
         for(BranchMaster branchMaster : branchMasterList) {
             ServerSideDropDownDto userAvailableBranches = new ServerSideDropDownDto();
