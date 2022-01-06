@@ -214,43 +214,60 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public ResponseEntity<Response> changePassword(LoginRequest request) throws ObjectNotFoundException, BadRequestException {
         Response response = new Response();
         UserSession userSession = userCredentialService.getUserSession();
-        //Validate password (Regrex)
+//      validate password(Regex)
         User user = userRepository.findByUserIdIgnoreCase(userSession.getUserId()).orElseThrow(() -> new ObjectNotFoundException(
                 "Invalid userId - " + userSession.getUserId(), HttpStatus.NOT_FOUND));
-        //check current password
+//      check current password
         if (!user.isPasswordCorrect(request.getPassword())) {
             throw new BadRequestException("Invalid current password", HttpStatus.BAD_REQUEST);
         }
-        //check new password with 5 old password
+//      check new password with 5 old password
         String oldPassword = user.getOldPassword();
-        if(oldPassword == null){
+        if (oldPassword == null) {
             oldPassword = user.getPassword();
-        } else{
+        } else {
             String[] oldPasswordList = oldPassword.split(PASSWORD_SEPARATOR);
-            for(String pass : oldPasswordList){
-                if(BCrypt.checkpw(request.getNewPassword(), pass)){
+            for (String pass : oldPasswordList) {
+                if (BCrypt.checkpw(request.getNewPassword(), pass)) {
                     throw new BadRequestException("New password matches with recent passwords ", HttpStatus.BAD_REQUEST);
                 }
             }
-            //Maintain old passwords
-            if(oldPasswordList.length < oldPasswordCount){
-                oldPassword = oldPassword +PASSWORD_SEPARATOR+user.getPassword();
+//          Maintain old passwords
+            if (oldPasswordList.length < oldPasswordCount) {
+                oldPassword = oldPassword + PASSWORD_SEPARATOR + user.getPassword();
             } else {
-                String updatedOldPassword="";
-                for(int i= 1; i<oldPasswordList.length; i++){
-                    if(updatedOldPassword.isEmpty()){
+                String updatedOldPassword = "";
+                for (int i= 1; i < oldPasswordList.length; i++) {
+                    if (updatedOldPassword.isEmpty()) {
                         updatedOldPassword = oldPasswordList[i];
-                    }else{
-                        updatedOldPassword = updatedOldPassword +PASSWORD_SEPARATOR+oldPasswordList[i];
+                    } else {
+                        updatedOldPassword = updatedOldPassword + PASSWORD_SEPARATOR+oldPasswordList[i];
                     }
                 }
-                oldPassword = updatedOldPassword +PASSWORD_SEPARATOR+user.getPassword();
+                oldPassword = updatedOldPassword + PASSWORD_SEPARATOR + user.getPassword();
             }
         }
-
-        //update new password
+//      update new password
         user.setOldPassword(oldPassword);
         user.setPassword(passwordEncoder, request.getNewPassword());
+        user.setUpdatedOn(LocalDate.now());
+        user.setUpdatedBy(userSession.getUserId());
+        userRepository.save(user);
+
+        response.setCode(HttpStatus.OK.value());
+        response.setStatus(HttpStatus.OK);
+        response.setMessage(RestMappingConstants.CHANGED_PASSWORD);
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    public ResponseEntity<Response> resetPassword(LoginRequest loginRequest) throws ObjectNotFoundException {
+        Response response = new Response();
+        UserSession userSession = userCredentialService.getUserSession();
+        User user = userRepository.findByUserIdIgnoreCase(loginRequest.getUserId()).orElseThrow(() -> new ObjectNotFoundException(
+                "Invalid userId - " + userSession.getUserId(), HttpStatus.NOT_FOUND));
+        user.setPassword(passwordEncoder, loginRequest.getPassword());
+        user.setIsTemporaryPassword("Y");
         user.setUpdatedOn(LocalDate.now());
         user.setUpdatedBy(userSession.getUserId());
         userRepository.save(user);
