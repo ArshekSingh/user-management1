@@ -267,6 +267,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         User user = userRepository.findByUserIdIgnoreCase(loginRequest.getUserId()).orElseThrow(() -> new ObjectNotFoundException(
                 "Invalid userId - " + userSession.getUserId(), HttpStatus.NOT_FOUND));
         user.setPassword(passwordEncoder, loginRequest.getPassword());
+        user.setIsTemporaryPassword("Y");
         user.setUpdatedOn(LocalDate.now());
         user.setUpdatedBy(userSession.getUserId());
         userRepository.save(user);

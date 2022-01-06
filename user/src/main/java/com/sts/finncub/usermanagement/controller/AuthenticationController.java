@@ -74,10 +74,9 @@ public class AuthenticationController {
     }
 
     @PostMapping("/api/resetPassword")
-    public ResponseEntity<Response> resetPassword(HttpServletRequest httpServletRequest, @RequestBody LoginRequest loginRequest)
+    public ResponseEntity<Response> resetPassword(@RequestBody LoginRequest loginRequest)
             throws ObjectNotFoundException {
         ResponseEntity<Response> responseEntity = authenticationService.resetPassword(loginRequest);
-        authenticationService.logout(httpServletRequest);
         return responseEntity;
     }
 }
