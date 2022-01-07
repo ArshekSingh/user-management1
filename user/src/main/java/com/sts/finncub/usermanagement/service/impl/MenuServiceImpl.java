@@ -122,7 +122,7 @@ public class MenuServiceImpl implements MenuService {
             MenuRoleMapping menuRoleMapping = new MenuRoleMapping();
             MenuRoleMappingPK menuRoleMappingPK = new MenuRoleMappingPK();
             menuRoleMappingPK.setMenuId(menuRoleMappingDto.getId());
-            menuRoleMappingPK.setRoleId(Long.valueOf(assignedRole.getLabel()));
+            menuRoleMappingPK.setRoleId(Long.valueOf(assignedRole.getId()));
             menuRoleMapping.setMenuRoleMappingPK(menuRoleMappingPK);
             menuRoleMapping.setInsertedOn(LocalDateTime.now());
             menuRoleMapping.setInsertedBy(userSession.getUserId());
