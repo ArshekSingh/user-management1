@@ -219,20 +219,20 @@ public class UserServiceImpl implements UserService {
         for (UserRoleMapping userRoleMapping : userRoleMappingList) {
             userRoleMappingDto.setUserId(userId);
             ServerSideDropDownDto userAssignedRoles = new ServerSideDropDownDto();
-            userAssignedRoles.setId(userRoleMapping.getRoleMaster().getId().toString());
+            userAssignedRoles.setId(userRoleMapping.getRoleMaster().getRoleId().toString());
             userAssignedRoles.setLabel(userRoleMapping.getRoleMaster().getRoleName());
             userAssignedRolesList.add(userAssignedRoles);
-            roleList.add(userRoleMapping.getRoleMaster().getId());
+            roleList.add(userRoleMapping.getRoleMaster().getRoleId());
         }
         List<RoleMaster> roleMasterList;
         if (roleList.isEmpty()) {
             roleMasterList = roleMasterRepository.findAll();
         } else {
-            roleMasterList = roleMasterRepository.findByIdNotIn(roleList);
+            roleMasterList = roleMasterRepository.findByRoleIdNotIn(roleList);
         }
         for (RoleMaster roleMaster : roleMasterList) {
             ServerSideDropDownDto userAvailableRoles = new ServerSideDropDownDto();
-            userAvailableRoles.setId(roleMaster.getId().toString());
+            userAvailableRoles.setId(roleMaster.getRoleId().toString());
             userAvailableRoles.setLabel(roleMaster.getRoleName());
             userAvailableRolesList.add(userAvailableRoles);
         }
@@ -292,9 +292,9 @@ public class UserServiceImpl implements UserService {
         }
         List<BranchMaster> branchMasterList;
         if (branchList.isEmpty()) {
-            branchMasterList = branchMasterRepository.findAllByOrgId(userSession.getOrganizationId());
+            branchMasterList = branchMasterRepository.findAllByOrgIdAndBranchType(userSession.getOrganizationId(), "BR");
         } else {
-            branchMasterList = branchMasterRepository.findByBranchIdNotInAndOrgId(branchList, userSession.getOrganizationId());
+            branchMasterList = branchMasterRepository.findByBranchIdNotInAndOrgIdAndBranchType(branchList, userSession.getOrganizationId(), "BR");
         }
         for(BranchMaster branchMaster : branchMasterList) {
             ServerSideDropDownDto userAvailableBranches = new ServerSideDropDownDto();
