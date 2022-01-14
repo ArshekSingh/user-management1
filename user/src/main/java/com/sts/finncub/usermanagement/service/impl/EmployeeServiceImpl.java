@@ -202,6 +202,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         // fetch employee detail list using organizationId
         request.setOrganizationId(userCredentialService.getUserSession().getOrganizationId());
         List<Employee> employeeList = employeeDao.fetchAllEmployeeDetails(request);
+        // fetch Employee details list count
+        Long employeeDetailsCount = employeeDao.findAllFilterEmployeeDetailsCount(request);
         if (CollectionUtils.isEmpty(employeeList)) {
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         }
@@ -222,6 +224,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         response.setStatus(HttpStatus.OK);
         response.setMessage("Transaction completed successfully.");
         response.setData(employeeDtoList);
+        response.setTotalCount(employeeDetailsCount);
         return response;
     }
 
