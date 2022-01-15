@@ -15,6 +15,7 @@ public class Response<T> {
 	private String message;
 	private HttpStatus status;
 	private T data;
+	private Long totalCount;
 
 	public Response(String message, HttpStatus status) {
 		this.message = message;

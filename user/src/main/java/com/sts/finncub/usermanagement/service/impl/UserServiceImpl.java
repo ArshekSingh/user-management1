@@ -60,6 +60,10 @@ public class UserServiceImpl implements UserService {
         Response response = new Response();
         List<UserDetailDto> userDetailDtos = new ArrayList<>();
         List<User> userList = userRepository.findAll();
+        Long count = 0l;
+        if (!CollectionUtils.isEmpty(userList)) {
+            count = Long.valueOf(userList.size());
+        }
         if (!CollectionUtils.isEmpty(userList)) {
             for (User user : userList) {
                 UserDetailDto userDetailDto = new UserDetailDto();
@@ -74,6 +78,7 @@ public class UserServiceImpl implements UserService {
             response.setCode(HttpStatus.OK.value());
             response.setStatus(HttpStatus.OK);
             response.setData(userDetailDtos);
+            response.setTotalCount(count);
             response.setMessage("Transaction completed successfully.");
         }
         return response;
@@ -282,7 +287,7 @@ public class UserServiceImpl implements UserService {
         List<ServerSideDropDownDto> userAssignedBranchesList = new ArrayList<>();
         List<ServerSideDropDownDto> userAvailableBranchesList = new ArrayList<>();
         List<Integer> branchList = new ArrayList<>();
-        for(UserBranchMapping userBranchMapping : userBranchMappingList) {
+        for (UserBranchMapping userBranchMapping : userBranchMappingList) {
             userBranchMappingDto.setUserId(userId);
             ServerSideDropDownDto userAssignedBranches = new ServerSideDropDownDto();
             userAssignedBranches.setId(userBranchMapping.getBranchMaster().getBranchId().toString());
@@ -296,7 +301,7 @@ public class UserServiceImpl implements UserService {
         } else {
             branchMasterList = branchMasterRepository.findByBranchIdNotInAndOrgIdAndBranchType(branchList, userSession.getOrganizationId(), "BR");
         }
-        for(BranchMaster branchMaster : branchMasterList) {
+        for (BranchMaster branchMaster : branchMasterList) {
             ServerSideDropDownDto userAvailableBranches = new ServerSideDropDownDto();
             userAvailableBranches.setId(branchMaster.getBranchId().toString());
             userAvailableBranches.setLabel(branchMaster.getBranchName());
@@ -320,7 +325,7 @@ public class UserServiceImpl implements UserService {
             userBranchMappingRepository.deleteAll(userBranchMappingList);
         }
         List<ServerSideDropDownDto> assignedBranchesList = userBranchMappingDto.getAssignedBranches();
-        for(ServerSideDropDownDto assignedBranches : assignedBranchesList) {
+        for (ServerSideDropDownDto assignedBranches : assignedBranchesList) {
             UserBranchMapping userBranchMapping = new UserBranchMapping();
             UserBranchMappingPK userBranchMappingPK = new UserBranchMappingPK();
             userBranchMappingPK.setUserId(userBranchMappingDto.getUserId());
