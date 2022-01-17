@@ -15,5 +15,5 @@ public interface EmployeeService {
 
     Response updateEmployeeDetails(EmployeeRequest request) throws BadRequestException;
 
-    Response employeePackageTransferCall(FilterRequest filterRequest) throws BadRequestException;
+    Response employeeTransferPackageCall(FilterRequest filterRequest) throws BadRequestException;
 }

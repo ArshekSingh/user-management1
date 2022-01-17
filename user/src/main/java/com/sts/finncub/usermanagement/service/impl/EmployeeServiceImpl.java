@@ -279,7 +279,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public Response employeePackageTransferCall(FilterRequest filterRequest) throws BadRequestException {
+    public Response employeeTransferPackageCall(FilterRequest filterRequest) throws BadRequestException {
         Response response = new Response();
         UserSession userSession = userCredentialService.getUserSession();
         if (filterRequest.getEmployeeId() == null) {
@@ -297,7 +297,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         if (filterRequest.getBasedLocationId() == null) {
             filterRequest.setBasedLocationId(0l);
         }
-        response = employeeDao.employeePackageTransferCall(filterRequest, userSession.getOrganizationId(), userSession.getUserId());
+        response = employeeDao.employeeTransferPackageCall(filterRequest, userSession.getOrganizationId(), userSession.getUserId());
         return response;
     }
 }

@@ -43,8 +43,8 @@ public class EmployeeController {
     }
 
     @PostMapping("/employeePackageTransfer")
-    public Response employeePackageTransferCall(@RequestBody FilterRequest request) throws BadRequestException {
-        return employeeService.employeePackageTransferCall(request);
+    public Response employeeTransferPackageCall(@RequestBody FilterRequest request) throws BadRequestException {
+        return employeeService.employeeTransferPackageCall(request);
     }
 
 }
