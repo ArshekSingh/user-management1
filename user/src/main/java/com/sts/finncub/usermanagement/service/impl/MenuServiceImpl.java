@@ -10,7 +10,7 @@ import com.sts.finncub.core.repository.RoleMasterRepository;
 import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.usermanagement.assembler.MenuResponseConverter;
 import com.sts.finncub.usermanagement.response.MenuResponse;
-import com.sts.finncub.usermanagement.response.Response;
+import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.service.MenuService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

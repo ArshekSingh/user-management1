@@ -1,6 +1,6 @@
 package com.sts.finncub.usermanagement.controller;
 
-import com.sts.finncub.usermanagement.response.Response;
+import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.response.UserProfileResponse;
 import com.sts.finncub.usermanagement.service.UserProfileService;
 import com.sts.finncub.core.constants.RestMappingConstants;

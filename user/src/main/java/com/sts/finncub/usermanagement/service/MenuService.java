@@ -3,7 +3,7 @@ package com.sts.finncub.usermanagement.service;
 import com.sts.finncub.core.dto.MenuRoleMappingDto;
 import com.sts.finncub.core.exception.ObjectNotFoundException;
 import com.sts.finncub.usermanagement.response.MenuResponse;
-import com.sts.finncub.usermanagement.response.Response;
+import com.sts.finncub.core.response.Response;
 
 public interface MenuService{
 

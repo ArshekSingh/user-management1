@@ -13,7 +13,7 @@ import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.request.EmployeeRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
-import com.sts.finncub.usermanagement.response.Response;
+import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.service.EmployeeService;
 import com.sts.finncub.usermanagement.service.UserService;
 import org.springframework.beans.BeanUtils;
@@ -275,6 +275,29 @@ public class EmployeeServiceImpl implements EmployeeService {
         } else {
             throw new BadRequestException("Invalid Request Parameters", HttpStatus.BAD_REQUEST);
         }
+        return response;
+    }
+
+    @Override
+    public Response employeePackageTransferCall(FilterRequest filterRequest) throws BadRequestException {
+        Response response = new Response();
+        UserSession userSession = userCredentialService.getUserSession();
+        if (filterRequest.getEmployeeId() == null) {
+            filterRequest.setEmployeeId(0l);
+        }
+        if (filterRequest.getEmplDesigType() == null) {
+            filterRequest.setEmplDesigType("");
+        }
+        if (filterRequest.getEmplDesigAreaId() == null) {
+            filterRequest.setEmplDesigAreaId(0l);
+        }
+        if (filterRequest.getIsManager() == null) {
+            filterRequest.setIsManager("");
+        }
+        if (filterRequest.getBasedLocationId() == null) {
+            filterRequest.setBasedLocationId(0l);
+        }
+        response = employeeDao.employeePackageTransferCall(filterRequest, userSession.getOrganizationId(), userSession.getUserId());
         return response;
     }
 }

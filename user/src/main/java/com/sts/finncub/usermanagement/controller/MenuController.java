@@ -3,7 +3,7 @@ package com.sts.finncub.usermanagement.controller;
 import com.sts.finncub.core.constants.RestMappingConstants;
 import com.sts.finncub.core.dto.MenuRoleMappingDto;
 import com.sts.finncub.usermanagement.response.MenuResponse;
-import com.sts.finncub.usermanagement.response.Response;
+import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.service.MenuService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
