@@ -7,7 +7,7 @@ import com.sts.finncub.core.exception.ObjectNotFoundException;
 import com.sts.finncub.usermanagement.request.LoginRequest;
 import com.sts.finncub.usermanagement.request.SignupRequest;
 import com.sts.finncub.usermanagement.response.LoginResponse;
-import com.sts.finncub.usermanagement.response.Response;
+import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.response.SignupResponse;
 import org.springframework.http.ResponseEntity;
 

@@ -12,7 +12,7 @@ import com.sts.finncub.usermanagement.assembler.SignUpConverter;
 import com.sts.finncub.usermanagement.request.LoginRequest;
 import com.sts.finncub.usermanagement.request.SignupRequest;
 import com.sts.finncub.usermanagement.response.LoginResponse;
-import com.sts.finncub.usermanagement.response.Response;
+import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.response.SignupResponse;
 import com.sts.finncub.usermanagement.service.AuthenticationService;
 import lombok.extern.slf4j.Slf4j;

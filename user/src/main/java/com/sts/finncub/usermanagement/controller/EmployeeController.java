@@ -3,7 +3,7 @@ package com.sts.finncub.usermanagement.controller;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.usermanagement.request.EmployeeRequest;
-import com.sts.finncub.usermanagement.response.Response;
+import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.service.EmployeeService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +40,11 @@ public class EmployeeController {
     @PostMapping("/update")
     public Response updateEmployeeDetails(@RequestBody EmployeeRequest request) throws BadRequestException {
         return employeeService.updateEmployeeDetails(request);
+    }
+
+    @PostMapping("/employeePackageTransfer")
+    public Response employeeTransferPackageCall(@RequestBody FilterRequest request) throws BadRequestException {
+        return employeeService.employeeTransferPackageCall(request);
     }
 
 }
