@@ -3,7 +3,7 @@ pipeline {
     environment {
     AWS_ACCOUNT_ID='305949049023'
     AWS_DEFAULT_REGION='ap-south-1'
-    app='account'
+    app='user'
     IMAGE_REPO_NAME='sastech-devops-repository'
     IMAGE_TAG='account-${ImageNumber}'
     REPOSITORY_URI = '${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}'
@@ -15,7 +15,7 @@ pipeline {
         stage('copy terraformfiles') {
             steps{
                 script {
-                    sh 'cp /opt/${app}-service/terraform/* .'
+                    sh 'cp /opt/${app}-management/terraform/* .'
                 }
             }
         }
@@ -28,28 +28,7 @@ pipeline {
                     sh 'terraform init'
                     sh 'terraform validate'
                     sh 'terraform plan -var="tag=${app}-${ImageNumber}"'
-                    sh 'terraform apply --auto-approve -var="tag=${app}-${ImageNumber}"'
-                }
-            }
-        }
-        stage('Approve Destroy-Service'){
-            steps {
-            milestone 100
-                script {
-                    env.DO_RELEASE = input(
-                        message: 'Destory?',
-                        ok: 'Apply',
-                        parameters: [
-                        choice(name: 'Promote', choices: ['Yes','No'].join('\n'), description: 'Destroy Service?')
-                        ]
-                    )
-                }
-            }
-        }
-        stage('Destroying Service'){
-            steps{
-                script {
-                    sh 'terraform destroy --auto-approve'
+                    sh 'terraform apply --auto-approve -var="tag=${app}-${ImageNumber} -replace=aws_ecs_service.user_ecs_service"'
                 }
             }
         }
