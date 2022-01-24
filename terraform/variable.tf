@@ -1,6 +1,6 @@
 variable "environment" {
     type= string
-    default= "dev"
+    default= "uat"
 }
 variable "aws_region" {
     type= string
@@ -12,19 +12,11 @@ variable "ecr_repo_name" {
 }
 variable "deployment_tag" {
     type= string
-    default="account-deployment"
-}
-variable "node_env" {
-    type= string
-    default=""
+    default="user-deployment"
 }
 variable "memory" {
     type= number
     default=512
-}
-variable "stage" {
-    type= string
-    default="test"
 }
 variable "cpu" {
     type= number
@@ -34,17 +26,13 @@ variable "port" {
     type= number
     default=8080
 }
-variable "service_name" {
-    type= string
-    default="account-service"
-}
 variable "service" {
     type= string
-    default="account"
+    default="user"
 }
 variable "api_health"{
     type=string
-    default="dev.finncub.com/account/actuator/health"
+    default="/account/actuator/health"
 }
 variable "vpc_id" {
     type= string
@@ -52,7 +40,7 @@ variable "vpc_id" {
 }
 variable "common_tags" {
     type= string
-    default="account-common"
+    default="user-common"
 }
 variable "containers_min" {
     type= number
@@ -80,5 +68,5 @@ variable "task_role"{
 }
 variable "tag"{ 
     type= string
-    default="account-latest"
+    default="user-latest"
 }
