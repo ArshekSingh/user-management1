@@ -16,12 +16,8 @@
     },
     "environment" : [
       {
-        "name" : "CHECKIT_ENV",
+        "name" : "env",
         "value" : "${environment}"
-      },
-      {
-        "name": "NODE_ENV",
-        "value": "${node_env}"
       }
     ],
     "portMappings": [
