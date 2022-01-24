@@ -44,7 +44,7 @@ resource "aws_ecs_service" "user_ecs_service" {
 
 resource "aws_lb_listener_rule" "service-path" {
   listener_arn = var.lb_listener_arn
-  priority     = 2
+  priority     = 9
 
   action {
     type             = "forward"
