@@ -28,7 +28,7 @@ variable "port" {
 }
 variable "service" {
     type= string
-    default="user"
+    default="user-management"
 }
 variable "api_health"{
     type=string
