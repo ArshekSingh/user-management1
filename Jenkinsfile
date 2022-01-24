@@ -35,7 +35,7 @@ pipeline {
                 script {
                 sh 'git submodule update --init --recursive'
                 sh 'mvn clean install'
-                sh 'cp /var/lib/jenkins/user-1.0.0.jar .'
+                sh 'cp /var/lib/jenkins/disbursement-1.0.0.jar .'
 				sh 'docker build -t sastech-devops-repository .'
                 }
             }
