@@ -1,4 +1,4 @@
-resource "aws_ecs_task_definition" "user-service" {
+resource "aws_ecs_task_definition" "user-management" {
   family                = "${var.environment}-${var.service}"
   container_definitions = data.template_file.user_task.rendered
   task_role_arn         = var.task_role
@@ -9,7 +9,7 @@ data "template_file" "user_task" {
   template = file("container-definition.json.tpl")
 
   vars = {
-    application        = "user-service"
+    application        = "user-management"
     environment        = var.environment
     service            = var.service
     ecr_repo_name      = var.ecr_repo_name
@@ -25,7 +25,7 @@ data "template_file" "user_task" {
 resource "aws_ecs_service" "user_ecs_service" {
   name            = "${var.environment}-${var.service}"
   cluster         = var.clustername
-  task_definition = aws_ecs_task_definition.user-service.arn
+  task_definition = aws_ecs_task_definition.user-management.arn
   # tags            = "${var.common_tags}"
   # propagate_tags  = "TASK_DEFINITION"
   desired_count = 1
