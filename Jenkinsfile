@@ -3,7 +3,7 @@ pipeline {
     environment {
     AWS_ACCOUNT_ID='305949049023'
     AWS_DEFAULT_REGION='ap-south-1'
-    app='account'
+    app='user'
     IMAGE_REPO_NAME='sastech-devops-repository'
     IMAGE_TAG='account-${BUILD_NUMBER}t'
     REPOSITORY_URI = '${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}'
@@ -18,7 +18,7 @@ pipeline {
 				checkout([$class: 'GitSCM', branches: [[name: '*/devops']],
 				doGenerateSubmoduleConfigurations: true, extensions: [],
 				submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'bitbucket_creds',
-				url: 'https://vinodkr1@bitbucket.org/finstudio/account-service.git']]])
+				url: 'https://vinodkr1@bitbucket.org/finstudio/user-management.git']]])
                 
             }
         }
@@ -35,7 +35,7 @@ pipeline {
                 script {
                 sh 'git submodule update --init --recursive'
                 sh 'mvn clean install'
-                sh 'cp /var/lib/jenkins/disbursement-1.0.0.jar .'
+                sh 'cp /var/lib/jenkins/user-1.0.0.jar .'
 				sh 'docker build -t sastech-devops-repository .'
                 }
             }
