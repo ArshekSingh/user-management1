@@ -32,7 +32,7 @@ variable "service" {
 }
 variable "api_health"{
     type=string
-    default="/account/actuator/health"
+    default="/user/actuator/health"
 }
 variable "vpc_id" {
     type= string
