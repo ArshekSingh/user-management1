@@ -3,7 +3,7 @@ pipeline {
     environment {
     AWS_ACCOUNT_ID='305949049023'
     AWS_DEFAULT_REGION='ap-south-1'
-    app='user'
+    app='usermanagement'
     IMAGE_REPO_NAME='sastech-devops-repository'
     IMAGE_TAG='account-${ImageNumber}'
     REPOSITORY_URI = '${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}'
