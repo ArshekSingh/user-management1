@@ -30,6 +30,10 @@ variable "service" {
     type= string
     default="usermanagement"
 }
+variable "servicetg" {
+    type= string
+    default="ums"
+}
 variable "api_health"{
     type=string
     default="/user/actuator/health"
