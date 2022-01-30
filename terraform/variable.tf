@@ -36,7 +36,7 @@ variable "servicetg" {
 }
 variable "api_health"{
     type=string
-    default="/usermanagement/actuator/health"
+    default="/ums/actuator/health"
 }
 variable "vpc_id" {
     type= string
