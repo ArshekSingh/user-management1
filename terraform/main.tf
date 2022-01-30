@@ -1,15 +1,15 @@
-resource "aws_ecs_task_definition" "user-management" {
+resource "aws_ecs_task_definition" "usermanagement-service" {
   family                = "${var.environment}-${var.service}"
-  container_definitions = data.template_file.user_task.rendered
+  container_definitions = data.template_file.usermanagement_task.rendered
   task_role_arn         = var.task_role
   # tags                  = var.common_tags
 }
 
-data "template_file" "user_task" {
+data "template_file" "usermanagement_task" {
   template = file("container-definition.json.tpl")
 
   vars = {
-    application        = "user-management"
+    application        = "usermanagement-service"
     environment        = var.environment
     service            = var.service
     ecr_repo_name      = var.ecr_repo_name
@@ -22,13 +22,22 @@ data "template_file" "user_task" {
     name               = var.service
   }
 }
-resource "aws_ecs_service" "user_ecs_service" {
+resource "aws_ecs_service" "usermanagement_ecs_service" {
   name            = "${var.environment}-${var.service}"
   cluster         = var.clustername
-  task_definition = aws_ecs_task_definition.user-management.arn
+  task_definition = aws_ecs_task_definition.usermanagement-service.arn
   # tags            = "${var.common_tags}"
   # propagate_tags  = "TASK_DEFINITION"
   desired_count = 1
+  ordered_placement_strategy {
+    type  = "spread"
+    field = "attribute:ecs.availability-zone"
+  }
+ lifecycle {
+   ignore_changes = [
+      capacity_provider_strategy
+    ]
+  }
 
   load_balancer {
     target_group_arn = aws_lb_target_group.service-target-group.arn
@@ -36,12 +45,7 @@ resource "aws_ecs_service" "user_ecs_service" {
     container_port   = var.port
   }
 
-  ordered_placement_strategy {
-    type  = "spread"
-    field = "attribute:ecs.availability-zone"
-  }
 }
-
 resource "aws_lb_listener_rule" "service-path" {
   listener_arn = var.lb_listener_arn
   priority     = 9
@@ -73,13 +77,13 @@ resource "aws_lb_target_group" "service-target-group" {
 
   health_check {
     path     = "${var.api_health}"
-    interval = 60
-    timeout  = 10
+    interval = 70
+    timeout  = 60
   }
 }
 resource "aws_appautoscaling_target" "target" {
   service_namespace  = "ecs"
-  resource_id        = "service/${var.clustername}/${aws_ecs_service.user_ecs_service.name}"
+  resource_id        = "service/${var.clustername}/${aws_ecs_service.usermanagement_ecs_service.name}"
   role_arn           = var.service_role
   scalable_dimension = "ecs:service:DesiredCount"
   min_capacity       = var.containers_min
@@ -88,7 +92,7 @@ resource "aws_appautoscaling_target" "target" {
 
 resource "aws_appautoscaling_policy" "scale_up" {
   name               = "${var.environment}-${var.service}-scale-up"
-  resource_id        = "service/${var.clustername}/${aws_ecs_service.user_ecs_service.name}"
+  resource_id        = "service/${var.clustername}/${aws_ecs_service.usermanagement_ecs_service.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
 
@@ -110,7 +114,7 @@ resource "aws_appautoscaling_policy" "scale_up" {
 
 resource "aws_appautoscaling_policy" "scale_down" {
   name               = "${var.environment}-${var.service}-scale-down"
-  resource_id        = "service/${var.clustername}/${aws_ecs_service.user_ecs_service.name}"
+  resource_id        = "service/${var.clustername}/${aws_ecs_service.usermanagement_ecs_service.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
 
@@ -144,7 +148,7 @@ resource "aws_cloudwatch_metric_alarm" "api_service_cpu_high" {
 
   dimensions = {
     ClusterName = var.clustername
-    ServiceName = aws_ecs_service.user_ecs_service.name
+    ServiceName = aws_ecs_service.usermanagement_ecs_service.name
   }
 
   alarm_actions = [
@@ -166,7 +170,7 @@ resource "aws_cloudwatch_metric_alarm" "api_service_cpu_low" {
 
   dimensions = {
     ClusterName = var.clustername
-    ServiceName = aws_ecs_service.user_ecs_service.name
+    ServiceName = aws_ecs_service.usermanagement_ecs_service.name
   }
 
   alarm_actions = [
