@@ -72,5 +72,5 @@ variable "task_role"{
 }
 variable "tag"{ 
     type= string
-    default="user-latest"
+    default="usermanagement-latest"
 }
