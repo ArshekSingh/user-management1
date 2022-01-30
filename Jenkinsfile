@@ -3,9 +3,9 @@ pipeline {
     environment {
     AWS_ACCOUNT_ID='305949049023'
     AWS_DEFAULT_REGION='ap-south-1'
-    app='user'
+    app='usermanagement'
     IMAGE_REPO_NAME='sastech-devops-repository'
-    IMAGE_TAG='account-${BUILD_NUMBER}t'
+    IMAGE_TAG='account-${BUILD_NUMBER}'
     REPOSITORY_URI = '${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}'
     AWS_ACCESS_KEY_ID     = credentials('access_key')
     AWS_SECRET_ACCESS_KEY = credentials('secret_key')
@@ -15,7 +15,7 @@ pipeline {
 
         stage('Clone Repo') {
             steps {
-				checkout([$class: 'GitSCM', branches: [[name: '*/devops']],
+				checkout([$class: 'GitSCM', branches: [[name: '*/develop']],
 				doGenerateSubmoduleConfigurations: true, extensions: [],
 				submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'bitbucket_creds',
 				url: 'https://vinodkr1@bitbucket.org/finstudio/user-management.git']]])
