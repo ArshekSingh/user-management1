@@ -12,7 +12,7 @@ variable "ecr_repo_name" {
 }
 variable "deployment_tag" {
     type= string
-    default="user-deployment"
+    default="usermanagement-deployment"
 }
 variable "memory" {
     type= number
@@ -36,7 +36,7 @@ variable "servicetg" {
 }
 variable "api_health"{
     type=string
-    default="/user/actuator/health"
+    default="/usermanagement/actuator/health"
 }
 variable "vpc_id" {
     type= string
@@ -44,7 +44,7 @@ variable "vpc_id" {
 }
 variable "common_tags" {
     type= string
-    default="user-common"
+    default="usermanagement-common"
 }
 variable "containers_min" {
     type= number
@@ -52,7 +52,7 @@ variable "containers_min" {
 }
 variable "containers_max" {
     type= number
-    default=3
+    default=2
 }
 variable "clustername" {
     type= string
