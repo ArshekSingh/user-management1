@@ -3,7 +3,7 @@ pipeline {
     environment {
     AWS_ACCOUNT_ID='305949049023'
     AWS_DEFAULT_REGION='ap-south-1'
-    app='usermanagement'
+    app='management'
     IMAGE_REPO_NAME='sastech-devops-repository'
     IMAGE_TAG='account-${BUILD_NUMBER}'
     REPOSITORY_URI = '${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}'
@@ -43,8 +43,8 @@ pipeline {
 		stage('Pushing to ECR') {
             steps{
                 script {
-                    sh 'docker tag sastech-devops-repository:latest 305949049023.dkr.ecr.ap-south-1.amazonaws.com/sastech-devops-repository:${app}-${BUILD_NUMBER}'
-                    sh 'docker push 305949049023.dkr.ecr.ap-south-1.amazonaws.com/sastech-devops-repository:${app}-${BUILD_NUMBER}'
+                    sh 'docker tag sastech-devops-repository:latest 305949049023.dkr.ecr.ap-south-1.amazonaws.com/sastech-devops-repository:${app}_${BUILD_NUMBER}'
+                    sh 'docker push 305949049023.dkr.ecr.ap-south-1.amazonaws.com/sastech-devops-repository:${app}_${BUILD_NUMBER}'
                 }
             }
         }
