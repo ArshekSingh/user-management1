@@ -57,7 +57,7 @@ resource "aws_lb_listener_rule" "service-path" {
   condition {
     path_pattern {
       values = [
-        "/${var.service}/*"
+        "/${var.servicetg}/*"
       ]
     }
   }
