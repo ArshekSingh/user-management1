@@ -15,7 +15,7 @@ pipeline {
 
         stage('Clone Repo') {
             steps {
-				checkout([$class: 'GitSCM', branches: [[name: '*/develop']],
+				checkout([$class: 'GitSCM', branches: [[name: '*/devops']],
 				doGenerateSubmoduleConfigurations: true, extensions: [],
 				submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'bitbucket_creds',
 				url: 'https://vinodkr1@bitbucket.org/finstudio/user-management.git']]])
