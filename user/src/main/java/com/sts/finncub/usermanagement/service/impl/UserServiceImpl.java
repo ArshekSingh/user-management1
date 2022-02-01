@@ -7,10 +7,10 @@ import com.sts.finncub.core.dto.UserRoleMappingDto;
 import com.sts.finncub.core.entity.*;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.*;
+import com.sts.finncub.core.response.Response;
 import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.request.UserRequest;
-import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -156,8 +156,7 @@ public class UserServiceImpl implements UserService {
     }
 
     private void validateRequest(UserRequest request) throws BadRequestException {
-        if (request == null || !StringUtils.hasText(request.getName())
-                || !StringUtils.hasText(request.getEmail()) || request.getType() == null ||
+        if (request == null || !StringUtils.hasText(request.getName()) || request.getType() == null ||
                 !StringUtils.hasText(request.getPassword())) {
             throw new BadRequestException("Invalid Request Parameters", HttpStatus.BAD_REQUEST);
         }
