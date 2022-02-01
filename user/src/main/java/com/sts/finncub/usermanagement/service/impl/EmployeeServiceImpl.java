@@ -9,11 +9,11 @@ import com.sts.finncub.core.repository.EmployeeRepository;
 import com.sts.finncub.core.repository.UserRepository;
 import com.sts.finncub.core.repository.dao.EmployeeDao;
 import com.sts.finncub.core.request.FilterRequest;
+import com.sts.finncub.core.response.Response;
 import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.request.EmployeeRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
-import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.service.EmployeeService;
 import com.sts.finncub.usermanagement.service.UserService;
 import org.springframework.beans.BeanUtils;
@@ -180,18 +180,9 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     private void validateRequest(EmployeeRequest request) throws BadRequestException {
         // validate employee add / update request
-        if (request == null || !StringUtils.hasText(request.getFirstName()) || !StringUtils.hasText(request.getDob())
-                || !StringUtils.hasText(request.getGender()) || !StringUtils.hasText(request.getStatus()) ||
-                !StringUtils.hasText(request.getTitle()) || !StringUtils.hasText(request.getFatherName())
-                || !StringUtils.hasText(request.getLanguageKnown()) || request.getPersonalMob() == null
-                || !StringUtils.hasText(request.getCurrentAdd()) || !StringUtils.hasText(request.getCurrentCity())
-                || !StringUtils.hasText(request.getCurrentState()) || request.getCurrentPincode() == null
-                || !StringUtils.hasText(request.getPermanentAdd()) || !StringUtils.hasText(request.getPermanentCity())
-                || !StringUtils.hasText(request.getPermanentState()) || request.getPermanentPincode() == null
-                || !StringUtils.hasText(request.getDesignationType()) || request.getDesignationId() == null
-                || request.getDepartmentId() == null || request.getSubDepartmentId() == null) {
+        if (request == null || !StringUtils.hasText(request.getEmployeeCode()) || !StringUtils.hasText(request.getStatus()) ||
+                !StringUtils.hasText(request.getFirstName()) || !StringUtils.hasText(request.getGender())) {
             throw new BadRequestException("Invalid Request", HttpStatus.BAD_REQUEST);
-
         }
     }
 
