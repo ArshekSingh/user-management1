@@ -17,8 +17,8 @@ pipeline {
             steps {
 				checkout([$class: 'GitSCM', branches: [[name: '*/devops']],
 				doGenerateSubmoduleConfigurations: true, extensions: [],
-				submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'bitbucket_creds',
-				url: 'https://vinodkr1@bitbucket.org/finstudio/user-management.git']]])
+				submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'BItBucket_devops_admin',
+				url: 'https://devops_admin_sas@bitbucket.org/finstudio/user-management.git']]])
                 
             }
         }
@@ -59,7 +59,7 @@ pipeline {
                     [$class: 'RequesterRecipientProvider']
                     ],
                     replyTo: '$DEFAULT_REPLYTO',
-                    to: 'ranjith5076457@gmail.com'
+                    to: 'finncub.dev@sastechstudio.com'
                 }
                 if (currentBuild.currentResult == 'FAILURE') {
                     emailext subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - FAILED!!!',
@@ -68,7 +68,7 @@ pipeline {
                     [$class: 'RequesterRecipientProvider']
                     ],
                     replyTo: '$DEFAULT_REPLYTO',
-                    to: 'ranjith5076457@gmail.com'
+                    to: 'finncub.dev@sastechstudio.com'
                 }
             }
         }
