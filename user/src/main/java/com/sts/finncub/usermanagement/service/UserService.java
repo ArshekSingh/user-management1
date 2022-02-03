@@ -9,7 +9,7 @@ import com.sts.finncub.core.response.Response;
 
 public interface UserService {
 
-    Response getAllUserDetails(FilterRequest request) throws BadRequestException;
+    Response getAllUserDetailsByFilterRequest(FilterRequest request) throws BadRequestException;
 
     Response getUserDetail(String userId) throws BadRequestException;
 

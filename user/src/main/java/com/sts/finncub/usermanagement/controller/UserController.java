@@ -4,8 +4,8 @@ import com.sts.finncub.core.dto.UserBranchMappingDto;
 import com.sts.finncub.core.dto.UserRoleMappingDto;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.request.FilterRequest;
-import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.core.response.Response;
+import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -22,8 +22,8 @@ public class UserController {
     }
 
     @PostMapping("/fetchAllUsers")
-    public Response getAllUserDetails(@RequestBody FilterRequest request) throws BadRequestException {
-        return userService.getAllUserDetails(request);
+    public Response getAllUserDetailsByFilter(@RequestBody FilterRequest request) throws BadRequestException {
+        return userService.getAllUserDetailsByFilterRequest(request);
     }
 
     @GetMapping("/getUserDetail/{userId}")

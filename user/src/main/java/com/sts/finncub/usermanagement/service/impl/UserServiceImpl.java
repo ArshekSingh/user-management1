@@ -60,11 +60,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Response getAllUserDetails(FilterRequest request) throws BadRequestException {
+    public Response getAllUserDetailsByFilterRequest(FilterRequest request) throws BadRequestException {
         Response response = new Response();
         List<UserDetailDto> userDetailDtos = new ArrayList<>();
-
-        List<User> userList = userDao.getUserDetailsByFilterRequest(request);
+        List<User> userList = userDao.getAllUserDetailsByFilterRequest(request);
         Long count = 0l;
         if (!CollectionUtils.isEmpty(userList)) {
             count = Long.valueOf(userList.size());
