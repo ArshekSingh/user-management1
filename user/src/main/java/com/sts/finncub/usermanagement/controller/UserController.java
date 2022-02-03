@@ -3,6 +3,7 @@ package com.sts.finncub.usermanagement.controller;
 import com.sts.finncub.core.dto.UserBranchMappingDto;
 import com.sts.finncub.core.dto.UserRoleMappingDto;
 import com.sts.finncub.core.exception.BadRequestException;
+import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.service.UserService;
@@ -20,9 +21,9 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping("/fetchAllUsers")
-    public Response getAllUserDetails() throws BadRequestException {
-        return userService.getAllUserDetails();
+    @PostMapping("/fetchAllUsers")
+    public Response getAllUserDetails(@RequestBody FilterRequest request) throws BadRequestException {
+        return userService.getAllUserDetails(request);
     }
 
     @GetMapping("/getUserDetail/{userId}")

@@ -7,6 +7,8 @@ import com.sts.finncub.core.dto.UserRoleMappingDto;
 import com.sts.finncub.core.entity.*;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.*;
+import com.sts.finncub.core.repository.dao.UserDao;
+import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.core.util.DateTimeUtil;
@@ -39,12 +41,13 @@ public class UserServiceImpl implements UserService {
     private final RoleMasterRepository roleMasterRepository;
     private final UserBranchMappingRepository userBranchMappingRepository;
     private final BranchMasterRepository branchMasterRepository;
+    private final UserDao userDao;
 
     @Autowired
     public UserServiceImpl(UserRepository userRepository, UserCredentialService userCredentialService
             , BCryptPasswordEncoder passwordEncoder, UserOrganizationMappingRepository userOrganizationMappingRepository,
                            UserRoleMappingRepository userRoleMappingRepository, RoleMasterRepository roleMasterRepository,
-                           UserBranchMappingRepository userBranchMappingRepository, BranchMasterRepository branchMasterRepository) {
+                           UserBranchMappingRepository userBranchMappingRepository, BranchMasterRepository branchMasterRepository, UserDao userDao) {
         this.userRepository = userRepository;
         this.userCredentialService = userCredentialService;
         this.passwordEncoder = passwordEncoder;
@@ -53,13 +56,15 @@ public class UserServiceImpl implements UserService {
         this.roleMasterRepository = roleMasterRepository;
         this.userBranchMappingRepository = userBranchMappingRepository;
         this.branchMasterRepository = branchMasterRepository;
+        this.userDao = userDao;
     }
 
     @Override
-    public Response getAllUserDetails() {
+    public Response getAllUserDetails(FilterRequest request) throws BadRequestException {
         Response response = new Response();
         List<UserDetailDto> userDetailDtos = new ArrayList<>();
-        List<User> userList = userRepository.findAll();
+
+        List<User> userList = userDao.getUserDetailsByFilterRequest(request);
         Long count = 0l;
         if (!CollectionUtils.isEmpty(userList)) {
             count = Long.valueOf(userList.size());
