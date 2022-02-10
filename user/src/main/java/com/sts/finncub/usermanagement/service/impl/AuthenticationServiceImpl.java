@@ -111,7 +111,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     if (userBranchMapping.getBranchMaster().getParentId() != null) {
                         parentIdList.add(userBranchMapping.getBranchMaster().getParentId());
                     }
-                    branchIdMap.put(userBranchMapping.getBranchMaster().getBranchId(), userBranchMapping.getBranchMaster().getBranchCode()+"-"+userBranchMapping.getBranchMaster().getBranchName());
+                    branchIdMap.put(userBranchMapping.getBranchMaster().getBranchId(), userBranchMapping.getBranchMaster().getBranchCode()+" - "+userBranchMapping.getBranchMaster().getBranchName());
                 }
             }
             if (!CollectionUtils.isEmpty(parentIdList)) {

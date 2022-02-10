@@ -149,7 +149,10 @@ public class UserServiceImpl implements UserService {
         }
         //Save in user branch mapping if branch Id is present
         try{
-            saveUserBranchMapping(request.getUserId(),request.getBranchId(), userSession);
+            //TODO Need to handle different designation type as well
+            if("B".equalsIgnoreCase(request.getDesignationType())){
+                saveUserBranchMapping(request.getUserId(),request.getBranchId(), userSession);
+            }
         } catch (Exception exception){
             log.debug("Error while mapping user - {}, to branch - {}", request.getUserId(), request.getBranchId());
             log.error(exception.getMessage());
@@ -208,11 +211,18 @@ public class UserServiceImpl implements UserService {
     }
 
     private void updateUser(UserRequest request, Response response,
-                            UserSession userSession, Optional<User> user) throws BadRequestException {
+                            UserSession userSession, Optional<User> user) {
         User userDetail = user.get();
         userDetail.setName(request.getName());
         userDetail.setMobileNumber(request.getMobileNumber());
         userDetail.setType(request.getType());
+        if (!userDetail.getIsActive().equalsIgnoreCase(request.getIsActive())) {
+            if ("Y".equalsIgnoreCase(request.getIsActive())) {
+                userDetail.setDisabledOn(null);
+            } else {
+                userDetail.setDisabledOn(LocalDate.now());
+            }
+        }
         userDetail.setIsActive(request.getIsActive());
         userDetail.setUpdatedBy(userSession.getUserId());
         userDetail.setUpdatedOn(LocalDate.now());

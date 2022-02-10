@@ -95,6 +95,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         request.setIsActive("Y");
         request.setEmployeeCreate(true);
         request.setBranchId(employeeRequest.getBranchId());
+        request.setDesignationType(employeeRequest.getDesignationType());
         userService.addUser(request);
 
     }
