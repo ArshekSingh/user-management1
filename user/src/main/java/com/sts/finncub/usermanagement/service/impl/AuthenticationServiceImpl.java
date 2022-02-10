@@ -69,10 +69,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         LoginResponse loginResponse = new LoginResponse();
         log.info("Request received for userId -" + loginRequest.getUserId());
         User user = userRepository
-                .findByUserIdIgnoreCase(loginRequest.getUserId())
-                .orElseThrow(() -> new ObjectNotFoundException(
-                        "Invalid userId - " + loginRequest.getUserId(),
-                        HttpStatus.NOT_FOUND));
+                .findByUserIdIgnoreCase(loginRequest.getUserId()).orElseThrow(()
+                        -> new ObjectNotFoundException("Invalid userId - " + loginRequest.getUserId(), HttpStatus.NOT_FOUND));
+        if ("N".equalsIgnoreCase(user.getIsActive())) {
+            throw new BadRequestException("User is not active.", HttpStatus.BAD_REQUEST);
+        }
         if (!user.isPasswordCorrect(loginRequest.getPassword())) {
             throw new BadRequestException("Invalid password", HttpStatus.BAD_REQUEST);
         }
@@ -98,6 +99,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             Map<Integer, String> divisionMap = new HashMap<>();
             List<BranchMaster> divisionList;
             userSession.setEmail(user.getEmail());
+            userSession.setIsTemporaryPassword(user.getIsActive());
             if (user.getUserRoleMapping() != null && !user.getUserRoleMapping().isEmpty()) {
                 userSession.setRoles(user.getUserRoleMapping()
                         .stream()
@@ -109,13 +111,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     if (userBranchMapping.getBranchMaster().getParentId() != null) {
                         parentIdList.add(userBranchMapping.getBranchMaster().getParentId());
                     }
-                    branchIdMap.put(userBranchMapping.getBranchMaster().getBranchId(), StringUtils.hasText(userBranchMapping.getBranchMaster().getBranchCode()) ? userBranchMapping.getBranchMaster().getBranchCode() : "");
+                    branchIdMap.put(userBranchMapping.getBranchMaster().getBranchId(), userBranchMapping.getBranchMaster().getBranchCode()+"-"+userBranchMapping.getBranchMaster().getBranchName());
                 }
             }
             if (!CollectionUtils.isEmpty(parentIdList)) {
                 divisionList = branchMasterRepository.findByBranchIdIn(parentIdList);
                 for (BranchMaster branchMaster : divisionList) {
-                    divisionMap.put(branchMaster.getBranchId(), StringUtils.hasText(branchMaster.getBranchCode()) ? branchMaster.getBranchCode() : "");
+                    divisionMap.put(branchMaster.getBranchId(), branchMaster.getBranchCode()+"-"+branchMaster.getBranchName());
                 }
             }
             userSession.setName(user.getName());
@@ -250,6 +252,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 //      update new password
         user.setOldPassword(oldPassword);
         user.setPassword(passwordEncoder, request.getNewPassword());
+        user.setIsTemporaryPassword("N");
         user.setUpdatedOn(LocalDate.now());
         user.setUpdatedBy(userSession.getUserId());
         userRepository.save(user);

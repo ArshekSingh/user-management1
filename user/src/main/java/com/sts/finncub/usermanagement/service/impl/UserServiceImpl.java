@@ -140,7 +140,20 @@ public class UserServiceImpl implements UserService {
         user.setIsActive(request.getIsActive());
         user.setIsFrozenBookFlag('N');
         userRepository.save(user);
-        saveValueInUserOrganizationMapping(request.getUserId(), userSession.getOrganizationId(), "Y");
+        //Save in user organization
+        try{
+            saveValueInUserOrganizationMapping(request.getUserId(), userSession.getOrganizationId(), "Y");
+        }catch (Exception exception){
+            log.debug("Error while mapping user - {}, to organization - {}", request.getUserId(), userSession.getOrganizationId());
+            log.error(exception.getMessage());
+        }
+        //Save in user branch mapping if branch Id is present
+        try{
+            saveUserBranchMapping(request.getUserId(),request.getBranchId(), userSession);
+        } catch (Exception exception){
+            log.debug("Error while mapping user - {}, to branch - {}", request.getUserId(), request.getBranchId());
+            log.error(exception.getMessage());
+        }
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);
         response.setMessage("Transaction completed successfully.");
@@ -157,6 +170,18 @@ public class UserServiceImpl implements UserService {
         userOrganizationMapping.setInsertedOn(LocalDateTime.now());
         userOrganizationMapping.setInsertedBy(userCredentialService.getUserSession().getUserId());
         userOrganizationMappingRepository.save(userOrganizationMapping);
+    }
+
+    private void saveUserBranchMapping(String userId, Long branchId, UserSession userSession) {
+        UserBranchMapping userBranchMapping = new UserBranchMapping();
+        UserBranchMappingPK userBranchMappingPK = new UserBranchMappingPK();
+        userBranchMappingPK.setUserId(userId);
+        userBranchMappingPK.setBranchId(branchId);
+        userBranchMappingPK.setOrgId(userSession.getOrganizationId());
+        userBranchMapping.setUserBranchMappingPK(userBranchMappingPK);
+        userBranchMapping.setInsertedOn(LocalDateTime.now());
+        userBranchMapping.setInsertedBy(userSession.getUserId());
+        userBranchMappingRepository.save(userBranchMapping);
     }
 
     private void validateRequest(UserRequest request) throws BadRequestException {

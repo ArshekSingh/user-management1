@@ -16,4 +16,5 @@ public class UserRequest {
     private String mobileNumber;
     private String passwordResetDate;
     private boolean employeeCreate;
+    private Long branchId;
 }
