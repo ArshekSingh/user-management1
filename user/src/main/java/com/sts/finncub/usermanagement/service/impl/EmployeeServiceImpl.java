@@ -2,7 +2,6 @@ package com.sts.finncub.usermanagement.service.impl;
 
 import com.sts.finncub.core.dto.EmployeeDto;
 import com.sts.finncub.core.entity.Employee;
-import com.sts.finncub.core.entity.EmployeePK;
 import com.sts.finncub.core.entity.UserSession;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.EmployeeRepository;
@@ -66,14 +65,12 @@ public class EmployeeServiceImpl implements EmployeeService {
         UserSession userSession = userCredentialService.getUserSession();
         validateRequest(request);
         Employee employee = new Employee();
-        EmployeePK employeePK = new EmployeePK();
         String userEmployeeId = userRepository.getGeneratedUserEmployeeId
                 (userCredentialService.getUserSession().getOrganizationId(), "EMP");
         final String userId = userEmployeeId.split(",")[0];
         final String employeeId = userEmployeeId.split(",")[1];
-        employeePK.setOrganizationId(userSession.getOrganizationId());
-        employeePK.setEmployeeCode(employeeId);
-        employee.setEmployeePK(employeePK);
+        employee.setOrganizationId(userSession.getOrganizationId());
+        employee.setEmployeeCode(employeeId);
         // save value in employee master
         saveValueEmployeeMaster(request, employee, request.getEmployeeId());
         // create  employee user details in user master
@@ -182,7 +179,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     private void validateRequest(EmployeeRequest request) throws BadRequestException {
         // validate employee add / update request
-        if (request == null || !StringUtils.hasText(request.getEmployeeCode()) || !StringUtils.hasText(request.getStatus()) ||
+        if (request == null || !StringUtils.hasText(request.getStatus()) ||
                 !StringUtils.hasText(request.getFirstName()) || !StringUtils.hasText(request.getGender())) {
             throw new BadRequestException("Invalid Request", HttpStatus.BAD_REQUEST);
         }
@@ -208,9 +205,6 @@ public class EmployeeServiceImpl implements EmployeeService {
             employeeDto.setRelievingDate(DateTimeUtil.dateToString(employee.getRelievingDate()));
             employeeDto.setPromotionDate(DateTimeUtil.dateToString(employee.getPromotionDate()));
             employeeDto.setBranchJoinDate(DateTimeUtil.dateToString(employee.getBranchJoinDate()));
-            employeeDto.setEmployeeCode(employee.getEmployeePK().getEmployeeCode());
-            employeeDto.setInsertedOn(DateTimeUtil.dateTimeToString(employee.getInsertedOn()));
-            employeeDto.setUpdatedOn(DateTimeUtil.dateTimeToString(employee.getUpdatedOn()));
             employeeDtoList.add(employeeDto);
         }
         response.setCode(HttpStatus.OK.value());
@@ -226,8 +220,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         Response response = new Response();
         EmployeeDto employeeDto = new EmployeeDto();
         // fetch employee detail using organizationId and employeeId
-        Employee employee = employeeRepository.findByEmployeePK_OrganizationIdAndEmployeeId
-                (userCredentialService.getUserSession().getOrganizationId(), employeeId);
+        Employee employee = employeeRepository.findByOrganizationIdAndEmployeeId(
+                userCredentialService.getUserSession().getOrganizationId(), employeeId);
         if (employee == null) {
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         }
@@ -238,9 +232,6 @@ public class EmployeeServiceImpl implements EmployeeService {
         employeeDto.setRelievingDate(DateTimeUtil.dateToString(employee.getRelievingDate()));
         employeeDto.setPromotionDate(DateTimeUtil.dateToString(employee.getPromotionDate()));
         employeeDto.setBranchJoinDate(DateTimeUtil.dateToString(employee.getBranchJoinDate()));
-        employeeDto.setInsertedOn(DateTimeUtil.dateTimeToString(employee.getInsertedOn()));
-        employeeDto.setUpdatedOn(DateTimeUtil.dateTimeToString(employee.getUpdatedOn()));
-        employeeDto.setEmployeeCode(employee.getEmployeePK().getEmployeeCode());
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);
         response.setMessage("Transaction completed successfully.");
@@ -254,8 +245,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         validateRequest(request);
         // fetch employee detail using organizationId and employeeId
         if (request.getEmployeeId() != null) {
-            Employee employee = employeeRepository.findByEmployeePK_OrganizationIdAndEmployeeId
-                    (userCredentialService.getUserSession().getOrganizationId(), request.getEmployeeId());
+            Employee employee = employeeRepository.findByOrganizationIdAndEmployeeId(
+                    userCredentialService.getUserSession().getOrganizationId(), request.getEmployeeId());
             if (employee != null) {
                 // save value in employee master table
                 saveValueEmployeeMaster(request, employee, request.getEmployeeId());
