@@ -41,9 +41,9 @@ public class UserController {
         return userService.updateUserDetails(request);
     }
 
-    @GetMapping(value = "/{userSearchableKey}")
-    public Response getUserSearchable(@PathVariable String userSearchableKey) {
-        return userService.getUserSearchable(userSearchableKey);
+    @GetMapping(value = "/{userSearchableKey}/{userType}")
+    public Response getUserSearchable(@PathVariable String userSearchableKey, @PathVariable String userType) {
+        return userService.getUserSearchable(userSearchableKey, userType);
     }
 
     @GetMapping(value = "getUserRoleList/{userId}")
