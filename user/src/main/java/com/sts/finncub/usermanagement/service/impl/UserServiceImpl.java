@@ -64,9 +64,9 @@ public class UserServiceImpl implements UserService {
         Response response = new Response();
         List<UserDetailDto> userDetailDtos = new ArrayList<>();
         List<User> userList = userDao.getAllUserDetailsByFilterRequest(request);
-        Long count = 0l;
+        long count = 0L;
         if (!CollectionUtils.isEmpty(userList)) {
-            count = Long.valueOf(userList.size());
+            count = userList.size();
         }
         if (!CollectionUtils.isEmpty(userList)) {
             for (User user : userList) {
@@ -233,10 +233,16 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Response getUserSearchable(String userSearchableKey) {
+    public Response getUserSearchable(String userSearchableKey, String userType) {
         Response response = new Response();
         List<ServerSideDropDownDto> serverSideDropDownDtoList = new ArrayList<>();
-        List<User> userList = userRepository.findByUserIdContainingIgnoreCaseOrNameContainingIgnoreCase(userSearchableKey, userSearchableKey);
+        List<User> userList;
+        if("ALL".equalsIgnoreCase(userType)) {
+            userList = userRepository.findByUserIdContainingIgnoreCaseOrNameContainingIgnoreCase(userSearchableKey, userSearchableKey);
+        } else {
+            userList = userRepository.findByUserIdContainingIgnoreCaseOrNameContainingIgnoreCaseAndType(userSearchableKey,
+                    userSearchableKey, userType);
+        }
         for (User user : userList) {
             ServerSideDropDownDto serverSideDropDownDto = new ServerSideDropDownDto();
             serverSideDropDownDto.setId(user.getUserId());
