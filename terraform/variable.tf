@@ -16,11 +16,11 @@ variable "deployment_tag" {
 }
 variable "memory" {
     type= number
-    default=512
+    default=1024
 }
 variable "cpu" {
     type= number
-    default= 1024
+    default= 256
 }
 variable "port" {
     type= number
