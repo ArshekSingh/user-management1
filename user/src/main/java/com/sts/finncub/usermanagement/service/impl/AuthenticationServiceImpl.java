@@ -72,6 +72,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         LoginResponse loginResponse = new LoginResponse();
         UserLoginLog userLoginLog = new UserLoginLog();
         userLoginLog.setLoginMode(loginRequest.getLoginMode());
+        userLoginLog.setUserId(loginRequest.getUserId());
         userLoginLog.setLoginTime(LocalDateTime.now());
         userLoginLog.setApplicationVersion(loginRequest.getApplicationVersion());
         userLoginLog.setIpAddress(loginRequest.getIpAddress());
