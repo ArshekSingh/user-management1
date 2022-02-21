@@ -48,7 +48,7 @@ pipeline {
                     sh 'export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}'
                     sh 'export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}'
                     for(i=0;i<=5;i++){
-                        def commandStdout = sh(returnStdout: true, script: "aws ecs describe-services --cluster SASTech-Devops-Preprod --services uat-usermanagement --region ap-south-1 | grep message | head -n 1 | grep steady")
+                        def commandStdout = ("aws ecs describe-services --cluster SASTech-Devops-Preprod --services uat-usermanagement --region ap-south-1 | grep message | head -n 1 | grep steady")
                         if (commandStdout.contains("steady")) {
                             println("Service is running")
                             break;
