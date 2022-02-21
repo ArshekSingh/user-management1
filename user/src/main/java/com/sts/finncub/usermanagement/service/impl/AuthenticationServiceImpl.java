@@ -79,6 +79,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         userLoginLog.setDeviceId(loginRequest.getDeviceId());
         userLoginLog.setImeiNumber1(loginRequest.getImeiNumber1());
         userLoginLog.setImeiNumber2(loginRequest.getImeiNumber2());
+        userLoginLog.setLatitude(loginRequest.getLatitude());
+        userLoginLog.setLongitude(loginRequest.getLongitude());
         userLoginLog.setStatus("S");
         try {
             Gson gson = new Gson();
