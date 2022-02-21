@@ -238,10 +238,10 @@ public class UserServiceImpl implements UserService {
         List<ServerSideDropDownDto> serverSideDropDownDtoList = new ArrayList<>();
         List<User> userList;
         if("ALL".equalsIgnoreCase(userType)) {
-            userList = userRepository.findByUserIdContainingIgnoreCaseOrNameContainingIgnoreCase(userSearchableKey, userSearchableKey);
+            userList = userRepository.findByUserIdIsContainingIgnoreCaseOrNameIsContainingIgnoreCase(userSearchableKey, userSearchableKey);
         } else {
-            userList = userRepository.findByUserIdContainingIgnoreCaseOrNameContainingIgnoreCaseAndType(userSearchableKey,
-                    userSearchableKey, userType);
+            userSearchableKey = "%"+userSearchableKey+"%";
+            userList = userRepository.getUsers(userType, userSearchableKey, userSearchableKey);
         }
         for (User user : userList) {
             ServerSideDropDownDto serverSideDropDownDto = new ServerSideDropDownDto();
