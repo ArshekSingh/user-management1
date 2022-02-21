@@ -14,6 +14,12 @@ public class LoginRequest {
     private String userId;
     private String password;
     private String newPassword;
+    private String applicationVersion;
+    private String ipAddress;
+    private String deviceId;
+    private String imeiNumber1;
+    private String imeiNumber2;
+    private String loginMode;
 
     @JsonIgnore
     public boolean isValid(){

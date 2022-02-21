@@ -29,6 +29,7 @@ import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -49,11 +50,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final UserCredentialService userCredentialService;
     private final UserOrganizationMappingRepository userOrganizationMappingRepository;
     private final BranchMasterRepository branchMasterRepository;
+    private final UserLoginLogRepository userLoginLogRepository;
 
     @Autowired
     public AuthenticationServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserRedisRepository userRedisRepository,
                                      UserRoleMappingRepository userRoleMappingRepository, UserCredentialService userCredentialService,
-                                     UserOrganizationMappingRepository userOrganizationMappingRepository, BranchMasterRepository branchMasterRepository) {
+                                     UserOrganizationMappingRepository userOrganizationMappingRepository, BranchMasterRepository branchMasterRepository,
+                                     UserLoginLogRepository userLoginLogRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userRedisRepository = userRedisRepository;
@@ -61,32 +64,60 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         this.userCredentialService = userCredentialService;
         this.userOrganizationMappingRepository = userOrganizationMappingRepository;
         this.branchMasterRepository = branchMasterRepository;
+        this.userLoginLogRepository = userLoginLogRepository;
     }
 
     @Override
     public LoginResponse login(LoginRequest loginRequest) throws ObjectNotFoundException, BadRequestException, InternalServerErrorException {
-        Gson gson = new Gson();
         LoginResponse loginResponse = new LoginResponse();
-        log.info("Request received for userId -" + loginRequest.getUserId());
-        User user = userRepository
-                .findByUserIdIgnoreCase(loginRequest.getUserId()).orElseThrow(()
-                        -> new ObjectNotFoundException("Invalid userId - " + loginRequest.getUserId(), HttpStatus.NOT_FOUND));
-        if ("N".equalsIgnoreCase(user.getIsActive())) {
-            throw new BadRequestException("User is not active.", HttpStatus.BAD_REQUEST);
-        }
-        if (!user.isPasswordCorrect(loginRequest.getPassword())) {
-            throw new BadRequestException("Invalid password", HttpStatus.BAD_REQUEST);
-        }
-
-        UserSession userSession = toSessionObject(user);
+        UserLoginLog userLoginLog = new UserLoginLog();
+        userLoginLog.setLoginMode(loginRequest.getLoginMode());
+        userLoginLog.setLoginTime(LocalDateTime.now());
+        userLoginLog.setApplicationVersion(loginRequest.getApplicationVersion());
+        userLoginLog.setIpAddress(loginRequest.getIpAddress());
+        userLoginLog.setDeviceId(loginRequest.getDeviceId());
+        userLoginLog.setImeiNumber1(loginRequest.getImeiNumber1());
+        userLoginLog.setImeiNumber2(loginRequest.getImeiNumber2());
+        userLoginLog.setStatus("S");
         try {
-            String authToken = saveToken(userSession);
-            log.info("User session saved with id -" + authToken);
-            loginResponse.setAuthToken(authToken);
-            loginResponse.setUserSession(gson.fromJson(userSession.getUserSessionJSON(), UserSession.class));
-        } catch (Exception e) {
-            log.error("Exception- {}", e.getMessage());
-            throw new InternalServerErrorException("Exception while saving token - " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            Gson gson = new Gson();
+            log.info("Request received for userId -" + loginRequest.getUserId());
+            User user = userRepository
+                    .findByUserIdIgnoreCase(loginRequest.getUserId()).orElseThrow(()
+                            -> new ObjectNotFoundException("Invalid userId - " + loginRequest.getUserId(), HttpStatus.NOT_FOUND));
+            if ("N".equalsIgnoreCase(user.getIsActive())) {
+                throw new BadRequestException("User is not active.", HttpStatus.BAD_REQUEST);
+            }
+            if (!user.isPasswordCorrect(loginRequest.getPassword())) {
+                throw new BadRequestException("Invalid password", HttpStatus.BAD_REQUEST);
+            }
+
+            UserSession userSession = toSessionObject(user);
+            String authToken;
+            try {
+                authToken = saveToken(userSession);
+                log.info("User session saved with id -" + authToken);
+                loginResponse.setAuthToken(authToken);
+                loginResponse.setUserSession(gson.fromJson(userSession.getUserSessionJSON(), UserSession.class));
+            } catch (Exception e) {
+                log.error("Exception- {}", e.getMessage());
+                throw new InternalServerErrorException("Exception while saving token - " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            //save user Login log
+            userLoginLog.setTokenId(authToken);
+            userLoginLogRepository.save(userLoginLog);
+
+        } catch (Exception exception) {
+            log.error("Exception- {}", exception.getMessage());
+            userLoginLog.setFailureReason(exception.getMessage());
+            userLoginLog.setStatus("E");
+            try{
+                userLoginLogRepository.save(userLoginLog);
+            }catch (Exception ex){
+                log.error("Exception while saving UserLogin log - {} ", ex.getMessage());
+            }
+            throw exception;
         }
         return loginResponse;
     }
