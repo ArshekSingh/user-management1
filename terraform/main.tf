@@ -135,7 +135,7 @@ resource "aws_appautoscaling_policy" "scale_down" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "api_service_memory_high" {
-  alarm_name          = "${var.environment}-${var.service}-memory-utilisation-above-80"
+  alarm_name          = "${var.environment}-${var.service}-memory-utilisation-above-70"
   alarm_description   = "This alarm monitors ${var.environment}-${var.service} Memory utilisation for scaling up"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = "1"
