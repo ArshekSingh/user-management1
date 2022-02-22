@@ -1,0 +1,93 @@
+pipeline {
+    agent any
+    environment {
+    AWS_ACCOUNT_ID='305949049023'
+    AWS_DEFAULT_REGION='ap-south-1'
+    app='usermanagement'
+    IMAGE_REPO_NAME='sastech-devops-repository'
+    IMAGE_TAG='account-${ImageNumber}'
+    REPOSITORY_URI = '${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}'
+    AWS_ACCESS_KEY_ID     = credentials('access_key')
+    AWS_SECRET_ACCESS_KEY = credentials('secret_key')
+    }
+    
+    stages{
+        stage('Clone Repo') {
+            steps {
+				checkout([$class: 'GitSCM', branches: [[name: '*/develop']],
+				doGenerateSubmoduleConfigurations: true, extensions: [],
+				submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'BItBucket_devops_admin',
+				url: 'https://devops_admin_sas@bitbucket.org/finstudio/user-management.git']]])
+                }
+            }
+        stage('copy terraformfiles') {
+            steps{
+                script {
+                    sh 'cp ${WORKSPACE}/terraform/* .'
+                }
+            }
+        }
+        stage('deploy') {
+            steps{
+                script {
+                    sh 'export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}'
+                    sh 'export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}'
+                    sh 'export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}'
+                    sh 'terraform init'
+                    sh 'terraform validate'
+                    sh 'terraform plan -var="tag=${app}-${ImageNumber}"'
+                    sh 'terraform apply --auto-approve -var="tag=${app}-${ImageNumber}" -replace=aws_ecs_service.usermanagement_ecs_service'
+                }
+            }
+        }
+        stage('Service check')
+        {
+            steps{
+                script {
+                    sh 'export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}'
+                    sh 'export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}'
+                    sh 'export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}'
+                    for(i=0;i<=5;i++){
+                        def commandStdout = ("aws ecs describe-services --cluster SASTech-Devops-Preprod --services uat-usermanagement --region ap-south-1 | grep message | head -n 1 | grep steady")
+                        if (commandStdout.contains("steady")) {
+                            println("Service is running")
+                            break;
+                        }
+                        else if(i==5){
+                            sh 'echo "Appilication Deployment failed. please check logs"'
+                            sh 'exit 1'
+                        }
+                        else {
+                            println("service is not up. please wait")
+                            sleep 30
+                        }
+                    }    
+                }
+            }
+        }
+    }
+    post {
+        always {
+            script {
+                if (currentBuild.currentResult == 'SUCCESS') {
+                    emailext subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - SUCCESS!!!',
+                    body: '$DEFAULT_CONTENT',
+                    recipientProviders: [
+                    [$class: 'RequesterRecipientProvider']
+                    ],
+                    replyTo: '$DEFAULT_REPLYTO',
+                    to: 'finncub.dev@sastechstudio.com'
+                }
+                if (currentBuild.currentResult == 'FAILURE') {
+                    emailext subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - FAILED!!!',
+                    body: '$DEFAULT_CONTENT',
+                    recipientProviders: [
+                    [$class: 'RequesterRecipientProvider']
+                    ],
+                    replyTo: '$DEFAULT_REPLYTO',
+                    to: 'finncub.dev@sastechstudio.com'
+                }
+            }
+        }
+    }
+}    
