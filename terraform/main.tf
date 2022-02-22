@@ -134,16 +134,16 @@ resource "aws_appautoscaling_policy" "scale_down" {
   ]
 }
 
-resource "aws_cloudwatch_metric_alarm" "api_service_cpu_high" {
-  alarm_name          = "${var.environment}-${var.service}-cpu-utilisation-above-80"
-  alarm_description   = "This alarm monitors ${var.environment}-${var.service} CPU utilisation for scaling up"
+resource "aws_cloudwatch_metric_alarm" "api_service_memory_high" {
+  alarm_name          = "${var.environment}-${var.service}-memory-utilisation-above-80"
+  alarm_description   = "This alarm monitors ${var.environment}-${var.service} Memory utilisation for scaling up"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = "1"
-  metric_name         = "CPUUtilization"
+  metric_name         = "MemoryUtilization"
   namespace           = "AWS/ECS"
   period              = "300"
   statistic           = "Average"
-  threshold           = "80"
+  threshold           = "70"
   # tags                = var.common_tags
 
   dimensions = {
@@ -156,16 +156,16 @@ resource "aws_cloudwatch_metric_alarm" "api_service_cpu_high" {
   ]
 }
 
-resource "aws_cloudwatch_metric_alarm" "api_service_cpu_low" {
-  alarm_name          = "${var.environment}-${var.service}-cpu-utilisation-below-5"
-  alarm_description   = "This alarm monitors ${var.environment}-${var.service} CPU utilisation for scaling down"
+resource "aws_cloudwatch_metric_alarm" "api_service_memory_low" {
+  alarm_name          = "${var.environment}-${var.service}-memory-utilisation-below-5"
+  alarm_description   = "This alarm monitors ${var.environment}-${var.service} Memory utilisation for scaling down"
   comparison_operator = "LessThanThreshold"
   evaluation_periods  = "1"
-  metric_name         = "CPUUtilization"
+  metric_name         = "MemoryUtilization"
   namespace           = "AWS/ECS"
   period              = "300"
   statistic           = "Average"
-  threshold           = "10"
+  threshold           = "5"
   # tags                = var.common_tags
 
   dimensions = {
