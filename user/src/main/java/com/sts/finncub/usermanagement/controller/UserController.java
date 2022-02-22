@@ -3,8 +3,9 @@ package com.sts.finncub.usermanagement.controller;
 import com.sts.finncub.core.dto.UserBranchMappingDto;
 import com.sts.finncub.core.dto.UserRoleMappingDto;
 import com.sts.finncub.core.exception.BadRequestException;
-import com.sts.finncub.usermanagement.request.UserRequest;
+import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.core.response.Response;
+import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -20,9 +21,9 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping("/fetchAllUsers")
-    public Response getAllUserDetails() throws BadRequestException {
-        return userService.getAllUserDetails();
+    @PostMapping("/fetchAllUsers")
+    public Response getAllUserDetailsByFilter(@RequestBody FilterRequest request) throws BadRequestException {
+        return userService.getAllUserDetailsByFilterRequest(request);
     }
 
     @GetMapping("/getUserDetail/{userId}")
@@ -40,9 +41,9 @@ public class UserController {
         return userService.updateUserDetails(request);
     }
 
-    @GetMapping(value = "/{userSearchableKey}")
-    public Response getUserSearchable(@PathVariable String userSearchableKey) {
-        return userService.getUserSearchable(userSearchableKey);
+    @GetMapping(value = "/{userSearchableKey}/{userType}")
+    public Response getUserSearchable(@PathVariable String userSearchableKey, @PathVariable String userType) {
+        return userService.getUserSearchable(userSearchableKey, userType);
     }
 
     @GetMapping(value = "getUserRoleList/{userId}")

@@ -3,12 +3,13 @@ package com.sts.finncub.usermanagement.service;
 import com.sts.finncub.core.dto.UserBranchMappingDto;
 import com.sts.finncub.core.dto.UserRoleMappingDto;
 import com.sts.finncub.core.exception.BadRequestException;
-import com.sts.finncub.usermanagement.request.UserRequest;
+import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.core.response.Response;
+import com.sts.finncub.usermanagement.request.UserRequest;
 
 public interface UserService {
 
-    Response getAllUserDetails();
+    Response getAllUserDetailsByFilterRequest(FilterRequest request) throws BadRequestException;
 
     Response getUserDetail(String userId) throws BadRequestException;
 
@@ -16,7 +17,7 @@ public interface UserService {
 
     Response updateUserDetails(UserRequest request) throws BadRequestException;
 
-    Response getUserSearchable(String userSearchableKey);
+    Response getUserSearchable(String userSearchableKey, String userType);
 
     Response getUserRoleListAssignedOrAvailable(String userId);
 

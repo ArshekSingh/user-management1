@@ -7,10 +7,12 @@ import com.sts.finncub.core.dto.UserRoleMappingDto;
 import com.sts.finncub.core.entity.*;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.*;
+import com.sts.finncub.core.repository.dao.UserDao;
+import com.sts.finncub.core.request.FilterRequest;
+import com.sts.finncub.core.response.Response;
 import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.request.UserRequest;
-import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -39,12 +41,13 @@ public class UserServiceImpl implements UserService {
     private final RoleMasterRepository roleMasterRepository;
     private final UserBranchMappingRepository userBranchMappingRepository;
     private final BranchMasterRepository branchMasterRepository;
+    private final UserDao userDao;
 
     @Autowired
     public UserServiceImpl(UserRepository userRepository, UserCredentialService userCredentialService
             , BCryptPasswordEncoder passwordEncoder, UserOrganizationMappingRepository userOrganizationMappingRepository,
                            UserRoleMappingRepository userRoleMappingRepository, RoleMasterRepository roleMasterRepository,
-                           UserBranchMappingRepository userBranchMappingRepository, BranchMasterRepository branchMasterRepository) {
+                           UserBranchMappingRepository userBranchMappingRepository, BranchMasterRepository branchMasterRepository, UserDao userDao) {
         this.userRepository = userRepository;
         this.userCredentialService = userCredentialService;
         this.passwordEncoder = passwordEncoder;
@@ -53,16 +56,17 @@ public class UserServiceImpl implements UserService {
         this.roleMasterRepository = roleMasterRepository;
         this.userBranchMappingRepository = userBranchMappingRepository;
         this.branchMasterRepository = branchMasterRepository;
+        this.userDao = userDao;
     }
 
     @Override
-    public Response getAllUserDetails() {
+    public Response getAllUserDetailsByFilterRequest(FilterRequest request) throws BadRequestException {
         Response response = new Response();
         List<UserDetailDto> userDetailDtos = new ArrayList<>();
-        List<User> userList = userRepository.findAll();
-        Long count = 0l;
+        List<User> userList = userDao.getAllUserDetailsByFilterRequest(request);
+        long count = 0L;
         if (!CollectionUtils.isEmpty(userList)) {
-            count = Long.valueOf(userList.size());
+            count = userList.size();
         }
         if (!CollectionUtils.isEmpty(userList)) {
             for (User user : userList) {
@@ -136,7 +140,23 @@ public class UserServiceImpl implements UserService {
         user.setIsActive(request.getIsActive());
         user.setIsFrozenBookFlag('N');
         userRepository.save(user);
-        saveValueInUserOrganizationMapping(request.getUserId(), userSession.getOrganizationId(), "Y");
+        //Save in user organization
+        try{
+            saveValueInUserOrganizationMapping(request.getUserId(), userSession.getOrganizationId(), "Y");
+        }catch (Exception exception){
+            log.debug("Error while mapping user - {}, to organization - {}", request.getUserId(), userSession.getOrganizationId());
+            log.error(exception.getMessage());
+        }
+        //Save in user branch mapping if branch Id is present
+        try{
+            //TODO Need to handle different designation type as well
+            if("B".equalsIgnoreCase(request.getDesignationType())){
+                saveUserBranchMapping(request.getUserId(),request.getBranchId(), userSession);
+            }
+        } catch (Exception exception){
+            log.debug("Error while mapping user - {}, to branch - {}", request.getUserId(), request.getBranchId());
+            log.error(exception.getMessage());
+        }
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);
         response.setMessage("Transaction completed successfully.");
@@ -155,9 +175,20 @@ public class UserServiceImpl implements UserService {
         userOrganizationMappingRepository.save(userOrganizationMapping);
     }
 
+    private void saveUserBranchMapping(String userId, Long branchId, UserSession userSession) {
+        UserBranchMapping userBranchMapping = new UserBranchMapping();
+        UserBranchMappingPK userBranchMappingPK = new UserBranchMappingPK();
+        userBranchMappingPK.setUserId(userId);
+        userBranchMappingPK.setBranchId(branchId);
+        userBranchMappingPK.setOrgId(userSession.getOrganizationId());
+        userBranchMapping.setUserBranchMappingPK(userBranchMappingPK);
+        userBranchMapping.setInsertedOn(LocalDateTime.now());
+        userBranchMapping.setInsertedBy(userSession.getUserId());
+        userBranchMappingRepository.save(userBranchMapping);
+    }
+
     private void validateRequest(UserRequest request) throws BadRequestException {
-        if (request == null || !StringUtils.hasText(request.getName())
-                || !StringUtils.hasText(request.getEmail()) || request.getType() == null ||
+        if (request == null || !StringUtils.hasText(request.getName()) || request.getType() == null ||
                 !StringUtils.hasText(request.getPassword())) {
             throw new BadRequestException("Invalid Request Parameters", HttpStatus.BAD_REQUEST);
         }
@@ -180,11 +211,18 @@ public class UserServiceImpl implements UserService {
     }
 
     private void updateUser(UserRequest request, Response response,
-                            UserSession userSession, Optional<User> user) throws BadRequestException {
+                            UserSession userSession, Optional<User> user) {
         User userDetail = user.get();
         userDetail.setName(request.getName());
         userDetail.setMobileNumber(request.getMobileNumber());
         userDetail.setType(request.getType());
+        if (!userDetail.getIsActive().equalsIgnoreCase(request.getIsActive())) {
+            if ("Y".equalsIgnoreCase(request.getIsActive())) {
+                userDetail.setDisabledOn(null);
+            } else {
+                userDetail.setDisabledOn(LocalDate.now());
+            }
+        }
         userDetail.setIsActive(request.getIsActive());
         userDetail.setUpdatedBy(userSession.getUserId());
         userDetail.setUpdatedOn(LocalDate.now());
@@ -195,10 +233,16 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Response getUserSearchable(String userSearchableKey) {
+    public Response getUserSearchable(String userSearchableKey, String userType) {
         Response response = new Response();
         List<ServerSideDropDownDto> serverSideDropDownDtoList = new ArrayList<>();
-        List<User> userList = userRepository.findByUserIdContainingIgnoreCaseOrNameContainingIgnoreCase(userSearchableKey, userSearchableKey);
+        List<User> userList;
+        if("ALL".equalsIgnoreCase(userType)) {
+            userList = userRepository.findByUserIdIsContainingIgnoreCaseOrNameIsContainingIgnoreCase(userSearchableKey, userSearchableKey);
+        } else {
+            userSearchableKey = "%"+userSearchableKey+"%";
+            userList = userRepository.getUsers(userType, userSearchableKey, userSearchableKey);
+        }
         for (User user : userList) {
             ServerSideDropDownDto serverSideDropDownDto = new ServerSideDropDownDto();
             serverSideDropDownDto.setId(user.getUserId());
