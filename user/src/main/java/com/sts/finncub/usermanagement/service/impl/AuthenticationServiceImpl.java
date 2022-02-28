@@ -133,7 +133,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             Map<Integer, String> divisionMap = new HashMap<>();
             List<BranchMaster> divisionList;
             userSession.setEmail(user.getEmail());
-            userSession.setIsTemporaryPassword(user.getIsActive());
+            userSession.setIsTemporaryPassword(user.getIsTemporaryPassword());
             if (user.getUserRoleMapping() != null && !user.getUserRoleMapping().isEmpty()) {
                 userSession.setRoles(user.getUserRoleMapping()
                         .stream()
