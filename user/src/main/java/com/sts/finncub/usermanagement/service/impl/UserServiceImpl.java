@@ -141,19 +141,19 @@ public class UserServiceImpl implements UserService {
         user.setIsFrozenBookFlag('N');
         userRepository.save(user);
         //Save in user organization
-        try{
+        try {
             saveValueInUserOrganizationMapping(request.getUserId(), userSession.getOrganizationId(), "Y");
-        }catch (Exception exception){
+        } catch (Exception exception) {
             log.debug("Error while mapping user - {}, to organization - {}", request.getUserId(), userSession.getOrganizationId());
             log.error(exception.getMessage());
         }
         //Save in user branch mapping if branch Id is present
-        try{
+        try {
             //TODO Need to handle different designation type as well
-            if("B".equalsIgnoreCase(request.getDesignationType())){
-                saveUserBranchMapping(request.getUserId(),request.getBranchId(), userSession);
+            if ("B".equalsIgnoreCase(request.getDesignationType())) {
+                saveUserBranchMapping(request.getUserId(), request.getBranchId(), userSession);
             }
-        } catch (Exception exception){
+        } catch (Exception exception) {
             log.debug("Error while mapping user - {}, to branch - {}", request.getUserId(), request.getBranchId());
             log.error(exception.getMessage());
         }
@@ -237,10 +237,11 @@ public class UserServiceImpl implements UserService {
         Response response = new Response();
         List<ServerSideDropDownDto> serverSideDropDownDtoList = new ArrayList<>();
         List<User> userList;
-        if("ALL".equalsIgnoreCase(userType)) {
-            userList = userRepository.findByUserIdIsContainingIgnoreCaseOrNameIsContainingIgnoreCase(userSearchableKey, userSearchableKey);
+        if ("ALL".equalsIgnoreCase(userType)) {
+            userList = userRepository.findByIsActiveAndUserIdIsContainingIgnoreCaseOrNameIsContainingIgnoreCase("Y",
+                    userSearchableKey, userSearchableKey);
         } else {
-            userSearchableKey = "%"+userSearchableKey+"%";
+            userSearchableKey = "%" + userSearchableKey + "%";
             userList = userRepository.getUsers(userType, userSearchableKey, userSearchableKey);
         }
         for (User user : userList) {
