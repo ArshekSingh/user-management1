@@ -7,12 +7,12 @@ import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.exception.InternalServerErrorException;
 import com.sts.finncub.core.exception.ObjectNotFoundException;
 import com.sts.finncub.core.repository.*;
+import com.sts.finncub.core.response.Response;
 import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.usermanagement.assembler.SignUpConverter;
 import com.sts.finncub.usermanagement.request.LoginRequest;
 import com.sts.finncub.usermanagement.request.SignupRequest;
 import com.sts.finncub.usermanagement.response.LoginResponse;
-import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.response.SignupResponse;
 import com.sts.finncub.usermanagement.service.AuthenticationService;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +25,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
@@ -115,9 +114,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             log.error("Exception- {}", exception.getMessage());
             userLoginLog.setFailureReason(exception.getMessage());
             userLoginLog.setStatus("E");
-            try{
+            try {
                 userLoginLogRepository.save(userLoginLog);
-            }catch (Exception ex){
+            } catch (Exception ex) {
                 log.error("Exception while saving UserLogin log - {} ", ex.getMessage());
             }
             throw exception;
@@ -131,7 +130,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             Set<Integer> parentIdList = new HashSet<>();
             Map<Integer, String> branchIdMap = new HashMap<>();
             Map<Integer, String> divisionMap = new HashMap<>();
-            List<BranchMaster> divisionList;
+            Map<Integer, String> zoneMap = new HashMap<>();
             userSession.setEmail(user.getEmail());
             userSession.setIsTemporaryPassword(user.getIsTemporaryPassword());
             if (user.getUserRoleMapping() != null && !user.getUserRoleMapping().isEmpty()) {
@@ -145,13 +144,23 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     if (userBranchMapping.getBranchMaster().getParentId() != null) {
                         parentIdList.add(userBranchMapping.getBranchMaster().getParentId());
                     }
-                    branchIdMap.put(userBranchMapping.getBranchMaster().getBranchId(), userBranchMapping.getBranchMaster().getBranchCode()+" - "+userBranchMapping.getBranchMaster().getBranchName());
+                    branchIdMap.put(userBranchMapping.getBranchMaster().getBranchId(), userBranchMapping.getBranchMaster().getBranchCode() + " - " + userBranchMapping.getBranchMaster().getBranchName());
                 }
             }
             if (!CollectionUtils.isEmpty(parentIdList)) {
-                divisionList = branchMasterRepository.findByBranchIdIn(parentIdList);
-                for (BranchMaster branchMaster : divisionList) {
-                    divisionMap.put(branchMaster.getBranchId(), branchMaster.getBranchCode()+"-"+branchMaster.getBranchName());
+                List<BranchMaster> divisionList = branchMasterRepository.findByBranchIdIn(parentIdList);
+                parentIdList.clear();
+                for (BranchMaster division : divisionList) {
+                    if (division.getParentId() != null) {
+                        parentIdList.add(division.getParentId());
+                    }
+                    divisionMap.put(division.getBranchId(), division.getBranchCode() + "-" + division.getBranchName());
+                }
+            }
+            if (!CollectionUtils.isEmpty(parentIdList)) {
+                List<BranchMaster> zoneList = branchMasterRepository.findByBranchIdIn(parentIdList);
+                for (BranchMaster zone : zoneList) {
+                    zoneMap.put(zone.getBranchId(), zone.getBranchCode() + "-" + zone.getBranchName());
                 }
             }
             userSession.setName(user.getName());
@@ -160,7 +169,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             userSession.setOrganizationId(getActiveOrganizationId(user));
             userSession.setBranchMap(branchIdMap);
             userSession.setDivisionMap(divisionMap);
-
+            userSession.setZoneMap(zoneMap);
         } catch (Exception ex) {
             log.error("Exception- {}", ex.getMessage());
             throw new InternalServerErrorException("Exception while set data in userSession object" + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -273,11 +282,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 oldPassword = oldPassword + PASSWORD_SEPARATOR + user.getPassword();
             } else {
                 String updatedOldPassword = "";
-                for (int i= 1; i < oldPasswordList.length; i++) {
+                for (int i = 1; i < oldPasswordList.length; i++) {
                     if (updatedOldPassword.isEmpty()) {
                         updatedOldPassword = oldPasswordList[i];
                     } else {
-                        updatedOldPassword = updatedOldPassword + PASSWORD_SEPARATOR+oldPasswordList[i];
+                        updatedOldPassword = updatedOldPassword + PASSWORD_SEPARATOR + oldPasswordList[i];
                     }
                 }
                 oldPassword = updatedOldPassword + PASSWORD_SEPARATOR + user.getPassword();
