@@ -50,12 +50,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final UserOrganizationMappingRepository userOrganizationMappingRepository;
     private final BranchMasterRepository branchMasterRepository;
     private final UserLoginLogRepository userLoginLogRepository;
+    private final EmployeeRepository employeeRepository;
 
     @Autowired
     public AuthenticationServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserRedisRepository userRedisRepository,
                                      UserRoleMappingRepository userRoleMappingRepository, UserCredentialService userCredentialService,
                                      UserOrganizationMappingRepository userOrganizationMappingRepository, BranchMasterRepository branchMasterRepository,
-                                     UserLoginLogRepository userLoginLogRepository) {
+                                     UserLoginLogRepository userLoginLogRepository, EmployeeRepository employeeRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userRedisRepository = userRedisRepository;
@@ -64,6 +65,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         this.userOrganizationMappingRepository = userOrganizationMappingRepository;
         this.branchMasterRepository = branchMasterRepository;
         this.userLoginLogRepository = userLoginLogRepository;
+        this.employeeRepository =  employeeRepository;
     }
 
     @Override
@@ -101,6 +103,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 log.info("User session saved with id -" + authToken);
                 loginResponse.setAuthToken(authToken);
                 loginResponse.setUserSession(gson.fromJson(userSession.getUserSessionJSON(), UserSession.class));
+                try{
+                    Employee employee = employeeRepository.findByUserId(loginRequest.getUserId()).orElseThrow();
+                    loginResponse.setBaseLocation((employee.getBranchMaster() != null) ? employee.getBranchMaster().getBranchName() : "");
+                    loginResponse.setDepartmentName((employee.getEmployeeDepartmentMaster() != null) ? employee.getEmployeeDepartmentMaster().getEmpDepartmentName() : "");
+                    loginResponse.setDesignationName((employee.getEmployeeDesignationMaster() != null) ? employee.getEmployeeDesignationMaster().getEmpDesignationName() : "");
+                } catch (Exception exception) {
+                    log.error("Exception while fetching employee details - " + exception.getMessage());
+                }
             } catch (Exception e) {
                 log.error("Exception- {}", e.getMessage());
                 throw new InternalServerErrorException("Exception while saving token - " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
