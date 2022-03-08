@@ -45,7 +45,7 @@ public class RequestFilter implements Filter {
             if (token != null && !token.isEmpty()) {
                 try {
                     String tokenValue = token.split(" ")[1];
-                    UserSession userSession = tokenValidator.validateTokenAndReturnUserSession(tokenValue);
+                    UserSession userSession = tokenValidator.validateTokenAndReturnUserSession(tokenValue, httpServletRequest.getHeader("user-agent"));
                     if (userSession.getUserId() != null) {
                         setSecurityContext(userSession);
                     } else throw new UnauthorizedException(RestMappingConstants.AUTHENTICATION_FAILED);
