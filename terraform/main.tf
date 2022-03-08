@@ -29,7 +29,7 @@ resource "aws_ecs_service" "usermanagement_ecs_service" {
   # tags            = "${var.common_tags}"
   # propagate_tags  = "TASK_DEFINITION"
   desired_count = var.containers_min
-  force_new_deployment = yes
+  force_new_deployment = true
   ordered_placement_strategy {
     type  = "spread"
     field = "attribute:ecs.availability-zone"
