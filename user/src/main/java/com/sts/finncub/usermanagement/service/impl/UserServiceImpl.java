@@ -133,7 +133,9 @@ public class UserServiceImpl implements UserService {
         user.setPasswordResetDate(LocalDate.now());
         user.setType(request.getType());
         user.setUserId(request.getUserId());
-        user.setPassword(passwordEncoder, request.getPassword());
+        if (StringUtils.hasText(request.getUserId())) {
+            user.setPassword(passwordEncoder, request.getUserId());
+        }
         user.setInsertedOn(LocalDate.now());
         user.setInsertedBy(userSession.getUserId());
         user.setIsTemporaryPassword("Y");
@@ -188,8 +190,7 @@ public class UserServiceImpl implements UserService {
     }
 
     private void validateRequest(UserRequest request) throws BadRequestException {
-        if (request == null || !StringUtils.hasText(request.getName()) || request.getType() == null ||
-                !StringUtils.hasText(request.getPassword())) {
+        if (request == null || !StringUtils.hasText(request.getName()) || request.getType() == null) {
             throw new BadRequestException("Invalid Request Parameters", HttpStatus.BAD_REQUEST);
         }
     }
