@@ -15,6 +15,7 @@ import com.sts.finncub.usermanagement.request.EmployeeRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.service.EmployeeService;
 import com.sts.finncub.usermanagement.service.UserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -30,6 +31,7 @@ import java.util.List;
 
 // @Author Sumit kumar
 
+@Slf4j
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
 
@@ -232,6 +234,12 @@ public class EmployeeServiceImpl implements EmployeeService {
         employeeDto.setRelievingDate(DateTimeUtil.dateToString(employee.getRelievingDate()));
         employeeDto.setPromotionDate(DateTimeUtil.dateToString(employee.getPromotionDate()));
         employeeDto.setBranchJoinDate(DateTimeUtil.dateToString(employee.getBranchJoinDate()));
+        try{
+            employeeDto.setCurrentVillageName(employee.getCurrentVillageMaster().getVillageName());
+            employeeDto.setPermanentVillageName(employee.getPermanentVillageMaster().getVillageName());
+        } catch (Exception exception){
+            log.error(exception.getMessage());
+        }
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);
         response.setMessage("Transaction completed successfully.");
