@@ -36,14 +36,14 @@ pipeline {
                 sh 'git submodule update --init --recursive'
                 sh 'mvn clean install'
                 sh 'cp /var/lib/jenkins/disbursement-1.0.0.jar .'
-				sh 'docker build -t sastech-devops-repository .'
+				sh 'docker build -t sastech-devops-repository-${app} .'
                 }
             }
         }
 		stage('Pushing to ECR') {
             steps{
                 script {
-                    sh 'docker tag sastech-devops-repository:latest 305949049023.dkr.ecr.ap-south-1.amazonaws.com/sastech-devops-repository:${app}-${BUILD_NUMBER}'
+                    sh 'docker tag sastech-devops-repository-${app}:latest 305949049023.dkr.ecr.ap-south-1.amazonaws.com/sastech-devops-repository:${app}-${BUILD_NUMBER}'
                     sh 'docker push 305949049023.dkr.ecr.ap-south-1.amazonaws.com/sastech-devops-repository:${app}-${BUILD_NUMBER}'
                 }
             }
