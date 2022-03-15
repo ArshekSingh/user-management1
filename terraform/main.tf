@@ -69,6 +69,7 @@ resource "aws_lb_target_group" "service-target-group" {
   port     = "8080"
   protocol = "HTTP"
   vpc_id   = var.vpc_id
+  deregistration_delay = 120 
   # tags     = var.common_tags
   stickiness {
     type = "lb_cookie"
