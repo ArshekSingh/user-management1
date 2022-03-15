@@ -10,7 +10,7 @@
     # If the wait time has passed, we need to roll back
       echo "ecs service $1 running in $2"
       DEPLOYMENT_SUCCESS="true"
-      break
+      exit 1
       # Exit the loop.
       else
       echo "Waiting for service $1 to be steady"
