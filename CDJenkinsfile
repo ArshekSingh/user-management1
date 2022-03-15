@@ -1,4 +1,4 @@
-pipeline {
+ipipeline {
     agent any
     environment {
     AWS_ACCOUNT_ID='305949049023'
@@ -47,22 +47,10 @@ pipeline {
                     sh 'export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}'
                     sh 'export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}'
                     sh 'export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}'
+                    sh 'sudo chmod +x statushealth.sh'
                     sleep 60
-                    for(i=0;i<=10;i++){
-                        def commandStdout = ("aws ecs describe-services --cluster SASTech-Devops-Preprod --services uat-usermanagement --region ap-south-1 | grep message | head -n 1")
-                        if (commandStdout.contains("steady")) {
-                            println("Service is running")
-                            break;
-                        }
-                        else if(i==10){
-                            sh 'echo "Appilication Deployment failed. please check logs"'
-                            sh 'exit 1'
-                        }
-                        else {
-                            println("service is not up. please wait")
-                            sleep 30
-                        }
-                    }    
+                    sh './statushealth.sh'
+                    
                 }
             }
         }
@@ -86,7 +74,7 @@ pipeline {
                     [$class: 'RequesterRecipientProvider']
                     ],
                     replyTo: '$DEFAULT_REPLYTO',
-                    to: 'finncub.dev@sastechstudio.com'
+                    to: ''
                 }
             }
         }
