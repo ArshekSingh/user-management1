@@ -20,7 +20,7 @@ while [ $i -lt 10 ]
     fi
   done
 
-  if [[ "${DEPLOYMENT_SUCCESS}" != "true" ]]; then
+  if [[ "${DEPLOYMENT_SUCCESS}" -eq "false" ]]; then
     echo "ecs service $1 missing in $2"
     fi
     exit 1
