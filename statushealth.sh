@@ -1,5 +1,5 @@
  #!/bin/bash 
-  DEPLOYMENT_SUCCESS="false"
+  DEPLOYMENT_SUCCESS=1
   i=0
   every=1
   #echo "Waiting for service deployment to complete..."
@@ -10,7 +10,7 @@ while [ $i -lt 10 ]
     # Wait to see if more than 1 deployment stays running
     # If the wait time has passed, we need to roll back 
       echo "ecs service $1 running in $2"
-      DEPLOYMENT_SUCCESS="true"
+      DEPLOYMENT_SUCCESS=0
       i=10
       # Exit the loop.
       else
@@ -20,7 +20,7 @@ while [ $i -lt 10 ]
     fi
   done
 
-  if [[ "${DEPLOYMENT_SUCCESS}" == "false" ]]; then
+  if [[ ${DEPLOYMENT_SUCCESS} -eq 1 ]]; then
     echo "ecs service $1 missing in $2"
     fi
     exit 1
