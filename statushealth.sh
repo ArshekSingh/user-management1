@@ -1,5 +1,6 @@
   DEPLOYMENT_SUCCESS="false"
   i=0
+  every=1
   #echo "Waiting for service deployment to complete..."
  while [ $i -lt 10 ]
   do
@@ -14,7 +15,7 @@
       else
       echo "Waiting for service $1 to be steady"
       sleep 30
-      i=$i+1
+      i=$(($i + $every))
     fi
   done
 
