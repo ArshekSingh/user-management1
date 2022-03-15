@@ -6,7 +6,7 @@
 while [ $i -lt 10 ]
     do
     NUM_DEPLOYMENTS=$(aws ecs describe-services --services $1 --cluster $2 | jq "[.services[].deployments[]] | length")
-    if [ $NUM_DEPLOYMENTS -eq 1 ]
+    if [ $NUM_DEPLOYMENTS -eq 1 ]; then
     # Wait to see if more than 1 deployment stays running
     # If the wait time has passed, we need to roll back 
       echo "ecs service $1 running in $2"
