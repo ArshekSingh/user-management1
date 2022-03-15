@@ -24,7 +24,6 @@ pipeline {
             steps{
                 script {
                     sh 'cp ${WORKSPACE}/terraform/* .'
-                    sh 'cp ${WORKSPACE}/statushealth.sh .'
                 }
             }
         }
