@@ -7,7 +7,8 @@ then
 echo "ecs service $1 is running on $2 "
 break
 else
-echo "Waiting for service uat-usermanagement to be steady"
+echo "Waiting for service $1 to be steady"
 sleep 45s
 fi
 done
+echo "Service $1 is not available in $2 Please check logs"
