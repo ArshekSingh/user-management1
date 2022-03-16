@@ -73,7 +73,7 @@ pipeline {
                     [$class: 'RequesterRecipientProvider']
                     ],
                     replyTo: '$DEFAULT_REPLYTO',
-                    to: ''
+                    to: 'finncub.dev@sastechstudio.com'
                 }
             }
         }
