@@ -49,7 +49,7 @@ pipeline {
                     sh 'export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}'
                     sh 'sudo chmod +x statushealth.sh'
                     sleep 60
-                    sh './statushealth.sh uat-usermanagement SASTech-Devops-Preprod'
+                    sh './statushealth.sh ${env}-{app} ${cluster_name}'
                 }
             }
         }
