@@ -10,7 +10,11 @@ else
 echo "Waiting for service $1 to be steady"
 sleep 45s
 fi
-if [ i -eq 10 ] 
+if [ i -eq 1 ] 
+then 
+echo "Service $1 is not available in $2 Please check logs"
+fi
+if [ i -eq 2] 
 then 
 echo "Service $1 is not available in $2 Please check logs"
 fi
