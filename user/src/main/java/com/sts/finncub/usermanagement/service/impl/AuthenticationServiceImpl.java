@@ -9,6 +9,7 @@ import com.sts.finncub.core.exception.ObjectNotFoundException;
 import com.sts.finncub.core.repository.*;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.core.service.UserCredentialService;
+import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.assembler.SignUpConverter;
 import com.sts.finncub.usermanagement.request.LoginRequest;
 import com.sts.finncub.usermanagement.request.SignupRequest;
@@ -37,8 +38,11 @@ import java.util.stream.Collectors;
 @Slf4j
 public class AuthenticationServiceImpl implements AuthenticationService {
 
-    @Value("${old.password.count}")
+    @Value("${password.old.count}")
     private Integer oldPasswordCount;
+
+    @Value("${password.failed.count}")
+    private Integer passwordFailedCount;
 
     private final String PASSWORD_SEPARATOR = ",,";
 
@@ -65,7 +69,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         this.userOrganizationMappingRepository = userOrganizationMappingRepository;
         this.branchMasterRepository = branchMasterRepository;
         this.userLoginLogRepository = userLoginLogRepository;
-        this.employeeRepository =  employeeRepository;
+        this.employeeRepository = employeeRepository;
     }
 
     @Override
@@ -93,7 +97,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 throw new BadRequestException("User is not active.", HttpStatus.BAD_REQUEST);
             }
             if (!user.isPasswordCorrect(loginRequest.getPassword())) {
+                user.setLoginAttempt((user.getLoginAttempt() != null) ? user.getLoginAttempt() + 1 : 1);
+                if (user.getLoginAttempt() != null && user.getLoginAttempt() >= passwordFailedCount) {
+                    user.setIsActive("N");
+                }
+                userRepository.updateLoginAttemptByUserId(user.getUserId(), user.getLoginAttempt(), user.getUserId(), DateTimeUtil.dateToString(LocalDate.now()));
                 throw new BadRequestException("Invalid password", HttpStatus.BAD_REQUEST);
+            } else {
+                userRepository.updateLoginAttemptByUserId(user.getUserId(), 0, user.getUserId(), DateTimeUtil.dateToString(LocalDate.now()));
             }
 
             UserSession userSession = toSessionObject(user);
@@ -103,8 +114,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 log.info("User session saved with id -" + authToken);
                 loginResponse.setAuthToken(authToken);
                 loginResponse.setUserSession(gson.fromJson(userSession.getUserSessionJSON(), UserSession.class));
-                try{
-                    Employee employee = employeeRepository.findByUserId(loginRequest.getUserId()).orElseThrow();
+                try {
+                    Employee employee = employeeRepository.findByUserId(loginRequest.getUserId()).orElseThrow(
+                            () -> new BadRequestException("Invalid Id, ", HttpStatus.BAD_REQUEST));
                     loginResponse.setBaseLocation((employee.getBranchMaster() != null) ? employee.getBranchMaster().getBranchName() : "");
                     loginResponse.setDepartmentName((employee.getEmployeeDepartmentMaster() != null) ? employee.getEmployeeDepartmentMaster().getEmpDepartmentName() : "");
                     loginResponse.setDesignationName((employee.getEmployeeDesignationMaster() != null) ? employee.getEmployeeDesignationMaster().getEmpDesignationName() : "");
@@ -249,6 +261,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     }
 
+    private void updateLoginAttempt() {
+
+    }
+
     private String saveToken(UserSession userSession) {
         Gson gson = new Gson();
         log.info("saving user session");
@@ -324,6 +340,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 "Invalid userId - " + userSession.getUserId(), HttpStatus.NOT_FOUND));
         user.setPassword(passwordEncoder, loginRequest.getPassword());
         user.setIsTemporaryPassword("Y");
+        user.setIsActive("Y");
+        user.setLoginAttempt(0);
         user.setUpdatedOn(LocalDate.now());
         user.setUpdatedBy(userSession.getUserId());
         userRepository.save(user);
