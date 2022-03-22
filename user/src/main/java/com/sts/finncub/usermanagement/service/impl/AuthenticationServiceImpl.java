@@ -9,7 +9,6 @@ import com.sts.finncub.core.exception.ObjectNotFoundException;
 import com.sts.finncub.core.repository.*;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.core.service.UserCredentialService;
-import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.assembler.SignUpConverter;
 import com.sts.finncub.usermanagement.request.LoginRequest;
 import com.sts.finncub.usermanagement.request.SignupRequest;
@@ -28,7 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import javax.servlet.http.HttpServletRequest;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -57,10 +55,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final EmployeeRepository employeeRepository;
 
     @Autowired
-    public AuthenticationServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserRedisRepository userRedisRepository,
-                                     UserRoleMappingRepository userRoleMappingRepository, UserCredentialService userCredentialService,
-                                     UserOrganizationMappingRepository userOrganizationMappingRepository, BranchMasterRepository branchMasterRepository,
-                                     UserLoginLogRepository userLoginLogRepository, EmployeeRepository employeeRepository) {
+    public AuthenticationServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserRedisRepository userRedisRepository, UserRoleMappingRepository userRoleMappingRepository, UserCredentialService userCredentialService, UserOrganizationMappingRepository userOrganizationMappingRepository, BranchMasterRepository branchMasterRepository, UserLoginLogRepository userLoginLogRepository, EmployeeRepository employeeRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userRedisRepository = userRedisRepository;
@@ -90,9 +85,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         try {
             Gson gson = new Gson();
             log.info("Request received for userId -" + loginRequest.getUserId());
-            User user = userRepository
-                    .findByUserIdIgnoreCase(loginRequest.getUserId()).orElseThrow(()
-                            -> new ObjectNotFoundException("Invalid userId - " + loginRequest.getUserId(), HttpStatus.NOT_FOUND));
+            User user = userRepository.findByUserIdIgnoreCase(loginRequest.getUserId()).orElseThrow(() -> new ObjectNotFoundException("Invalid userId - " + loginRequest.getUserId(), HttpStatus.NOT_FOUND));
             if ("N".equalsIgnoreCase(user.getIsActive())) {
                 throw new BadRequestException("User is not active.", HttpStatus.BAD_REQUEST);
             }
@@ -101,10 +94,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 if (user.getLoginAttempt() != null && user.getLoginAttempt() >= passwordFailedCount) {
                     user.setIsActive("N");
                 }
-                userRepository.updateLoginAttemptByUserId(user.getUserId(), user.getLoginAttempt(), user.getUserId(), DateTimeUtil.dateToString(LocalDate.now()));
+                userRepository.updateLoginAttemptByUserId(user.getUserId(), user.getLoginAttempt(), user.getUserId(), LocalDateTime.now());
                 throw new BadRequestException("Invalid password", HttpStatus.BAD_REQUEST);
             } else {
-                userRepository.updateLoginAttemptByUserId(user.getUserId(), 0, user.getUserId(), DateTimeUtil.dateToString(LocalDate.now()));
+                userRepository.updateLoginAttemptByUserId(user.getUserId(), 0, user.getUserId(), LocalDateTime.now());
             }
 
             UserSession userSession = toSessionObject(user);
@@ -115,8 +108,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 loginResponse.setAuthToken(authToken);
                 loginResponse.setUserSession(gson.fromJson(userSession.getUserSessionJSON(), UserSession.class));
                 try {
-                    Employee employee = employeeRepository.findByUserId(loginRequest.getUserId()).orElseThrow(
-                            () -> new BadRequestException("Invalid Id, ", HttpStatus.BAD_REQUEST));
+                    Employee employee = employeeRepository.findByUserId(loginRequest.getUserId()).orElseThrow(() -> new BadRequestException("Invalid Id, ", HttpStatus.BAD_REQUEST));
                     loginResponse.setBaseLocation((employee.getBranchMaster() != null) ? employee.getBranchMaster().getBranchName() : "");
                     loginResponse.setDepartmentName((employee.getEmployeeDepartmentMaster() != null) ? employee.getEmployeeDepartmentMaster().getEmpDepartmentName() : "");
                     loginResponse.setDesignationName((employee.getEmployeeDesignationMaster() != null) ? employee.getEmployeeDesignationMaster().getEmpDesignationName() : "");
@@ -156,10 +148,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             userSession.setEmail(user.getEmail());
             userSession.setIsTemporaryPassword(user.getIsTemporaryPassword());
             if (user.getUserRoleMapping() != null && !user.getUserRoleMapping().isEmpty()) {
-                userSession.setRoles(user.getUserRoleMapping()
-                        .stream()
-                        .map(mapping -> mapping.getRoleMaster().getRoleName())
-                        .collect(Collectors.toSet()));
+                userSession.setRoles(user.getUserRoleMapping().stream().map(mapping -> mapping.getRoleMaster().getRoleName()).collect(Collectors.toSet()));
             }
             if (user.getUserBranchMapping() != null && !user.getUserBranchMapping().isEmpty()) {
                 for (UserBranchMapping userBranchMapping : user.getUserBranchMapping()) {
@@ -241,10 +230,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (signupRequest.hasRoles()) {
             log.info("Setting roles for userId - " + userId);
 
-            userRoleMappingRepository.saveAll(signupRequest.getRoleList()
-                    .stream()
-                    .map(id -> new UserRoleMapping(userId, id, organizationId, operationUserName))
-                    .collect(Collectors.toSet()));
+            userRoleMappingRepository.saveAll(signupRequest.getRoleList().stream().map(id -> new UserRoleMapping(userId, id, organizationId, operationUserName)).collect(Collectors.toSet()));
             log.info("Roles saved to db");
         }
         return SignUpConverter.convertToResponse(newUser);
@@ -252,10 +238,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public Response<UserSession> verify(String authToken) throws ObjectNotFoundException {
-        UserSession userSession = userRedisRepository.findById(authToken)
-                .orElseThrow(
-                        () -> new ObjectNotFoundException("User session not found, " +
-                                "Please login again!", HttpStatus.NOT_FOUND));
+        UserSession userSession = userRedisRepository.findById(authToken).orElseThrow(() -> new ObjectNotFoundException("User session not found, " + "Please login again!", HttpStatus.NOT_FOUND));
 
         return new Response<>(RestMappingConstants.SUCCESS, userSession, HttpStatus.OK);
 
@@ -286,8 +269,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         Response response = new Response();
         UserSession userSession = userCredentialService.getUserSession();
 //      validate password(Regex)
-        User user = userRepository.findByUserIdIgnoreCase(userSession.getUserId()).orElseThrow(() -> new ObjectNotFoundException(
-                "Invalid userId - " + userSession.getUserId(), HttpStatus.NOT_FOUND));
+        User user = userRepository.findByUserIdIgnoreCase(userSession.getUserId()).orElseThrow(() -> new ObjectNotFoundException("Invalid userId - " + userSession.getUserId(), HttpStatus.NOT_FOUND));
 //      check current password
         if (!user.isPasswordCorrect(request.getPassword())) {
             throw new BadRequestException("Invalid current password", HttpStatus.BAD_REQUEST);
@@ -322,7 +304,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         user.setOldPassword(oldPassword);
         user.setPassword(passwordEncoder, request.getNewPassword());
         user.setIsTemporaryPassword("N");
-        user.setUpdatedOn(LocalDate.now());
+        user.setUpdatedOn(LocalDateTime.now());
         user.setUpdatedBy(userSession.getUserId());
         userRepository.save(user);
 
@@ -336,13 +318,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public ResponseEntity<Response> resetPassword(LoginRequest loginRequest) throws ObjectNotFoundException {
         Response response = new Response();
         UserSession userSession = userCredentialService.getUserSession();
-        User user = userRepository.findByUserIdIgnoreCase(loginRequest.getUserId()).orElseThrow(() -> new ObjectNotFoundException(
-                "Invalid userId - " + userSession.getUserId(), HttpStatus.NOT_FOUND));
+        User user = userRepository.findByUserIdIgnoreCase(loginRequest.getUserId()).orElseThrow(() -> new ObjectNotFoundException("Invalid userId - " + userSession.getUserId(), HttpStatus.NOT_FOUND));
         user.setPassword(passwordEncoder, loginRequest.getPassword());
         user.setIsTemporaryPassword("Y");
         user.setIsActive("Y");
         user.setLoginAttempt(0);
-        user.setUpdatedOn(LocalDate.now());
+        user.setUpdatedOn(LocalDateTime.now());
         user.setUpdatedBy(userSession.getUserId());
         userRepository.save(user);
         response.setCode(HttpStatus.OK.value());

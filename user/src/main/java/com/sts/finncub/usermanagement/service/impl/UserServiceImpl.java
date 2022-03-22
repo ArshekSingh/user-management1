@@ -44,10 +44,7 @@ public class UserServiceImpl implements UserService {
     private final UserDao userDao;
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository, UserCredentialService userCredentialService
-            , BCryptPasswordEncoder passwordEncoder, UserOrganizationMappingRepository userOrganizationMappingRepository,
-                           UserRoleMappingRepository userRoleMappingRepository, RoleMasterRepository roleMasterRepository,
-                           UserBranchMappingRepository userBranchMappingRepository, BranchMasterRepository branchMasterRepository, UserDao userDao) {
+    public UserServiceImpl(UserRepository userRepository, UserCredentialService userCredentialService, BCryptPasswordEncoder passwordEncoder, UserOrganizationMappingRepository userOrganizationMappingRepository, UserRoleMappingRepository userRoleMappingRepository, RoleMasterRepository roleMasterRepository, UserBranchMappingRepository userBranchMappingRepository, BranchMasterRepository branchMasterRepository, UserDao userDao) {
         this.userRepository = userRepository;
         this.userCredentialService = userCredentialService;
         this.passwordEncoder = passwordEncoder;
@@ -75,8 +72,8 @@ public class UserServiceImpl implements UserService {
                 userDetailDto.setPasswordResetDate(DateTimeUtil.dateToString(user.getPasswordResetDate()));
                 userDetailDto.setDisabledOn(DateTimeUtil.dateToString(user.getDisabledOn()));
                 userDetailDto.setApprovedOn(DateTimeUtil.dateToString(user.getApprovedOn()));
-                userDetailDto.setInsertedOn(DateTimeUtil.dateToString(user.getInsertedOn()));
-                userDetailDto.setUpdatedOn(DateTimeUtil.dateToString(user.getUpdatedOn()));
+                userDetailDto.setInsertedOn(DateTimeUtil.dateTimeToString(user.getInsertedOn()));
+                userDetailDto.setUpdatedOn(DateTimeUtil.dateTimeToString(user.getUpdatedOn()));
                 userDetailDtos.add(userDetailDto);
             }
             response.setCode(HttpStatus.OK.value());
@@ -102,8 +99,8 @@ public class UserServiceImpl implements UserService {
         BeanUtils.copyProperties(user.get(), userDetailDto);
         userDetailDto.setDisabledOn(DateTimeUtil.dateToString(user.get().getDisabledOn()));
         userDetailDto.setApprovedOn(DateTimeUtil.dateToString(user.get().getApprovedOn()));
-        userDetailDto.setInsertedOn(DateTimeUtil.dateToString(user.get().getInsertedOn()));
-        userDetailDto.setUpdatedOn(DateTimeUtil.dateToString(user.get().getUpdatedOn()));
+        userDetailDto.setInsertedOn(DateTimeUtil.dateTimeToString(user.get().getInsertedOn()));
+        userDetailDto.setUpdatedOn(DateTimeUtil.dateTimeToString(user.get().getUpdatedOn()));
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);
         response.setData(userDetailDto);
@@ -123,8 +120,7 @@ public class UserServiceImpl implements UserService {
         }
 
         if (!request.isEmployeeCreate()) {
-            String userEmployeeId = userRepository.getGeneratedUserEmployeeId(
-                    userSession.getOrganizationId(), request.getType());
+            String userEmployeeId = userRepository.getGeneratedUserEmployeeId(userSession.getOrganizationId(), request.getType());
             final String userId = userEmployeeId.split(",")[0];
             request.setUserId(userId);
         }
@@ -136,7 +132,7 @@ public class UserServiceImpl implements UserService {
         if (StringUtils.hasText(request.getUserId())) {
             user.setPassword(passwordEncoder, request.getUserId());
         }
-        user.setInsertedOn(LocalDate.now());
+        user.setInsertedOn(LocalDateTime.now());
         user.setInsertedBy(userSession.getUserId());
         user.setIsTemporaryPassword("Y");
         user.setIsActive(request.getIsActive());
@@ -211,8 +207,7 @@ public class UserServiceImpl implements UserService {
         return response;
     }
 
-    private void updateUser(UserRequest request, Response response,
-                            UserSession userSession, Optional<User> user) {
+    private void updateUser(UserRequest request, Response response, UserSession userSession, Optional<User> user) {
         User userDetail = user.get();
         userDetail.setName(request.getName());
         userDetail.setMobileNumber(request.getMobileNumber());
@@ -226,7 +221,7 @@ public class UserServiceImpl implements UserService {
         }
         userDetail.setIsActive(request.getIsActive());
         userDetail.setUpdatedBy(userSession.getUserId());
-        userDetail.setUpdatedOn(LocalDate.now());
+        userDetail.setUpdatedOn(LocalDateTime.now());
         userRepository.save(userDetail);
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);
@@ -239,8 +234,7 @@ public class UserServiceImpl implements UserService {
         List<ServerSideDropDownDto> serverSideDropDownDtoList = new ArrayList<>();
         List<User> userList;
         if ("ALL".equalsIgnoreCase(userType)) {
-            userList = userRepository.findByIsActiveAndUserIdIsContainingIgnoreCaseOrNameIsContainingIgnoreCase("Y",
-                    userSearchableKey, userSearchableKey);
+            userList = userRepository.findByIsActiveAndUserIdIsContainingIgnoreCaseOrNameIsContainingIgnoreCase("Y", userSearchableKey, userSearchableKey);
         } else {
             userSearchableKey = "%" + userSearchableKey + "%";
             userList = userRepository.getUsers(userType, userSearchableKey, userSearchableKey);
@@ -313,7 +307,7 @@ public class UserServiceImpl implements UserService {
             userRoleOrganizationLinkId.setRoleId(Long.valueOf(assignedRole.getId()));
             userRoleOrganizationLinkId.setOrganizationId(userSession.getOrganizationId());
             userRoleMapping.setId(userRoleOrganizationLinkId);
-            userRoleMapping.setInsertedOn(LocalDate.now());
+            userRoleMapping.setInsertedOn(LocalDateTime.now());
             userRoleMapping.setInsertedBy(userSession.getUserId());
             userRoleMappingRepository.save(userRoleMapping);
         }
