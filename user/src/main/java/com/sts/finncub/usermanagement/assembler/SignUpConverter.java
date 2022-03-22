@@ -5,6 +5,7 @@ import com.sts.finncub.usermanagement.request.SignupRequest;
 import com.sts.finncub.usermanagement.response.SignupResponse;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class SignUpConverter {
     public static User convertToUser(SignupRequest signupRequest) {
@@ -15,7 +16,7 @@ public class SignUpConverter {
         user.setMobileNumber(signupRequest.getMobile());
         user.setType(signupRequest.getUserType());
         user.setPasswordResetDate(LocalDate.now());
-        user.setInsertedOn(LocalDate.now());
+        user.setInsertedOn(LocalDateTime.now());
         user.setInsertedBy(signupRequest.getName());
         return user;
     }
