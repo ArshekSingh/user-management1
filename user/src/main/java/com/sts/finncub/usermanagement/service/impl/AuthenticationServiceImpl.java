@@ -89,10 +89,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             if ("N".equalsIgnoreCase(user.getIsActive())) {
                 throw new BadRequestException("User is not active.", HttpStatus.BAD_REQUEST);
             }
+            if ("N".equalsIgnoreCase(user.getIsPasswordActive())) {
+                throw new BadRequestException("Your password is blocked. Please contact HR", HttpStatus.BAD_REQUEST);
+            }
             if (!user.isPasswordCorrect(loginRequest.getPassword())) {
                 user.setLoginAttempt((user.getLoginAttempt() != null) ? user.getLoginAttempt() + 1 : 1);
                 if (user.getLoginAttempt() != null && user.getLoginAttempt() >= passwordFailedCount) {
-                    user.setIsActive("N");
+                    user.setIsPasswordActive("N");
                 }
                 userRepository.updateLoginAttemptByUserId(user.getUserId(), user.getLoginAttempt(), user.getUserId(), LocalDateTime.now());
                 throw new BadRequestException("Invalid password", HttpStatus.BAD_REQUEST);
@@ -321,7 +324,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         User user = userRepository.findByUserIdIgnoreCase(loginRequest.getUserId()).orElseThrow(() -> new ObjectNotFoundException("Invalid userId - " + userSession.getUserId(), HttpStatus.NOT_FOUND));
         user.setPassword(passwordEncoder, loginRequest.getPassword());
         user.setIsTemporaryPassword("Y");
-        user.setIsActive("Y");
+        user.setIsPasswordActive("Y");
         user.setLoginAttempt(0);
         user.setUpdatedOn(LocalDateTime.now());
         user.setUpdatedBy(userSession.getUserId());
