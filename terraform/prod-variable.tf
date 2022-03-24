@@ -40,7 +40,7 @@ variable "api_health"{
 }
 variable "vpc_id" {
     type= string
-    default="vpc-0ef1c909227de196b"
+    default="vpc-03f2eebc6fb8a5784"
 }
 variable "common_tags" {
     type= string
@@ -56,7 +56,7 @@ variable "containers_max" {
 }
 variable "clustername" {
     type= string
-    default="SASTech-Devops-Preprod"
+    default="prod-sas-ecs"
 }
 variable "lb_listener_arn"{
     type = string
