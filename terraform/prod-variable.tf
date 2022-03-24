@@ -60,7 +60,7 @@ variable "clustername" {
 }
 variable "lb_listener_arn"{
     type = string
-    default="arn:aws:elasticloadbalancing:ap-south-1:305949049023:listener/app/Devops-ALB/e1dd7790c5b34474/2b8b3ad1ea006326"
+    default="arn:aws:elasticloadbalancing:ap-south-1:305949049023:listener/app/sastech-svcl-prod-alb/39b5a698ac5d9cdf/57b90b675e845a07"
 }
 variable "service_role"{
     type= string
