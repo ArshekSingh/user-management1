@@ -8,7 +8,7 @@ echo "ecs service $1 is running on $2 "
 break
 else
 echo "Waiting for service $1 to be steady"
-sleep 45s
+sleep 30s
 fi
 if [ $i == 10 ]
 then
