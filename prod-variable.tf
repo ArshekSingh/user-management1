@@ -48,7 +48,7 @@ variable "common_tags" {
 }
 variable "containers_min" {
     type= number
-    default=2
+    default=1
 }
 variable "containers_max" {
     type= number
