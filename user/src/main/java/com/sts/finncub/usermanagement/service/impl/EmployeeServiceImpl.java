@@ -2,8 +2,12 @@ package com.sts.finncub.usermanagement.service.impl;
 
 import com.sts.finncub.core.dto.EmployeeDto;
 import com.sts.finncub.core.entity.Employee;
+import com.sts.finncub.core.entity.EmployeeDepartmentMaster;
+import com.sts.finncub.core.entity.EmployeeFunctionalTitle;
 import com.sts.finncub.core.entity.UserSession;
 import com.sts.finncub.core.exception.BadRequestException;
+import com.sts.finncub.core.repository.EmployeeDepartmentRepository;
+import com.sts.finncub.core.repository.EmployeeFunctionalTitleRepository;
 import com.sts.finncub.core.repository.EmployeeRepository;
 import com.sts.finncub.core.repository.UserRepository;
 import com.sts.finncub.core.repository.dao.EmployeeDao;
@@ -47,17 +51,22 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     private final UserService userService;
 
+    private final EmployeeDepartmentRepository employeeDepartmentRepository;
+
+    private final EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository;
 
     @Autowired
     public EmployeeServiceImpl(UserCredentialService userCredentialService,
                                EmployeeRepository employeeRepository, EmployeeDao employeeDao
-            , UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserService userService) {
+            , UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserService userService, EmployeeDepartmentRepository employeeDepartmentRepository, EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository) {
         this.userCredentialService = userCredentialService;
         this.employeeRepository = employeeRepository;
         this.employeeDao = employeeDao;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userService = userService;
+        this.employeeDepartmentRepository = employeeDepartmentRepository;
+        this.employeeFunctionalTitleRepository = employeeFunctionalTitleRepository;
     }
 
     @Override
@@ -89,7 +98,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         request.setUserId(userId);
         request.setEmail(employeeRequest.getOfficialEmail());
         request.setName(employeeRequest.getFirstName());
-        request.setMobileNumber(request.getMobileNumber());
+        request.setMobileNumber(employeeRequest.getPersonalMob()==null?null:""+employeeRequest.getPersonalMob());
         request.setType("EMP");
         request.setIsActive("Y");
         request.setEmployeeCreate(true);
@@ -192,7 +201,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         Response response = new Response();
         List<EmployeeDto> employeeDtoList = new ArrayList<>();
         // fetch employee detail list using organizationId
-        request.setOrganizationId(userCredentialService.getUserSession().getOrganizationId());
+        UserSession userSession=userCredentialService.getUserSession();
+        request.setOrganizationId(userSession.getOrganizationId());
         List<Employee> employeeList = employeeDao.fetchAllEmployeeDetails(request);
         // fetch Employee details list count
         Long employeeDetailsCount = employeeDao.findAllFilterEmployeeDetailsCount(request);
@@ -207,6 +217,15 @@ public class EmployeeServiceImpl implements EmployeeService {
             employeeDto.setRelievingDate(DateTimeUtil.dateToString(employee.getRelievingDate()));
             employeeDto.setPromotionDate(DateTimeUtil.dateToString(employee.getPromotionDate()));
             employeeDto.setBranchJoinDate(DateTimeUtil.dateToString(employee.getBranchJoinDate()));
+            employeeDto.setDepartmentName(employee.getEmployeeDepartmentMaster()==null?"":employee.getEmployeeDepartmentMaster().getEmpDepartmentName());
+            if(employee.getSubDepartmentId() != null) {
+                EmployeeDepartmentMaster employeeDepartmentMaster = employeeDepartmentRepository.findByOrgIdAndEmpDepartmentId(userSession.getOrganizationId(), employee.getSubDepartmentId());
+                employeeDto.setSubDepartmentName(employeeDepartmentMaster.getEmpDepartmentName());
+            }
+            if(employee.getFunctionalTitleId() != null) {
+                EmployeeFunctionalTitle employeeFunctionalTitle = employeeFunctionalTitleRepository.findByOrgIdAndEmpFuncTitleId(userSession.getOrganizationId(), employee.getFunctionalTitleId());
+                employeeDto.setFunctionalTitleName(employeeFunctionalTitle.getEmpFuncTitleName());
+            }
             employeeDtoList.add(employeeDto);
         }
         response.setCode(HttpStatus.OK.value());
