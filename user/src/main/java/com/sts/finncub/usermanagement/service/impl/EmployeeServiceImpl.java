@@ -98,7 +98,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         request.setUserId(userId);
         request.setEmail(employeeRequest.getOfficialEmail());
         request.setName(employeeRequest.getFirstName());
-        request.setMobileNumber(employeeRequest.getPersonalMob()==null?null:""+employeeRequest.getPersonalMob());
+        request.setMobileNumber(employeeRequest.getPersonalMob() == null ? null : "" + employeeRequest.getPersonalMob());
         request.setType("EMP");
         request.setIsActive("Y");
         request.setEmployeeCreate(true);
@@ -201,7 +201,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         Response response = new Response();
         List<EmployeeDto> employeeDtoList = new ArrayList<>();
         // fetch employee detail list using organizationId
-        UserSession userSession=userCredentialService.getUserSession();
+        UserSession userSession = userCredentialService.getUserSession();
         request.setOrganizationId(userSession.getOrganizationId());
         List<Employee> employeeList = employeeDao.fetchAllEmployeeDetails(request);
         // fetch Employee details list count
@@ -217,14 +217,24 @@ public class EmployeeServiceImpl implements EmployeeService {
             employeeDto.setRelievingDate(DateTimeUtil.dateToString(employee.getRelievingDate()));
             employeeDto.setPromotionDate(DateTimeUtil.dateToString(employee.getPromotionDate()));
             employeeDto.setBranchJoinDate(DateTimeUtil.dateToString(employee.getBranchJoinDate()));
-            employeeDto.setDepartmentName(employee.getEmployeeDepartmentMaster()==null?"":employee.getEmployeeDepartmentMaster().getEmpDepartmentName());
-            if(employee.getSubDepartmentId() != null) {
+            employeeDto.setDob(DateTimeUtil.dateToString(employee.getDob()));
+            employeeDto.setDepartmentName(employee.getEmployeeDepartmentMaster() == null ? "" : employee.getEmployeeDepartmentMaster().getEmpDepartmentName());
+            employeeDto.setDesignationName(employee.getEmployeeDesignationMaster() == null ? "" : employee.getEmployeeDesignationMaster().getEmpDesignationName());
+            if (employee.getSubDepartmentId() != null) {
                 EmployeeDepartmentMaster employeeDepartmentMaster = employeeDepartmentRepository.findByOrgIdAndEmpDepartmentId(userSession.getOrganizationId(), employee.getSubDepartmentId());
                 employeeDto.setSubDepartmentName(employeeDepartmentMaster.getEmpDepartmentName());
             }
-            if(employee.getFunctionalTitleId() != null) {
+            if (employee.getFunctionalTitleId() != null) {
                 EmployeeFunctionalTitle employeeFunctionalTitle = employeeFunctionalTitleRepository.findByOrgIdAndEmpFuncTitleId(userSession.getOrganizationId(), employee.getFunctionalTitleId());
                 employeeDto.setFunctionalTitleName(employeeFunctionalTitle.getEmpFuncTitleName());
+            }
+            if (employee.getAccManagerId() != null) {
+                Employee accManager = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), employee.getAccManagerId());
+                employeeDto.setAccountManagerName(accManager.getEmployeeId() + " " + accManager.getFirstName());
+            }
+            if (employee.getReportManagerId() != null) {
+                Employee reportManager = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), employee.getReportManagerId());
+                employeeDto.setReportManagerName(reportManager.getEmployeeId() + " " + reportManager.getFirstName());
             }
             employeeDtoList.add(employeeDto);
         }
@@ -240,9 +250,9 @@ public class EmployeeServiceImpl implements EmployeeService {
     public Response getEmployeeDetail(Long employeeId) throws BadRequestException {
         Response response = new Response();
         EmployeeDto employeeDto = new EmployeeDto();
+        UserSession userSession = userCredentialService.getUserSession();
         // fetch employee detail using organizationId and employeeId
-        Employee employee = employeeRepository.findByOrganizationIdAndEmployeeId(
-                userCredentialService.getUserSession().getOrganizationId(), employeeId);
+        Employee employee = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), employeeId);
         if (employee == null) {
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         }
@@ -253,10 +263,28 @@ public class EmployeeServiceImpl implements EmployeeService {
         employeeDto.setRelievingDate(DateTimeUtil.dateToString(employee.getRelievingDate()));
         employeeDto.setPromotionDate(DateTimeUtil.dateToString(employee.getPromotionDate()));
         employeeDto.setBranchJoinDate(DateTimeUtil.dateToString(employee.getBranchJoinDate()));
-        try{
+        employeeDto.setDepartmentName(employee.getEmployeeDepartmentMaster() == null ? "" : employee.getEmployeeDepartmentMaster().getEmpDepartmentName());
+        employeeDto.setDesignationName(employee.getEmployeeDesignationMaster() == null ? "" : employee.getEmployeeDesignationMaster().getEmpDesignationName());
+        if (employee.getSubDepartmentId() != null) {
+            EmployeeDepartmentMaster employeeDepartmentMaster = employeeDepartmentRepository.findByOrgIdAndEmpDepartmentId(userSession.getOrganizationId(), employee.getSubDepartmentId());
+            employeeDto.setSubDepartmentName(employeeDepartmentMaster.getEmpDepartmentName());
+        }
+        if (employee.getFunctionalTitleId() != null) {
+            EmployeeFunctionalTitle employeeFunctionalTitle = employeeFunctionalTitleRepository.findByOrgIdAndEmpFuncTitleId(userSession.getOrganizationId(), employee.getFunctionalTitleId());
+            employeeDto.setFunctionalTitleName(employeeFunctionalTitle.getEmpFuncTitleName());
+        }
+        if (employee.getAccManagerId() != null) {
+            Employee accManager = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), employee.getAccManagerId());
+            employeeDto.setAccountManagerName(accManager.getEmployeeId() + " " + accManager.getFirstName());
+        }
+        if (employee.getReportManagerId() != null) {
+            Employee reportManager = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), employee.getReportManagerId());
+            employeeDto.setReportManagerName(reportManager.getEmployeeId() + " " + reportManager.getFirstName());
+        }
+        try {
             employeeDto.setCurrentVillageName(employee.getCurrentVillageMaster().getVillageName());
             employeeDto.setPermanentVillageName(employee.getPermanentVillageMaster().getVillageName());
-        } catch (Exception exception){
+        } catch (Exception exception) {
             log.error(exception.getMessage());
         }
         response.setCode(HttpStatus.OK.value());
