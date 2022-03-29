@@ -1,0 +1,3 @@
+[submodule "core-commons"]
+	path = core-commons
+	url = git@bitbucket.org:finstudio/core-commons.git
