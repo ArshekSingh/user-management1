@@ -30,7 +30,10 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 // @Author Sumit kumar
 
@@ -331,15 +334,13 @@ public class EmployeeServiceImpl implements EmployeeService {
         UserSession userSession = userCredentialService.getUserSession();
         Response response = new Response();
         List<EmployeeDepartmentMaster> employeeDepartmentMasterList = employeeDepartmentRepository.findByOrgIdAndMainEmpDeptIdAndIsMainEmpDept(userSession.getOrganizationId(), empDepartmentId, "N");
-        Map<Long, Set<EmployeeDepartmentDto>> employeeSubDeptMap = new HashMap<>();
-        Set<EmployeeDepartmentDto> dtoList = new HashSet<>();
+        Set<EmployeeDepartmentDto> employeeSubDeptMap = new HashSet<>();
         for (EmployeeDepartmentMaster employeeDepartmentMaster : employeeDepartmentMasterList) {
             EmployeeDepartmentDto employeeDepartmentDto = new EmployeeDepartmentDto();
             BeanUtils.copyProperties(employeeDepartmentMaster, employeeDepartmentDto);
             employeeDepartmentDto.setInsertedOn(DateTimeUtil.dateTimeToString(employeeDepartmentMaster.getInsertedOn()));
             employeeDepartmentDto.setUpdatedOn(DateTimeUtil.dateTimeToString(employeeDepartmentMaster.getUpdatedOn()));
-            dtoList.add(employeeDepartmentDto);
-            employeeSubDeptMap.put(employeeDepartmentMaster.getMainEmpDeptId(), dtoList);
+            employeeSubDeptMap.add(employeeDepartmentDto);
         }
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);
