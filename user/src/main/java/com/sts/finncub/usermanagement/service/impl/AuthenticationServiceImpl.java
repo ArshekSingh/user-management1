@@ -1,21 +1,15 @@
 package com.sts.finncub.usermanagement.service.impl;
 
-import com.google.gson.Gson;
-import com.sts.finncub.core.constants.RestMappingConstants;
-import com.sts.finncub.core.entity.*;
-import com.sts.finncub.core.exception.BadRequestException;
-import com.sts.finncub.core.exception.InternalServerErrorException;
-import com.sts.finncub.core.exception.ObjectNotFoundException;
-import com.sts.finncub.core.repository.*;
-import com.sts.finncub.core.response.Response;
-import com.sts.finncub.core.service.UserCredentialService;
-import com.sts.finncub.usermanagement.assembler.SignUpConverter;
-import com.sts.finncub.usermanagement.request.LoginRequest;
-import com.sts.finncub.usermanagement.request.SignupRequest;
-import com.sts.finncub.usermanagement.response.LoginResponse;
-import com.sts.finncub.usermanagement.response.SignupResponse;
-import com.sts.finncub.usermanagement.service.AuthenticationService;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.servlet.http.HttpServletRequest;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -26,10 +20,36 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
-import javax.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import com.google.gson.Gson;
+import com.sts.finncub.core.constants.RestMappingConstants;
+import com.sts.finncub.core.entity.BranchMaster;
+import com.sts.finncub.core.entity.Employee;
+import com.sts.finncub.core.entity.User;
+import com.sts.finncub.core.entity.UserBranchMapping;
+import com.sts.finncub.core.entity.UserLoginLog;
+import com.sts.finncub.core.entity.UserOrganizationMapping;
+import com.sts.finncub.core.entity.UserRoleMapping;
+import com.sts.finncub.core.entity.UserSession;
+import com.sts.finncub.core.exception.BadRequestException;
+import com.sts.finncub.core.exception.InternalServerErrorException;
+import com.sts.finncub.core.exception.ObjectNotFoundException;
+import com.sts.finncub.core.repository.BranchMasterRepository;
+import com.sts.finncub.core.repository.EmployeeRepository;
+import com.sts.finncub.core.repository.UserLoginLogRepository;
+import com.sts.finncub.core.repository.UserOrganizationMappingRepository;
+import com.sts.finncub.core.repository.UserRedisRepository;
+import com.sts.finncub.core.repository.UserRepository;
+import com.sts.finncub.core.repository.UserRoleMappingRepository;
+import com.sts.finncub.core.response.Response;
+import com.sts.finncub.core.service.UserCredentialService;
+import com.sts.finncub.usermanagement.assembler.SignUpConverter;
+import com.sts.finncub.usermanagement.request.LoginRequest;
+import com.sts.finncub.usermanagement.request.SignupRequest;
+import com.sts.finncub.usermanagement.response.LoginResponse;
+import com.sts.finncub.usermanagement.response.SignupResponse;
+import com.sts.finncub.usermanagement.service.AuthenticationService;
+
+import lombok.extern.slf4j.Slf4j;
 
 
 @Service
@@ -84,12 +104,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         userLoginLog.setStatus("S");
         try {
             Gson gson = new Gson();
-            log.info("Request received for userId -" + loginRequest.getUserId());
+			log.info("Login Request received for userId : {}", loginRequest.getUserId());
             User user = userRepository.findByUserIdIgnoreCase(loginRequest.getUserId()).orElseThrow(() -> new ObjectNotFoundException("Invalid userId - " + loginRequest.getUserId(), HttpStatus.NOT_FOUND));
             if ("N".equalsIgnoreCase(user.getIsActive())) {
+				log.error("User is not active , userId : {}", loginRequest.getUserId());
                 throw new BadRequestException("User is not active.", HttpStatus.BAD_REQUEST);
             }
             if ("N".equalsIgnoreCase(user.getIsPasswordActive())) {
+				log.error("User password is blocked , userId : {}", loginRequest.getUserId());
                 throw new BadRequestException("Your password is blocked. Please contact HR", HttpStatus.BAD_REQUEST);
             }
             if (!user.isPasswordCorrect(loginRequest.getPassword())) {
@@ -98,6 +120,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     user.setIsPasswordActive("N");
                 }
                 userRepository.updateLoginAttemptByUserId(user.getUserId(), user.getLoginAttempt(), user.getUserId(), LocalDateTime.now());
+				log.error("Invalid password supplied for login , userId : {}", loginRequest.getUserId());
                 throw new BadRequestException("Invalid password", HttpStatus.BAD_REQUEST);
             } else {
                 userRepository.updateLoginAttemptByUserId(user.getUserId(), 0, user.getUserId(), LocalDateTime.now());
@@ -107,7 +130,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             String authToken;
             try {
                 authToken = saveToken(userSession);
-                log.info("User session saved with id -" + authToken);
+				log.info("User session saved , userId : {}", loginRequest.getUserId());
                 loginResponse.setAuthToken(authToken);
                 loginResponse.setUserSession(gson.fromJson(userSession.getUserSessionJSON(), UserSession.class));
                 try {
@@ -116,17 +139,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     loginResponse.setDepartmentName((employee.getEmployeeDepartmentMaster() != null) ? employee.getEmployeeDepartmentMaster().getEmpDepartmentName() : "");
                     loginResponse.setDesignationName((employee.getEmployeeDesignationMaster() != null) ? employee.getEmployeeDesignationMaster().getEmpDesignationName() : "");
                 } catch (Exception exception) {
-                    log.error("Exception while fetching employee details - " + exception.getMessage());
+					log.error("Exception while fetching employee details for userId :{} , message : {}", loginRequest,
+							exception.getMessage(), exception);
                 }
             } catch (Exception e) {
-                log.error("Exception- {}", e.getMessage());
+				log.error("Exception occurred while login , userId : {} , message : {}", loginRequest.getUserId(),
+						e.getMessage(), e);
                 throw new InternalServerErrorException("Exception while saving token - " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
             //save user Login log
             userLoginLog.setTokenId(authToken);
             userLoginLogRepository.save(userLoginLog);
-
+			log.info("Login successful , userId : {}", loginRequest.getUserId());
         } catch (Exception exception) {
             log.error("Exception- {}", exception.getMessage());
             userLoginLog.setFailureReason(exception.getMessage());
@@ -134,7 +159,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             try {
                 userLoginLogRepository.save(userLoginLog);
             } catch (Exception ex) {
-                log.error("Exception while saving UserLogin log - {} ", ex.getMessage());
+				log.error("Exception while saving UserLogin , message {} ", ex.getMessage(), ex);
             }
             throw exception;
         }
@@ -185,7 +210,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             userSession.setDivisionMap(divisionMap);
             userSession.setZoneMap(zoneMap);
         } catch (Exception ex) {
-            log.error("Exception- {}", ex.getMessage());
+			log.error("Exception occurred while preparing userSession , message : {}", ex.getMessage(), ex);
             throw new InternalServerErrorException("Exception while set data in userSession object" + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return userSession;
@@ -215,15 +240,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         final String userId = userEmployeeId.split(",")[0];
         final String employeeId = userEmployeeId.split(",")[1];
         newUser.setUserId(userId);
-        log.info("Generated user Id -" + newUser.getUserId());
+		log.info("Generated user Id : {} , email : {}", newUser.getUserId(), newUser.getEmail());
 
         newUser = userRepository.save(newUser);
 
-        log.info("Operation user name - " + operationUserName);
+		log.info("Operation user name : {} , email : {} , organizationId : {}", operationUserName,
+				signupRequest.getEmail(), organizationId);
 
-
-        log.info("Operation user organizationId" + organizationId);
-        UserOrganizationMapping userOrganizationMapping = new UserOrganizationMapping(organizationId, newUser.getUserId(), operationUserName);
+		UserOrganizationMapping userOrganizationMapping = new UserOrganizationMapping(organizationId,
+				newUser.getUserId(), operationUserName);
         userOrganizationMappingRepository.save(userOrganizationMapping);
 //        if (signupRequest.getUserType().equals(UserType.EMP.name())) {
 //            log.info("New user saved to db");
@@ -231,10 +256,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 //        }
 
         if (signupRequest.hasRoles()) {
-            log.info("Setting roles for userId - " + userId);
+			log.info("Setting roles , userId :{} ", userId);
 
             userRoleMappingRepository.saveAll(signupRequest.getRoleList().stream().map(id -> new UserRoleMapping(userId, id, organizationId, operationUserName)).collect(Collectors.toSet()));
-            log.info("Roles saved to db");
+			log.info("Roles saved to db, userId :{} ", userId);
         }
         return SignUpConverter.convertToResponse(newUser);
     }
@@ -253,7 +278,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private String saveToken(UserSession userSession) {
         Gson gson = new Gson();
-        log.info("saving user session");
+		log.info("saving user session, userId : {}", userSession.getUserId());
         userSession.setUserSessionJSON(gson.toJson(userSession));
         return userRedisRepository.save(userSession).getId();
     }
@@ -264,17 +289,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         String tokenString = request.getHeader("Authorization");
         String token = tokenString.split(" ")[1];
         userRedisRepository.deleteById(token);
+		log.info("logout successful");
         return ResponseEntity.ok(response);
     }
 
     @Override
     public ResponseEntity<Response> changePassword(LoginRequest request) throws ObjectNotFoundException, BadRequestException {
         Response response = new Response();
+		log.info("Fetching userSession for changePassword request, userId : {} ", request.getUserId());
         UserSession userSession = userCredentialService.getUserSession();
 //      validate password(Regex)
         User user = userRepository.findByUserIdIgnoreCase(userSession.getUserId()).orElseThrow(() -> new ObjectNotFoundException("Invalid userId - " + userSession.getUserId(), HttpStatus.NOT_FOUND));
 //      check current password
         if (!user.isPasswordCorrect(request.getPassword())) {
+			log.error("Incorrect password supplied , userId : {}", request.getUserId());
             throw new BadRequestException("Invalid current password", HttpStatus.BAD_REQUEST);
         }
 //      check new password with 5 old password
@@ -285,6 +313,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             String[] oldPasswordList = oldPassword.split(PASSWORD_SEPARATOR);
             for (String pass : oldPasswordList) {
                 if (BCrypt.checkpw(request.getNewPassword(), pass)) {
+					log.error("New password matches with recent passwords  , userId : {}", request.getUserId());
                     throw new BadRequestException("New password matches with recent passwords ", HttpStatus.BAD_REQUEST);
                 }
             }
@@ -310,7 +339,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         user.setUpdatedOn(LocalDateTime.now());
         user.setUpdatedBy(userSession.getUserId());
         userRepository.save(user);
-
+		log.info("Password updated successfully , userId : {}", request.getUserId());
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);
         response.setMessage(RestMappingConstants.CHANGED_PASSWORD);
@@ -320,6 +349,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public ResponseEntity<Response> resetPassword(LoginRequest loginRequest) throws ObjectNotFoundException {
         Response response = new Response();
+		log.info("Fetching userSession for resetPassword request, userId : {} ", loginRequest.getUserId());
         UserSession userSession = userCredentialService.getUserSession();
         User user = userRepository.findByUserIdIgnoreCase(loginRequest.getUserId()).orElseThrow(() -> new ObjectNotFoundException("Invalid userId - " + userSession.getUserId(), HttpStatus.NOT_FOUND));
         user.setPassword(passwordEncoder, loginRequest.getPassword());
@@ -329,6 +359,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         user.setUpdatedOn(LocalDateTime.now());
         user.setUpdatedBy(userSession.getUserId());
         userRepository.save(user);
+		log.info("Password reset was successful, userId : {}", loginRequest.getUserId());
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);
         response.setMessage(RestMappingConstants.CHANGED_PASSWORD);
