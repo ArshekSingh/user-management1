@@ -1,5 +1,6 @@
 package com.sts.finncub.usermanagement.service.impl;
 
+import com.sts.finncub.core.dto.MenuMasterDto;
 import com.sts.finncub.core.dto.MenuRoleMappingDto;
 import com.sts.finncub.core.dto.ServerSideDropDownDto;
 import com.sts.finncub.core.entity.*;
@@ -18,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -133,5 +135,75 @@ public class MenuServiceImpl implements MenuService {
         response.setStatus(HttpStatus.OK);
         response.setMessage("Transaction completed successfully.");
         return response;
+    }
+    
+    @Override
+    public Response getMenuAssignedOrAvailableForRole(Long roleId) {
+        Response response = new Response();
+        List<Menu> menuIdAndMenuNameList = menuRepository.findMenuListForRole(roleId);
+        MenuRoleMappingDto menuRoleMappingDto = new MenuRoleMappingDto();
+        List<ServerSideDropDownDto> menuAssignedRolesList = new ArrayList<>();
+        List<ServerSideDropDownDto> menuAvailableRolesList = new ArrayList<>();
+        List<Long> assignedMenuList = new ArrayList<>();
+        for(Menu menu : menuIdAndMenuNameList) {
+            menuRoleMappingDto.setId(roleId);
+            ServerSideDropDownDto menuAssignedToRole = new ServerSideDropDownDto();
+            menuAssignedToRole.setId(menu.getId().toString());
+            menuAssignedToRole.setLabel(menu.getMenuName());
+            menuAssignedRolesList.add(menuAssignedToRole);
+            assignedMenuList.add(menu.getId());
+        }
+        List<Menu> unassignedMenuList;
+        if (assignedMenuList.isEmpty()) {
+            unassignedMenuList = menuRepository.findAll();
+        } else {
+            unassignedMenuList = menuRepository.findByIdNotIn(assignedMenuList);
+        }
+        for(Menu menu : unassignedMenuList) {
+            ServerSideDropDownDto menuAvailableRoles = new ServerSideDropDownDto();
+            menuAvailableRoles.setId(menu.getId().toString());
+            menuAvailableRoles.setLabel(menu.getMenuName());
+            menuAvailableRolesList.add(menuAvailableRoles);
+        }
+        menuRoleMappingDto.setAssignedMenus(menuAssignedRolesList);
+        menuRoleMappingDto.setAvailableMenus(menuAvailableRolesList);
+        response.setCode(HttpStatus.OK.value());
+        response.setStatus(HttpStatus.OK);
+        response.setData(menuRoleMappingDto);
+        response.setMessage("Transaction completed successfully.");
+        return response;
+    }
+    
+    @Override
+    public Response assignRoleToMenus(MenuRoleMappingDto menuRoleMappingDto) {
+        Response response = new Response();
+        UserSession userSession = userCredentialService.getUserSession();
+        List<MenuRoleMapping> menuRoleMappingList = menuRoleMappingRepository.findByRoleMaster_RoleId(menuRoleMappingDto.getId());
+        if (!CollectionUtils.isEmpty(menuRoleMappingList)) {
+        	log.info("Deleting previously assigned menus , roleId : {}",menuRoleMappingDto.getId());
+            menuRoleMappingRepository.deleteAll(menuRoleMappingList);
+        }
+        
+        log.info("Adding new assigned menus , roleId : {}",menuRoleMappingDto.getId());
+        
+        menuRoleMappingDto.getAssignedMenus().stream()
+				.forEach(assignedMenu -> saveNewMenuRoleMapping(assignedMenu, userSession, menuRoleMappingDto));
+        response.setCode(HttpStatus.OK.value());
+        response.setStatus(HttpStatus.OK);
+        response.setMessage("Transaction completed successfully.");
+        return response;
+    }
+    void saveNewMenuRoleMapping(ServerSideDropDownDto assignedMenu,UserSession userSession,MenuRoleMappingDto menuRoleMappingDto)
+    {
+
+        MenuRoleMapping menuRoleMapping = new MenuRoleMapping();
+        MenuRoleMappingPK menuRoleMappingPK = new MenuRoleMappingPK();
+        menuRoleMappingPK.setMenuId(Long.valueOf(assignedMenu.getId()));
+        menuRoleMappingPK.setRoleId(menuRoleMappingDto.getId());
+        menuRoleMapping.setMenuRoleMappingPK(menuRoleMappingPK);
+        menuRoleMapping.setInsertedOn(LocalDateTime.now());
+        menuRoleMapping.setInsertedBy(userSession.getUserId());
+        menuRoleMappingRepository.save(menuRoleMapping);
+    
     }
 }
