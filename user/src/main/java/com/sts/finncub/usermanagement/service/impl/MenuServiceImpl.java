@@ -1,28 +1,34 @@
 package com.sts.finncub.usermanagement.service.impl;
 
-import com.sts.finncub.core.dto.MenuMasterDto;
-import com.sts.finncub.core.dto.MenuRoleMappingDto;
-import com.sts.finncub.core.dto.ServerSideDropDownDto;
-import com.sts.finncub.core.entity.*;
-import com.sts.finncub.core.exception.ObjectNotFoundException;
-import com.sts.finncub.core.repository.MenuRepository;
-import com.sts.finncub.core.repository.MenuRoleMappingRepository;
-import com.sts.finncub.core.repository.RoleMasterRepository;
-import com.sts.finncub.core.service.UserCredentialService;
-import com.sts.finncub.usermanagement.assembler.MenuResponseConverter;
-import com.sts.finncub.usermanagement.response.MenuResponse;
-import com.sts.finncub.core.response.Response;
-import com.sts.finncub.usermanagement.service.MenuService;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import com.sts.finncub.core.dto.MenuRoleMappingDto;
+import com.sts.finncub.core.dto.ServerSideDropDownDto;
+import com.sts.finncub.core.entity.Menu;
+import com.sts.finncub.core.entity.MenuRoleMapping;
+import com.sts.finncub.core.entity.MenuRoleMappingPK;
+import com.sts.finncub.core.entity.MenuView;
+import com.sts.finncub.core.entity.RoleMaster;
+import com.sts.finncub.core.entity.UserSession;
+import com.sts.finncub.core.exception.ObjectNotFoundException;
+import com.sts.finncub.core.repository.MenuRepository;
+import com.sts.finncub.core.repository.MenuRoleMappingRepository;
+import com.sts.finncub.core.repository.RoleMasterRepository;
+import com.sts.finncub.core.response.Response;
+import com.sts.finncub.core.service.UserCredentialService;
+import com.sts.finncub.usermanagement.assembler.MenuResponseConverter;
+import com.sts.finncub.usermanagement.response.MenuResponse;
+import com.sts.finncub.usermanagement.service.MenuService;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
@@ -145,26 +151,17 @@ public class MenuServiceImpl implements MenuService {
         List<ServerSideDropDownDto> menuAssignedRolesList = new ArrayList<>();
         List<ServerSideDropDownDto> menuAvailableRolesList = new ArrayList<>();
         List<Long> assignedMenuList = new ArrayList<>();
-        for(Menu menu : menuIdAndMenuNameList) {
-            menuRoleMappingDto.setId(roleId);
-            ServerSideDropDownDto menuAssignedToRole = new ServerSideDropDownDto();
-            menuAssignedToRole.setId(menu.getId().toString());
-            menuAssignedToRole.setLabel(menu.getMenuName());
-            menuAssignedRolesList.add(menuAssignedToRole);
-            assignedMenuList.add(menu.getId());
-        }
+        
+        menuAssignedRolesList.addAll(menuIdAndMenuNameList.stream().map(menu->populateAssignedMenu(menu,assignedMenuList)).collect(Collectors.toList()));
         List<Menu> unassignedMenuList;
         if (assignedMenuList.isEmpty()) {
             unassignedMenuList = menuRepository.findAll();
         } else {
             unassignedMenuList = menuRepository.findByIdNotIn(assignedMenuList);
         }
-        for(Menu menu : unassignedMenuList) {
-            ServerSideDropDownDto menuAvailableRoles = new ServerSideDropDownDto();
-            menuAvailableRoles.setId(menu.getId().toString());
-            menuAvailableRoles.setLabel(menu.getMenuName());
-            menuAvailableRolesList.add(menuAvailableRoles);
-        }
+        
+		menuAvailableRolesList
+				.addAll(unassignedMenuList.stream().map(this::populateAvailableMenu).collect(Collectors.toList()));
         menuRoleMappingDto.setAssignedMenus(menuAssignedRolesList);
         menuRoleMappingDto.setAvailableMenus(menuAvailableRolesList);
         response.setCode(HttpStatus.OK.value());
@@ -205,5 +202,18 @@ public class MenuServiceImpl implements MenuService {
         menuRoleMapping.setInsertedBy(userSession.getUserId());
         menuRoleMappingRepository.save(menuRoleMapping);
     
+    }
+    ServerSideDropDownDto populateAvailableMenu(Menu menu){
+    	ServerSideDropDownDto dto = new ServerSideDropDownDto();
+        dto.setId(menu.getId().toString());
+        dto.setLabel(menu.getMenuName());
+        return dto;
+    }
+    ServerSideDropDownDto populateAssignedMenu(Menu menu,List<Long> assignedMenuList){
+    	ServerSideDropDownDto menuAvailableRoles = new ServerSideDropDownDto();
+        menuAvailableRoles.setId(menu.getId().toString());
+        menuAvailableRoles.setLabel(menu.getMenuName());
+        assignedMenuList.add(menu.getId());
+        return menuAvailableRoles;
     }
 }
