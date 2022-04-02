@@ -16,5 +16,5 @@ public class LoginResponse {
     private String baseLocation;
     private String designationName;
     private String departmentName;
-
+    private String designationType;
 }
