@@ -2,15 +2,9 @@ package com.sts.finncub.usermanagement.service.impl;
 
 import com.sts.finncub.core.dto.EmployeeDepartmentDto;
 import com.sts.finncub.core.dto.EmployeeDto;
-import com.sts.finncub.core.entity.Employee;
-import com.sts.finncub.core.entity.EmployeeDepartmentMaster;
-import com.sts.finncub.core.entity.EmployeeFunctionalTitle;
-import com.sts.finncub.core.entity.UserSession;
+import com.sts.finncub.core.entity.*;
 import com.sts.finncub.core.exception.BadRequestException;
-import com.sts.finncub.core.repository.EmployeeDepartmentRepository;
-import com.sts.finncub.core.repository.EmployeeFunctionalTitleRepository;
-import com.sts.finncub.core.repository.EmployeeRepository;
-import com.sts.finncub.core.repository.UserRepository;
+import com.sts.finncub.core.repository.*;
 import com.sts.finncub.core.repository.dao.EmployeeDao;
 import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.core.response.Response;
@@ -54,9 +48,10 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final EmployeeDepartmentRepository employeeDepartmentRepository;
 
     private final EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository;
+    private final BranchMasterRepository branchMasterRepository;
 
     @Autowired
-    public EmployeeServiceImpl(UserCredentialService userCredentialService, EmployeeRepository employeeRepository, EmployeeDao employeeDao, UserRepository userRepository, UserService userService, EmployeeDepartmentRepository employeeDepartmentRepository, EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository) {
+    public EmployeeServiceImpl(UserCredentialService userCredentialService, EmployeeRepository employeeRepository, EmployeeDao employeeDao, UserRepository userRepository, UserService userService, EmployeeDepartmentRepository employeeDepartmentRepository, EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository, BranchMasterRepository branchMasterRepository) {
         this.userCredentialService = userCredentialService;
         this.employeeRepository = employeeRepository;
         this.employeeDao = employeeDao;
@@ -64,6 +59,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         this.userService = userService;
         this.employeeDepartmentRepository = employeeDepartmentRepository;
         this.employeeFunctionalTitleRepository = employeeFunctionalTitleRepository;
+        this.branchMasterRepository = branchMasterRepository;
     }
 
     @Override
@@ -169,6 +165,21 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setTitle(request.getTitle());
         employee.setCaste(request.getCaste());
         employee.setReligion(request.getReligion());
+        employee.setReferenceType(request.getReferenceType());
+        employee.setReferenceSource(request.getReferenceSource());
+        employee.setReferenceName(request.getReferenceName());
+        employee.setReferenceId(request.getReferenceId());
+        employee.setRelWithEmergPerson(request.getRelWithEmergPerson());
+        if (StringUtils.hasText(request.getResignDate())) {
+            employee.setResignDate(DateTimeUtil.stringToDate(request.getResignDate()));
+        }
+        employee.setTypeOfExit(request.getTypeOfExit());
+        employee.setGrade(request.getGrade());
+        if (StringUtils.hasText(request.getExitDate())) {
+            employee.setExitDate(DateTimeUtil.stringToDate(request.getExitDate()));
+        }
+        employee.setIsSignatory(request.getIsSignatory());
+        employee.setIsFnfClear(request.getIsFnfClear());
         if (employeeId == null) {
             employee.setInsertedOn(LocalDateTime.now());
             employee.setInsertedBy(userCredentialService.getUserSession().getUserId());
@@ -226,6 +237,12 @@ public class EmployeeServiceImpl implements EmployeeService {
                 Employee reportManager = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), employee.getReportManagerId());
                 employeeDto.setReportManagerName(reportManager.getEmployeeId() + " " + reportManager.getFirstName());
             }
+            if (employee.getResignDate() != null) {
+                employeeDto.setResignDate(DateTimeUtil.dateToString(employee.getResignDate()));
+            }
+            if (employee.getExitDate() != null) {
+                employeeDto.setExitDate(DateTimeUtil.dateToString(employee.getExitDate()));
+            }
             employeeDtoList.add(employeeDto);
         }
         response.setCode(HttpStatus.OK.value());
@@ -271,12 +288,21 @@ public class EmployeeServiceImpl implements EmployeeService {
             Employee reportManager = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), employee.getReportManagerId());
             employeeDto.setReportManagerName(reportManager.getEmployeeId() + " " + reportManager.getFirstName());
         }
+        if (employee.getBranchId() != null) {
+            BranchMaster branchMaster = branchMasterRepository.findByBranchId(employee.getBranchId().intValue()).orElse(null);
+            employeeDto.setBaseLocation(branchMaster==null?"":branchMaster.getBranchCode() + " " + branchMaster.getBranchName());
+        }
+        if(employee.getReferenceId() != null){
+            Employee emp=employeeRepository.findByEmployeeCodeAndOrganizationId(employee.getReferenceId(),userSession.getOrganizationId());
+            employeeDto.setReferenceIdName(emp==null?"":emp.getEmployeeCode() + "-" + emp.getFirstName() + " " + emp.getLastName());
+        }
         try {
             employeeDto.setCurrentVillageName(employee.getCurrentVillageMaster().getVillageName());
             employeeDto.setPermanentVillageName(employee.getPermanentVillageMaster().getVillageName());
         } catch (Exception exception) {
             log.error(exception.getMessage());
         }
+        employeeDto.setResignDate(DateTimeUtil.dateToString(employee.getResignDate()));
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);
         response.setMessage("Transaction completed successfully.");
@@ -288,9 +314,15 @@ public class EmployeeServiceImpl implements EmployeeService {
     public Response updateEmployeeDetails(EmployeeRequest request) throws BadRequestException {
         Response response = new Response();
         validateRequest(request);
+        UserSession userSession = userCredentialService.getUserSession();
         // fetch employee detail using organizationId and employeeId
+        Employee employee = new Employee();
         if (request.getEmployeeId() != null) {
-            Employee employee = employeeRepository.findByOrganizationIdAndEmployeeId(userCredentialService.getUserSession().getOrganizationId(), request.getEmployeeId());
+            try {
+                employee = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), request.getEmployeeId());
+            } catch (Exception exception) {
+                throw new BadRequestException(exception.getMessage(), HttpStatus.BAD_REQUEST);
+            }
             if (employee != null) {
                 // save value in employee master table
                 saveValueEmployeeMaster(request, employee, request.getEmployeeId());
