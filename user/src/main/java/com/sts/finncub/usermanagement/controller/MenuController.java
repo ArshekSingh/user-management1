@@ -57,6 +57,7 @@ public class MenuController {
 
     @PostMapping(value = "assignMenuToRoles")
     public Response assignMenuToRoles(@RequestBody MenuRoleMappingDto menuRoleMappingDto) {
+    	log.info("assignMenuToRoles invoked , menuId : {}",menuRoleMappingDto.getId());
         return menuService.assignMenuToRoles(menuRoleMappingDto);
     }
     
