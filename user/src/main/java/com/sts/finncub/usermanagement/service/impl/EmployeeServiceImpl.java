@@ -192,6 +192,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         // validate employee add / update request
         if (request == null || !StringUtils.hasText(request.getStatus()) ||
                 !StringUtils.hasText(request.getFirstName()) || !StringUtils.hasText(request.getGender())) {
+        	log.warn("Request failed validation : {} ",request.getFirstName());
             throw new BadRequestException("Invalid Request", HttpStatus.BAD_REQUEST);
         }
     }
@@ -254,6 +255,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         // fetch employee detail using organizationId and employeeId
         Employee employee = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), employeeId);
         if (employee == null) {
+        	log.warn("Employee not found for employeeId : {} ",employeeId);
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         }
         BeanUtils.copyProperties(employee, employeeDto);
