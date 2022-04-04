@@ -138,6 +138,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     loginResponse.setBaseLocation((employee.getBranchMaster() != null) ? employee.getBranchMaster().getBranchName() : "");
                     loginResponse.setDepartmentName((employee.getEmployeeDepartmentMaster() != null) ? employee.getEmployeeDepartmentMaster().getEmpDepartmentName() : "");
                     loginResponse.setDesignationName((employee.getEmployeeDesignationMaster() != null) ? employee.getEmployeeDesignationMaster().getEmpDesignationName() : "");
+                    loginResponse.setDesignationType((employee.getEmployeeDesignationMaster() != null) ? employee.getEmployeeDesignationMaster().getEmpDesignationType() : "");
                 } catch (Exception exception) {
 					log.error("Exception while fetching employee details for userId :{} , message : {}", loginRequest,
 							exception.getMessage(), exception);

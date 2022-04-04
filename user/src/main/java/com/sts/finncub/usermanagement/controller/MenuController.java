@@ -1,15 +1,23 @@
 package com.sts.finncub.usermanagement.controller;
 
-import com.sts.finncub.core.constants.RestMappingConstants;
-import com.sts.finncub.core.dto.MenuRoleMappingDto;
-import com.sts.finncub.usermanagement.response.MenuResponse;
-import com.sts.finncub.core.response.Response;
-import com.sts.finncub.usermanagement.service.MenuService;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.sts.finncub.core.constants.RestMappingConstants;
+import com.sts.finncub.core.dto.MenuRoleMappingDto;
+import com.sts.finncub.core.exception.BadRequestException;
+import com.sts.finncub.core.response.Response;
+import com.sts.finncub.usermanagement.response.MenuResponse;
+import com.sts.finncub.usermanagement.service.MenuService;
+
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping(value = "/api")
@@ -51,4 +59,22 @@ public class MenuController {
     public Response assignMenuToRoles(@RequestBody MenuRoleMappingDto menuRoleMappingDto) {
         return menuService.assignMenuToRoles(menuRoleMappingDto);
     }
+    
+    @GetMapping(value = "getMenuAssignedOrAvailableForRole/{roleId}")
+    public Response getMenuAssignedOrAvailableForRole(@PathVariable Long roleId) {
+    	log.info("getMenuAssignedOrAvailableForRole() invoked for roleId : {}",roleId);
+        return menuService.getMenuAssignedOrAvailableForRole(roleId);
+    }
+    
+    @PostMapping(value = "assignRoleToMenus")
+	public Response assignRoleToMenus(@RequestBody MenuRoleMappingDto menuRoleMappingDto) throws BadRequestException {
+    	
+    	if (menuRoleMappingDto.isValid(menuRoleMappingDto)) {
+    		log.info("assignRoleToMenus() invoked for roleId : {}",menuRoleMappingDto.getId());
+			return menuService.assignRoleToMenus(menuRoleMappingDto);
+		} else {
+			log.error("BadRequest passed to assignRoleToMenus()");
+			throw new BadRequestException("Required attributes not supplied in request !",HttpStatus.BAD_REQUEST);
+		}
+	}
 }
