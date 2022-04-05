@@ -243,6 +243,14 @@ public class EmployeeServiceImpl implements EmployeeService {
             if (employee.getExitDate() != null) {
                 employeeDto.setExitDate(DateTimeUtil.dateToString(employee.getExitDate()));
             }
+            if (employee.getBranchId() != null) {
+                BranchMaster branchMaster = branchMasterRepository.findByBranchId(employee.getBranchId().intValue()).orElse(null);
+                employeeDto.setBaseLocation(branchMaster==null?"":branchMaster.getBranchCode() + " " + branchMaster.getBranchName());
+            }
+            if (employee.getSubDepartmentId() != null) {
+                EmployeeDepartmentMaster employeeDepartmentMaster = employeeDepartmentRepository.findByOrgIdAndEmpDepartmentId(userSession.getOrganizationId(), employee.getSubDepartmentId());
+                employeeDto.setSubDepartmentName(employeeDepartmentMaster.getEmpDepartmentName());
+            }
             employeeDtoList.add(employeeDto);
         }
         response.setCode(HttpStatus.OK.value());
