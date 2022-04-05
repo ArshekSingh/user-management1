@@ -249,7 +249,7 @@ public class EmployeeServiceImpl implements EmployeeService {
             }
             if (employee.getSubDepartmentId() != null) {
                 EmployeeDepartmentMaster employeeDepartmentMaster = employeeDepartmentRepository.findByOrgIdAndEmpDepartmentId(userSession.getOrganizationId(), employee.getSubDepartmentId());
-                employeeDto.setSubDepartmentName(employeeDepartmentMaster.getEmpDepartmentName());
+                employeeDto.setSubDepartmentName(employeeDepartmentMaster==null?"":employeeDepartmentMaster.getEmpDepartmentName());
             }
             employeeDtoList.add(employeeDto);
         }
