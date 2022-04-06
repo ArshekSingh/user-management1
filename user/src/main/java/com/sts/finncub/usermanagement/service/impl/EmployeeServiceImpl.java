@@ -1,15 +1,10 @@
 package com.sts.finncub.usermanagement.service.impl;
 
+import com.sts.finncub.core.dto.EmployeeDepartmentDto;
 import com.sts.finncub.core.dto.EmployeeDto;
-import com.sts.finncub.core.entity.Employee;
-import com.sts.finncub.core.entity.EmployeeDepartmentMaster;
-import com.sts.finncub.core.entity.EmployeeFunctionalTitle;
-import com.sts.finncub.core.entity.UserSession;
+import com.sts.finncub.core.entity.*;
 import com.sts.finncub.core.exception.BadRequestException;
-import com.sts.finncub.core.repository.EmployeeDepartmentRepository;
-import com.sts.finncub.core.repository.EmployeeFunctionalTitleRepository;
-import com.sts.finncub.core.repository.EmployeeRepository;
-import com.sts.finncub.core.repository.UserRepository;
+import com.sts.finncub.core.repository.*;
 import com.sts.finncub.core.repository.dao.EmployeeDao;
 import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.core.response.Response;
@@ -23,7 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -31,7 +25,9 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 // @Author Sumit kumar
 
@@ -47,26 +43,23 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     private final UserRepository userRepository;
 
-    private final BCryptPasswordEncoder passwordEncoder;
-
     private final UserService userService;
 
     private final EmployeeDepartmentRepository employeeDepartmentRepository;
 
     private final EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository;
+    private final BranchMasterRepository branchMasterRepository;
 
     @Autowired
-    public EmployeeServiceImpl(UserCredentialService userCredentialService,
-                               EmployeeRepository employeeRepository, EmployeeDao employeeDao
-            , UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserService userService, EmployeeDepartmentRepository employeeDepartmentRepository, EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository) {
+    public EmployeeServiceImpl(UserCredentialService userCredentialService, EmployeeRepository employeeRepository, EmployeeDao employeeDao, UserRepository userRepository, UserService userService, EmployeeDepartmentRepository employeeDepartmentRepository, EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository, BranchMasterRepository branchMasterRepository) {
         this.userCredentialService = userCredentialService;
         this.employeeRepository = employeeRepository;
         this.employeeDao = employeeDao;
         this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
         this.userService = userService;
         this.employeeDepartmentRepository = employeeDepartmentRepository;
         this.employeeFunctionalTitleRepository = employeeFunctionalTitleRepository;
+        this.branchMasterRepository = branchMasterRepository;
     }
 
     @Override
@@ -76,8 +69,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         UserSession userSession = userCredentialService.getUserSession();
         validateRequest(request);
         Employee employee = new Employee();
-        String userEmployeeId = userRepository.getGeneratedUserEmployeeId
-                (userCredentialService.getUserSession().getOrganizationId(), "EMP");
+        String userEmployeeId = userRepository.getGeneratedUserEmployeeId(userCredentialService.getUserSession().getOrganizationId(), "EMP");
         final String userId = userEmployeeId.split(",")[0];
         final String employeeId = userEmployeeId.split(",")[1];
         employee.setOrganizationId(userSession.getOrganizationId());
@@ -138,14 +130,10 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setAlternateCon(request.getAlternateCon());
         employee.setEmergencyCon(request.getEmergencyCon());
         employee.setEmploymentType(request.getEmploymentType());
-        employee.setJoiningDate(StringUtils.hasText(request.getJoiningDate()) ? DateTimeUtil.stringToDate
-                (request.getJoiningDate()) : null);
-        employee.setConfirmationDate(StringUtils.hasText(request.getConfirmationDate()) ?
-                DateTimeUtil.stringToDate(request.getConfirmationDate()) : null);
-        employee.setPromotionDate(StringUtils.hasText(request.getPromotionDate()) ?
-                DateTimeUtil.stringToDate(request.getPromotionDate()) : null);
-        employee.setRelievingDate(StringUtils.hasText(request.getRelievingDate()) ?
-                DateTimeUtil.stringToDate(request.getRelievingDate()) : null);
+        employee.setJoiningDate(StringUtils.hasText(request.getJoiningDate()) ? DateTimeUtil.stringToDate(request.getJoiningDate()) : null);
+        employee.setConfirmationDate(StringUtils.hasText(request.getConfirmationDate()) ? DateTimeUtil.stringToDate(request.getConfirmationDate()) : null);
+        employee.setPromotionDate(StringUtils.hasText(request.getPromotionDate()) ? DateTimeUtil.stringToDate(request.getPromotionDate()) : null);
+        employee.setRelievingDate(StringUtils.hasText(request.getRelievingDate()) ? DateTimeUtil.stringToDate(request.getRelievingDate()) : null);
         employee.setAadharCard(request.getAadharCard());
         employee.setPancardNo(request.getPancardNo());
         employee.setPfNumber(request.getPfNumber());
@@ -163,8 +151,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setProfileImgPath(request.getProfileImgPath());
         employee.setSignImgPath(request.getSignImgPath());
         employee.setBranchId(request.getBranchId());
-        employee.setBranchJoinDate(StringUtils.hasText(request.getBranchJoinDate()) ?
-                DateTimeUtil.stringToDate(request.getBranchJoinDate()) : null);
+        employee.setBranchJoinDate(StringUtils.hasText(request.getBranchJoinDate()) ? DateTimeUtil.stringToDate(request.getBranchJoinDate()) : null);
         employee.setDepartmentId(request.getDepartmentId());
         employee.setDepartmentRoleId(request.getDepartmentRoleId());
         employee.setDesignationType(request.getDesignationType());
@@ -178,6 +165,21 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setTitle(request.getTitle());
         employee.setCaste(request.getCaste());
         employee.setReligion(request.getReligion());
+        employee.setReferenceType(request.getReferenceType());
+        employee.setReferenceSource(request.getReferenceSource());
+        employee.setReferenceName(request.getReferenceName());
+        employee.setReferenceId(request.getReferenceId());
+        employee.setRelWithEmergPerson(request.getRelWithEmergPerson());
+        if (StringUtils.hasText(request.getResignDate())) {
+            employee.setResignDate(DateTimeUtil.stringToDate(request.getResignDate()));
+        }
+        employee.setTypeOfExit(request.getTypeOfExit());
+        employee.setGrade(request.getGrade());
+        if (StringUtils.hasText(request.getExitDate())) {
+            employee.setExitDate(DateTimeUtil.stringToDate(request.getExitDate()));
+        }
+        employee.setIsSignatory(request.getIsSignatory());
+        employee.setIsFnfClear(request.getIsFnfClear());
         if (employeeId == null) {
             employee.setInsertedOn(LocalDateTime.now());
             employee.setInsertedBy(userCredentialService.getUserSession().getUserId());
@@ -190,8 +192,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     private void validateRequest(EmployeeRequest request) throws BadRequestException {
         // validate employee add / update request
-        if (request == null || !StringUtils.hasText(request.getStatus()) ||
-                !StringUtils.hasText(request.getFirstName()) || !StringUtils.hasText(request.getGender())) {
+        if (request == null || !StringUtils.hasText(request.getStatus()) || !StringUtils.hasText(request.getFirstName()) || !StringUtils.hasText(request.getGender())) {
             throw new BadRequestException("Invalid Request", HttpStatus.BAD_REQUEST);
         }
     }
@@ -235,6 +236,20 @@ public class EmployeeServiceImpl implements EmployeeService {
             if (employee.getReportManagerId() != null) {
                 Employee reportManager = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), employee.getReportManagerId());
                 employeeDto.setReportManagerName(reportManager.getEmployeeId() + " " + reportManager.getFirstName());
+            }
+            if (employee.getResignDate() != null) {
+                employeeDto.setResignDate(DateTimeUtil.dateToString(employee.getResignDate()));
+            }
+            if (employee.getExitDate() != null) {
+                employeeDto.setExitDate(DateTimeUtil.dateToString(employee.getExitDate()));
+            }
+            if (employee.getBranchId() != null) {
+                BranchMaster branchMaster = branchMasterRepository.findByBranchId(employee.getBranchId().intValue()).orElse(null);
+                employeeDto.setBaseLocation(branchMaster==null?"":branchMaster.getBranchCode() + " " + branchMaster.getBranchName());
+            }
+            if (employee.getSubDepartmentId() != null) {
+                EmployeeDepartmentMaster employeeDepartmentMaster = employeeDepartmentRepository.findByOrgIdAndEmpDepartmentId(userSession.getOrganizationId(), employee.getSubDepartmentId());
+                employeeDto.setSubDepartmentName(employeeDepartmentMaster==null?"":employeeDepartmentMaster.getEmpDepartmentName());
             }
             employeeDtoList.add(employeeDto);
         }
@@ -281,12 +296,21 @@ public class EmployeeServiceImpl implements EmployeeService {
             Employee reportManager = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), employee.getReportManagerId());
             employeeDto.setReportManagerName(reportManager.getEmployeeId() + " " + reportManager.getFirstName());
         }
+        if (employee.getBranchId() != null) {
+            BranchMaster branchMaster = branchMasterRepository.findByBranchId(employee.getBranchId().intValue()).orElse(null);
+            employeeDto.setBaseLocation(branchMaster==null?"":branchMaster.getBranchCode() + " " + branchMaster.getBranchName());
+        }
+        if(employee.getReferenceId() != null){
+            Employee emp=employeeRepository.findByEmployeeCodeAndOrganizationId(employee.getReferenceId(),userSession.getOrganizationId());
+            employeeDto.setReferenceIdName(emp==null?"":emp.getEmployeeCode() + "-" + emp.getFirstName() + " " + emp.getLastName());
+        }
         try {
             employeeDto.setCurrentVillageName(employee.getCurrentVillageMaster().getVillageName());
             employeeDto.setPermanentVillageName(employee.getPermanentVillageMaster().getVillageName());
         } catch (Exception exception) {
             log.error(exception.getMessage());
         }
+        employeeDto.setResignDate(DateTimeUtil.dateToString(employee.getResignDate()));
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);
         response.setMessage("Transaction completed successfully.");
@@ -298,10 +322,15 @@ public class EmployeeServiceImpl implements EmployeeService {
     public Response updateEmployeeDetails(EmployeeRequest request) throws BadRequestException {
         Response response = new Response();
         validateRequest(request);
+        UserSession userSession = userCredentialService.getUserSession();
         // fetch employee detail using organizationId and employeeId
+        Employee employee = new Employee();
         if (request.getEmployeeId() != null) {
-            Employee employee = employeeRepository.findByOrganizationIdAndEmployeeId(
-                    userCredentialService.getUserSession().getOrganizationId(), request.getEmployeeId());
+            try {
+                employee = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), request.getEmployeeId());
+            } catch (Exception exception) {
+                throw new BadRequestException(exception.getMessage(), HttpStatus.BAD_REQUEST);
+            }
             if (employee != null) {
                 // save value in employee master table
                 saveValueEmployeeMaster(request, employee, request.getEmployeeId());
@@ -319,24 +348,44 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public Response employeeTransferPackageCall(FilterRequest filterRequest) throws BadRequestException {
-        Response response = new Response();
+        Response response;
         UserSession userSession = userCredentialService.getUserSession();
         if (filterRequest.getEmployeeId() == null) {
-            filterRequest.setEmployeeId(0l);
+            filterRequest.setEmployeeId(0L);
         }
         if (filterRequest.getEmplDesigType() == null) {
             filterRequest.setEmplDesigType("");
         }
         if (filterRequest.getEmplDesigAreaId() == null) {
-            filterRequest.setEmplDesigAreaId(0l);
+            filterRequest.setEmplDesigAreaId(0L);
         }
         if (filterRequest.getIsManager() == null) {
             filterRequest.setIsManager("");
         }
         if (filterRequest.getBasedLocationId() == null) {
-            filterRequest.setBasedLocationId(0l);
+            filterRequest.setBasedLocationId(0L);
         }
         response = employeeDao.employeeTransferPackageCall(filterRequest, userSession.getOrganizationId(), userSession.getUserId());
+        return response;
+    }
+
+    @Override
+    public Response getSubEmpDeptByEmpDepartmentId(Long empDepartmentId) {
+        UserSession userSession = userCredentialService.getUserSession();
+        Response response = new Response();
+        List<EmployeeDepartmentMaster> employeeDepartmentMasterList = employeeDepartmentRepository.findByOrgIdAndMainEmpDeptIdAndIsMainEmpDept(userSession.getOrganizationId(), empDepartmentId, "N");
+        Set<EmployeeDepartmentDto> employeeSubDeptMap = new HashSet<>();
+        for (EmployeeDepartmentMaster employeeDepartmentMaster : employeeDepartmentMasterList) {
+            EmployeeDepartmentDto employeeDepartmentDto = new EmployeeDepartmentDto();
+            BeanUtils.copyProperties(employeeDepartmentMaster, employeeDepartmentDto);
+            employeeDepartmentDto.setInsertedOn(DateTimeUtil.dateTimeToString(employeeDepartmentMaster.getInsertedOn()));
+            employeeDepartmentDto.setUpdatedOn(DateTimeUtil.dateTimeToString(employeeDepartmentMaster.getUpdatedOn()));
+            employeeSubDeptMap.add(employeeDepartmentDto);
+        }
+        response.setCode(HttpStatus.OK.value());
+        response.setStatus(HttpStatus.OK);
+        response.setData(employeeSubDeptMap);
+        response.setMessage("Transaction completed successfully.");
         return response;
     }
 }

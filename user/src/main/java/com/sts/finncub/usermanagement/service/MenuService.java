@@ -14,4 +14,8 @@ public interface MenuService{
     Response getMenuRoleListAssignedOrAvailable(Long id);
 
     Response assignMenuToRoles(MenuRoleMappingDto menuRoleMappingDto);
+
+	Response getMenuAssignedOrAvailableForRole(Long roleId);
+
+	Response assignRoleToMenus(MenuRoleMappingDto menuRoleMappingDto);
 }

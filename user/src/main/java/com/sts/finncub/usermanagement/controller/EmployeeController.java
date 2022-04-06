@@ -2,8 +2,8 @@ package com.sts.finncub.usermanagement.controller;
 
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.request.FilterRequest;
-import com.sts.finncub.usermanagement.request.EmployeeRequest;
 import com.sts.finncub.core.response.Response;
+import com.sts.finncub.usermanagement.request.EmployeeRequest;
 import com.sts.finncub.usermanagement.service.EmployeeService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +22,7 @@ public class EmployeeController {
     }
 
 
-    @PostMapping ("/fetchAllEmployee")
+    @PostMapping("/fetchAllEmployee")
     public Response getAllEmployeeDetails(@RequestBody FilterRequest request) throws BadRequestException {
         return employeeService.getAllEmployeeDetails(request);
     }
@@ -47,4 +47,8 @@ public class EmployeeController {
         return employeeService.employeeTransferPackageCall(request);
     }
 
+    @GetMapping(value = "getSubEmpDeptByEmpDepartmentId/{empDepartmentId}")
+    public Response getSubEmpDeptByEmpDepartmentId(@PathVariable Long empDepartmentId) {
+        return employeeService.getSubEmpDeptByEmpDepartmentId(empDepartmentId);
+    }
 }

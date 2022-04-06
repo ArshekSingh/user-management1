@@ -3,6 +3,8 @@ package com.sts.finncub.usermanagement.request;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Date;
+
 @Getter
 @Setter
 public class EmployeeRequest {
@@ -74,4 +76,16 @@ public class EmployeeRequest {
     private Long accManagerId;
     private String caste;
     private String religion;
+    private String referenceType;
+    private String referenceSource;
+    private String referenceName;
+    private String referenceId;
+    private String relWithEmergPerson;
+    private String resignDate;
+    private String typeOfExit;
+    private String grade;
+    private String isSignatory;
+    private String exitDate;
+    private String isFnfClear;
+    private String baseLocation;
 }
