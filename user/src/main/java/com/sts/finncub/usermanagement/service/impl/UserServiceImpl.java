@@ -136,7 +136,7 @@ public class UserServiceImpl implements UserService {
         user.setInsertedBy(userSession.getUserId());
         user.setIsTemporaryPassword("Y");
         user.setIsActive(request.getIsActive());
-        user.setIsFrozenBookFlag('N');
+        user.setIsFrozenBookFlag("N");
         userRepository.save(user);
         //Save in user organization
         try {
