@@ -17,4 +17,5 @@ public class LoginResponse {
     private String designationName;
     private String departmentName;
     private String designationType;
+    private String appVersion;
 }
