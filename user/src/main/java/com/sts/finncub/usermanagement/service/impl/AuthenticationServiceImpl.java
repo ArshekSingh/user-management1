@@ -53,9 +53,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final BranchMasterRepository branchMasterRepository;
     private final UserLoginLogRepository userLoginLogRepository;
     private final EmployeeRepository employeeRepository;
+    private final MiscellaneousServiceRepository miscellaneousServiceRepository;
 
     @Autowired
-    public AuthenticationServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserRedisRepository userRedisRepository, UserRoleMappingRepository userRoleMappingRepository, UserCredentialService userCredentialService, UserOrganizationMappingRepository userOrganizationMappingRepository, BranchMasterRepository branchMasterRepository, UserLoginLogRepository userLoginLogRepository, EmployeeRepository employeeRepository) {
+    public AuthenticationServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserRedisRepository userRedisRepository, UserRoleMappingRepository userRoleMappingRepository, UserCredentialService userCredentialService, UserOrganizationMappingRepository userOrganizationMappingRepository, BranchMasterRepository branchMasterRepository, UserLoginLogRepository userLoginLogRepository, EmployeeRepository employeeRepository, MiscellaneousServiceRepository miscellaneousServiceRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userRedisRepository = userRedisRepository;
@@ -65,6 +66,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         this.branchMasterRepository = branchMasterRepository;
         this.userLoginLogRepository = userLoginLogRepository;
         this.employeeRepository = employeeRepository;
+        this.miscellaneousServiceRepository = miscellaneousServiceRepository;
     }
 
     @Override
@@ -116,6 +118,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     loginResponse.setDepartmentName((employee.getEmployeeDepartmentMaster() != null) ? employee.getEmployeeDepartmentMaster().getEmpDepartmentName() : "");
                     loginResponse.setDesignationName((employee.getEmployeeDesignationMaster() != null) ? employee.getEmployeeDesignationMaster().getEmpDesignationName() : "");
                     loginResponse.setDesignationType((employee.getEmployeeDesignationMaster() != null) ? employee.getEmployeeDesignationMaster().getEmpDesignationType() : "");
+                    Optional<MiscellaneousService> miscellaneousServices = miscellaneousServiceRepository.findByKey("APP_VERSION");
+                    if (miscellaneousServices.isPresent()) {
+                        loginResponse.setAppVersion(miscellaneousServices.get().getValue());
+                    }
                 } catch (Exception exception) {
                     log.error("Exception while fetching employee details - " + exception.getMessage());
                 }
