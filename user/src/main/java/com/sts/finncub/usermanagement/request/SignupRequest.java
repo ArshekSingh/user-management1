@@ -1,13 +1,15 @@
 package com.sts.finncub.usermanagement.request;
 
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+
 import com.sts.finncub.core.exception.BadRequestException;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-
-import java.util.List;
 
 @Slf4j
 @AllArgsConstructor
@@ -23,7 +25,7 @@ public class SignupRequest {
 
 
     public void validate() throws BadRequestException {
-        log.info("Validating signup request data");
+		log.info("Validating signup request data , email : {} , userType : {}", email, userType);
         boolean isValid = true;
         StringBuffer buffer = new StringBuffer();
         if (name == null || name.isEmpty()) {

@@ -38,7 +38,7 @@ public class RequestFilter implements Filter {
 
         boolean isValidRequest = true;
         if (servletRequest instanceof HttpServletRequest
-                && ((HttpServletRequest) servletRequest).getRequestURI().contains("/api")) {
+                && ((HttpServletRequest) servletRequest).getRequestURI().contains("/api") && !((HttpServletRequest) servletRequest).getRequestURI().contains("/api-docs")) {
             HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
             String token = httpServletRequest.getHeader("Authorization");
             log.info("Headers - {}", httpServletRequest.getHeaderNames());

@@ -76,6 +76,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setEmployeeCode(employeeId);
         // save value in employee master
         saveValueEmployeeMaster(request, employee, request.getEmployeeId());
+        log.info("Employee save success fully");
         // create  employee user details in user master
         SaveValueInUserMaster(userId, request);
         response.setCode(HttpStatus.OK.value());
@@ -192,7 +193,9 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     private void validateRequest(EmployeeRequest request) throws BadRequestException {
         // validate employee add / update request
-        if (request == null || !StringUtils.hasText(request.getStatus()) || !StringUtils.hasText(request.getFirstName()) || !StringUtils.hasText(request.getGender())) {
+    	if (request == null || !StringUtils.hasText(request.getStatus()) ||
+                !StringUtils.hasText(request.getFirstName()) || !StringUtils.hasText(request.getGender())) {
+        	log.warn("Request failed validation , these field are mandatory : Status {} , FirstName {} , Gender {} ",request.getStatus(),request.getFirstName(),request.getGender());
             throw new BadRequestException("Invalid Request", HttpStatus.BAD_REQUEST);
         }
     }
@@ -208,6 +211,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         // fetch Employee details list count
         Long employeeDetailsCount = employeeDao.findAllFilterEmployeeDetailsCount(request);
         if (CollectionUtils.isEmpty(employeeList)) {
+            log.info("Employee List Not Found");
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         }
         for (Employee employee : employeeList) {
@@ -269,6 +273,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         // fetch employee detail using organizationId and employeeId
         Employee employee = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), employeeId);
         if (employee == null) {
+        	log.warn("Employee not found for employeeId : {} ",employeeId);
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         }
         BeanUtils.copyProperties(employee, employeeDto);

@@ -45,16 +45,19 @@ public class MenuController {
 
     @GetMapping(value = "/menu/{menuSearchableKey}")
     public Response getMenuSearchable(@PathVariable String menuSearchableKey) {
+    	log.info("getMenuSearchable invoked , menuSearchableKey : {}",menuSearchableKey);
         return menuService.getMenuSearchable(menuSearchableKey);
     }
 
     @GetMapping(value = "getMenuRoleList/{id}")
     public Response getMenuRoleListAssignedOrAvailable(@PathVariable Long id) {
+    	log.info("getMenuRoleListAssignedOrAvailable invoked , menuId : {}",id);
         return menuService.getMenuRoleListAssignedOrAvailable(id);
     }
 
     @PostMapping(value = "assignMenuToRoles")
     public Response assignMenuToRoles(@RequestBody MenuRoleMappingDto menuRoleMappingDto) {
+    	log.info("assignMenuToRoles invoked , menuId : {}",menuRoleMappingDto.getId());
         return menuService.assignMenuToRoles(menuRoleMappingDto);
     }
     

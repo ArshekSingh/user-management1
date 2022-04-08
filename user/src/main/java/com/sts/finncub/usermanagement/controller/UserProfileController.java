@@ -27,7 +27,7 @@ public class UserProfileController {
 
     @GetMapping("profile")
     public ResponseEntity<Response<UserProfileResponse>> getProfile() throws ObjectNotFoundException {
-        log.info("Request to fetch user profile recived");
+        log.info("Request to fetch user profile received");
         UserProfileResponse response = userProfileService.getProfile();
         return  ResponseEntity.ok(new Response<>(RestMappingConstants.SUCCESS,response, HttpStatus.OK));
     }
