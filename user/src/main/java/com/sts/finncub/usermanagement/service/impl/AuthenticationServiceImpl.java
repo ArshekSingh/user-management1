@@ -1,15 +1,13 @@
 package com.sts.finncub.usermanagement.service.impl;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.sts.finncub.core.entity.*;
+import com.sts.finncub.core.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -22,24 +20,9 @@ import org.springframework.util.CollectionUtils;
 
 import com.google.gson.Gson;
 import com.sts.finncub.core.constants.RestMappingConstants;
-import com.sts.finncub.core.entity.BranchMaster;
-import com.sts.finncub.core.entity.Employee;
-import com.sts.finncub.core.entity.User;
-import com.sts.finncub.core.entity.UserBranchMapping;
-import com.sts.finncub.core.entity.UserLoginLog;
-import com.sts.finncub.core.entity.UserOrganizationMapping;
-import com.sts.finncub.core.entity.UserRoleMapping;
-import com.sts.finncub.core.entity.UserSession;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.exception.InternalServerErrorException;
 import com.sts.finncub.core.exception.ObjectNotFoundException;
-import com.sts.finncub.core.repository.BranchMasterRepository;
-import com.sts.finncub.core.repository.EmployeeRepository;
-import com.sts.finncub.core.repository.UserLoginLogRepository;
-import com.sts.finncub.core.repository.UserOrganizationMappingRepository;
-import com.sts.finncub.core.repository.UserRedisRepository;
-import com.sts.finncub.core.repository.UserRepository;
-import com.sts.finncub.core.repository.UserRoleMappingRepository;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.usermanagement.assembler.SignUpConverter;
@@ -127,7 +110,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             } else {
                 userRepository.updateLoginAttemptByUserId(user.getUserId(), 0, user.getUserId(), LocalDateTime.now());
             }
-
+            log.info("User session enter to get branchMap, ZoneMap , DivisionMap for , userId : {}", loginRequest.getUserId());
             UserSession userSession = toSessionObject(user);
             String authToken;
             try {
@@ -136,11 +119,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 loginResponse.setAuthToken(authToken);
                 loginResponse.setUserSession(gson.fromJson(userSession.getUserSessionJSON(), UserSession.class));
                 try {
-                    Employee employee = employeeRepository.findByUserId(loginRequest.getUserId()).orElseThrow(() -> new BadRequestException("Invalid Id, ", HttpStatus.BAD_REQUEST));
-                    loginResponse.setBaseLocation((employee.getBranchMaster() != null) ? employee.getBranchMaster().getBranchName() : "");
-                    loginResponse.setDepartmentName((employee.getEmployeeDepartmentMaster() != null) ? employee.getEmployeeDepartmentMaster().getEmpDepartmentName() : "");
-                    loginResponse.setDesignationName((employee.getEmployeeDesignationMaster() != null) ? employee.getEmployeeDesignationMaster().getEmpDesignationName() : "");
-                    loginResponse.setDesignationType((employee.getEmployeeDesignationMaster() != null) ? employee.getEmployeeDesignationMaster().getEmpDesignationType() : "");
+                    Employee employee = employeeRepository.findByUserId(loginRequest.getUserId()).orElse(null);
+                    if(employee != null) {
+                        loginResponse.setBaseLocation((employee.getBranchMaster() != null) ? employee.getBranchMaster().getBranchName() : "");
+                        loginResponse.setDepartmentName((employee.getEmployeeDepartmentMaster() != null) ? employee.getEmployeeDepartmentMaster().getEmpDepartmentName() : "");
+                        loginResponse.setDesignationName((employee.getEmployeeDesignationMaster() != null) ? employee.getEmployeeDesignationMaster().getEmpDesignationName() : "");
+                        loginResponse.setDesignationType((employee.getEmployeeDesignationMaster() != null) ? employee.getEmployeeDesignationMaster().getEmpDesignationType() : "");
+                    }
                     Optional<MiscellaneousService> miscellaneousServices = miscellaneousServiceRepository.findByKey("APP_VERSION");
                     if (miscellaneousServices.isPresent()) {
                         loginResponse.setAppVersion(miscellaneousServices.get().getValue());
@@ -217,7 +202,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             userSession.setDivisionMap(divisionMap);
             userSession.setZoneMap(zoneMap);
         } catch (Exception ex) {
-			log.error("Exception occurred while preparing userSession , message : {}", ex.getMessage(), ex);
+			log.error("Exception occurred while preparing BranchMap , DivisionMap and ZoneMap , message : {}", ex.getMessage(), ex);
             throw new InternalServerErrorException("Exception while set data in userSession object" + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return userSession;

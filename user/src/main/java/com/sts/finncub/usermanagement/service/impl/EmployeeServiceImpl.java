@@ -76,6 +76,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setEmployeeCode(employeeId);
         // save value in employee master
         saveValueEmployeeMaster(request, employee, request.getEmployeeId());
+        log.info("Employee save success fully");
         // create  employee user details in user master
         SaveValueInUserMaster(userId, request);
         response.setCode(HttpStatus.OK.value());
@@ -194,8 +195,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         // validate employee add / update request
     	if (request == null || !StringUtils.hasText(request.getStatus()) ||
                 !StringUtils.hasText(request.getFirstName()) || !StringUtils.hasText(request.getGender())) {
-        	log.warn("Request failed validation : {} ",request.getFirstName());
-
+        	log.warn("Request failed validation , these field are mandatory : Status {} , FirstName {} , Gender {} ",request.getStatus(),request.getFirstName(),request.getGender());
             throw new BadRequestException("Invalid Request", HttpStatus.BAD_REQUEST);
         }
     }
@@ -211,6 +211,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         // fetch Employee details list count
         Long employeeDetailsCount = employeeDao.findAllFilterEmployeeDetailsCount(request);
         if (CollectionUtils.isEmpty(employeeList)) {
+            log.info("Employee List Not Found");
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         }
         for (Employee employee : employeeList) {

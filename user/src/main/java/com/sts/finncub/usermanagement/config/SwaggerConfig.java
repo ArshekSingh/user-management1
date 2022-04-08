@@ -22,7 +22,7 @@ public class SwaggerConfig implements WebMvcConfigurer {
 		return new Docket(DocumentationType.SWAGGER_2)
 				.useDefaultResponseMessages(false)
 				.select()
-				.apis(RequestHandlerSelectors.basePackage("com.sts.fincub.usermanagement.controller"))
+				.apis(RequestHandlerSelectors.basePackage("com.sts.finncub.usermanagement.controller"))
 				.paths(PathSelectors.regex("/.*"))
 				.build().apiInfo(apiEndPointsInfo());
 	}
