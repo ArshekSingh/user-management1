@@ -13,9 +13,5 @@ import lombok.NoArgsConstructor;
 public class LoginResponse {
     private String authToken;
     private UserSession userSession;
-    private String baseLocation;
-    private String designationName;
-    private String departmentName;
-    private String designationType;
     private String appVersion;
 }
