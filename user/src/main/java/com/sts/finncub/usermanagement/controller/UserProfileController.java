@@ -1,10 +1,10 @@
 package com.sts.finncub.usermanagement.controller;
 
+import com.sts.finncub.core.constants.RestMappingConstants;
+import com.sts.finncub.core.exception.ObjectNotFoundException;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.response.UserProfileResponse;
 import com.sts.finncub.usermanagement.service.UserProfileService;
-import com.sts.finncub.core.constants.RestMappingConstants;
-import com.sts.finncub.core.exception.ObjectNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,7 +21,7 @@ public class UserProfileController {
     private final UserProfileService userProfileService;
 
     @Autowired
-    UserProfileController(UserProfileService userProfileService){
+    UserProfileController(UserProfileService userProfileService) {
         this.userProfileService = userProfileService;
     }
 
@@ -29,6 +29,6 @@ public class UserProfileController {
     public ResponseEntity<Response<UserProfileResponse>> getProfile() throws ObjectNotFoundException {
         log.info("Request to fetch user profile received");
         UserProfileResponse response = userProfileService.getProfile();
-        return  ResponseEntity.ok(new Response<>(RestMappingConstants.SUCCESS,response, HttpStatus.OK));
+        return ResponseEntity.ok(new Response<>(RestMappingConstants.SUCCESS, response, HttpStatus.OK));
     }
 }
