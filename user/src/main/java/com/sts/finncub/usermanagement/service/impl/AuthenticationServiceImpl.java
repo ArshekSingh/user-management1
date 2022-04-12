@@ -206,10 +206,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             try {
                 Employee employee = employeeRepository.findByUserId(user.getUserId()).orElse(null);
                 if (employee != null) {
-                    userSession.setBaseLocation((employee.getBranchMaster() != null) ? employee.getBranchMaster().getBranchName() : "");
-                    userSession.setDepartmentName((employee.getEmployeeDepartmentMaster() != null) ? employee.getEmployeeDepartmentMaster().getEmpDepartmentName() : "");
-                    userSession.setDesignationName((employee.getEmployeeDesignationMaster() != null) ? employee.getEmployeeDesignationMaster().getEmpDesignationName() : "");
-                    userSession.setDesignationType((employee.getEmployeeDesignationMaster() != null) ? employee.getEmployeeDesignationMaster().getEmpDesignationType() : "");
+                    userSession.setBaseLocation(employee.getBranchMaster() != null ? employee.getBranchMaster().getBranchName() : "");
+                    userSession.setDepartmentName(employee.getEmployeeDepartmentMaster() != null ? employee.getEmployeeDepartmentMaster().getEmpDepartmentName() : "");
+                    userSession.setDesignationName(employee.getEmployeeDesignationMaster() != null ? employee.getEmployeeDesignationMaster().getEmpDesignationName() : "");
+                    userSession.setDesignationType(employee.getDesignationType() != null ? employee.getDesignationType() : "");
                 }
             } catch (Exception exception) {
                 log.error("Exception while fetching employee details for userId :{} , message : {}", userSession, exception.getMessage(), exception);
