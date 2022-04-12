@@ -202,7 +202,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             try {
                 Employee employee = employeeRepository.findByUserId(user.getUserId()).orElse(null);
                 if (employee != null) {
-                    userSession.setBaseLocation(employee.getBranchMaster() != null ? employee.getBranchMaster().getBranchName() : "");
+                    userSession.setBaseLocation(branchMasterRepository.findBranchName(getActiveOrganizationId(user), employee.getBranchId().intValue()));
                     userSession.setDepartmentName(employee.getEmployeeDepartmentMaster() != null ? employee.getEmployeeDepartmentMaster().getEmpDepartmentName() : "");
                     userSession.setDesignationName(employee.getEmployeeDesignationMaster() != null ? employee.getEmployeeDesignationMaster().getEmpDesignationName() : "");
                     userSession.setDesignationType(employee.getDesignationType() != null ? employee.getDesignationType() : "");
