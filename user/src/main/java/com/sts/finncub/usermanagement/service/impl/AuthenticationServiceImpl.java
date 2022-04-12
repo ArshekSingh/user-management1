@@ -44,7 +44,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private Integer passwordFailedCount;
 
     private final String PASSWORD_SEPARATOR = ",,";
-
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final UserRedisRepository userRedisRepository;
@@ -118,9 +117,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 loginResponse.setUserSession(gson.fromJson(userSession.getUserSessionJSON(), UserSession.class));
                 try {
                     Optional<MiscellaneousService> miscellaneousServices = miscellaneousServiceRepository.findByKey("APP_VERSION");
-                    if (miscellaneousServices.isPresent()) {
-                        loginResponse.setAppVersion(miscellaneousServices.get().getValue());
-                    }
+                    miscellaneousServices.ifPresent(miscellaneousService -> loginResponse.setAppVersion(miscellaneousService.getValue()));
                 } catch (Exception exception) {
                     log.error("Exception while fetching app version : {} , message : {}", loginRequest, exception.getMessage(), exception);
                 }
@@ -128,7 +125,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 log.error("Exception occurred while login , userId : {} , message : {}", loginRequest.getUserId(), e.getMessage(), e);
                 throw new InternalServerErrorException("Exception while saving token - " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
             }
-
             //save user Login log
             userLoginLog.setTokenId(authToken);
             userLoginLogRepository.save(userLoginLog);
@@ -234,32 +230,24 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Transactional
     @Override
     public SignupResponse signup(SignupRequest signupRequest) {
-
         User newUser = SignUpConverter.convertToUser(signupRequest);
         String operationUserName = userCredentialService.getUserSession().getName();
         final Long organizationId = userCredentialService.getUserSession().getOrganizationId();
-
         newUser.setPassword(passwordEncoder, signupRequest.getPassword());
-
         String userEmployeeId = userRepository.getGeneratedUserEmployeeId(organizationId, signupRequest.getUserType());
         final String userId = userEmployeeId.split(",")[0];
         newUser.setUserId(userId);
         log.info("Generated user Id : {} , email : {}", newUser.getUserId(), newUser.getEmail());
-
         newUser = userRepository.save(newUser);
-
         log.info("Operation user name : {} , email : {} , organizationId : {}", operationUserName, signupRequest.getEmail(), organizationId);
-
         UserOrganizationMapping userOrganizationMapping = new UserOrganizationMapping(organizationId, newUser.getUserId(), operationUserName);
         userOrganizationMappingRepository.save(userOrganizationMapping);
 //        if (signupRequest.getUserType().equals(UserType.EMP.name())) {
 //            log.info("New user saved to db");
 ////            employeeRepository.save(new Employee(organizationId, employeeId, userId));
 //        }
-
         if (signupRequest.hasRoles()) {
             log.info("Setting roles , userId :{} ", userId);
-
             userRoleMappingRepository.saveAll(signupRequest.getRoleList().stream().map(id -> new UserRoleMapping(userId, id, organizationId, operationUserName)).collect(Collectors.toSet()));
             log.info("Roles saved to db, userId :{} ", userId);
         }
@@ -269,9 +257,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public Response<UserSession> verify(String authToken) throws ObjectNotFoundException {
         UserSession userSession = userRedisRepository.findById(authToken).orElseThrow(() -> new ObjectNotFoundException("User session not found, " + "Please login again!", HttpStatus.NOT_FOUND));
-
         return new Response<>(RestMappingConstants.SUCCESS, userSession, HttpStatus.OK);
-
     }
 
     private void updateLoginAttempt() {
@@ -323,12 +309,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             if (oldPasswordList.length < oldPasswordCount) {
                 oldPassword = oldPassword + PASSWORD_SEPARATOR + user.getPassword();
             } else {
-                String updatedOldPassword = "";
+                StringBuilder updatedOldPassword = new StringBuilder();
                 for (int i = 1; i < oldPasswordList.length; i++) {
-                    if (updatedOldPassword.isEmpty()) {
-                        updatedOldPassword = oldPasswordList[i];
+                    if (updatedOldPassword.length() == 0) {
+                        updatedOldPassword = new StringBuilder(oldPasswordList[i]);
                     } else {
-                        updatedOldPassword = updatedOldPassword + PASSWORD_SEPARATOR + oldPasswordList[i];
+                        updatedOldPassword.append(PASSWORD_SEPARATOR).append(oldPasswordList[i]);
                     }
                 }
                 oldPassword = updatedOldPassword + PASSWORD_SEPARATOR + user.getPassword();
