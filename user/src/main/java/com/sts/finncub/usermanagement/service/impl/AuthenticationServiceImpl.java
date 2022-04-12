@@ -1,21 +1,17 @@
 package com.sts.finncub.usermanagement.service.impl;
 
-import com.google.gson.Gson;
-import com.sts.finncub.core.constants.RestMappingConstants;
-import com.sts.finncub.core.entity.*;
-import com.sts.finncub.core.exception.BadRequestException;
-import com.sts.finncub.core.exception.InternalServerErrorException;
-import com.sts.finncub.core.exception.ObjectNotFoundException;
-import com.sts.finncub.core.repository.*;
-import com.sts.finncub.core.response.Response;
-import com.sts.finncub.core.service.UserCredentialService;
-import com.sts.finncub.usermanagement.assembler.SignUpConverter;
-import com.sts.finncub.usermanagement.request.LoginRequest;
-import com.sts.finncub.usermanagement.request.SignupRequest;
-import com.sts.finncub.usermanagement.response.LoginResponse;
-import com.sts.finncub.usermanagement.response.SignupResponse;
-import com.sts.finncub.usermanagement.service.AuthenticationService;
-import lombok.extern.slf4j.Slf4j;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.servlet.http.HttpServletRequest;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -26,11 +22,37 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
-import javax.servlet.http.HttpServletRequest;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import com.google.gson.Gson;
+import com.sts.finncub.core.constants.RestMappingConstants;
+import com.sts.finncub.core.entity.Employee;
+import com.sts.finncub.core.entity.MiscellaneousService;
+import com.sts.finncub.core.entity.User;
+import com.sts.finncub.core.entity.UserLoginLog;
+import com.sts.finncub.core.entity.UserOrganizationMapping;
+import com.sts.finncub.core.entity.UserRoleMapping;
+import com.sts.finncub.core.entity.UserSession;
+import com.sts.finncub.core.exception.BadRequestException;
+import com.sts.finncub.core.exception.InternalServerErrorException;
+import com.sts.finncub.core.exception.ObjectNotFoundException;
+import com.sts.finncub.core.repository.BranchMasterRepository;
+import com.sts.finncub.core.repository.EmployeeRepository;
+import com.sts.finncub.core.repository.MiscellaneousServiceRepository;
+import com.sts.finncub.core.repository.UserLoginLogRepository;
+import com.sts.finncub.core.repository.UserOrganizationMappingRepository;
+import com.sts.finncub.core.repository.UserRedisRepository;
+import com.sts.finncub.core.repository.UserRepository;
+import com.sts.finncub.core.repository.UserRoleMappingRepository;
+import com.sts.finncub.core.response.Response;
+import com.sts.finncub.core.service.UserCredentialService;
+import com.sts.finncub.usermanagement.assembler.SignUpConverter;
+import com.sts.finncub.usermanagement.config.MobileAppConfig;
+import com.sts.finncub.usermanagement.request.LoginRequest;
+import com.sts.finncub.usermanagement.request.SignupRequest;
+import com.sts.finncub.usermanagement.response.LoginResponse;
+import com.sts.finncub.usermanagement.response.SignupResponse;
+import com.sts.finncub.usermanagement.service.AuthenticationService;
+
+import lombok.extern.slf4j.Slf4j;
 
 
 @Service
@@ -54,9 +76,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final UserLoginLogRepository userLoginLogRepository;
     private final EmployeeRepository employeeRepository;
     private final MiscellaneousServiceRepository miscellaneousServiceRepository;
-
+    private final MobileAppConfig mobileAppConfig;
+    
     @Autowired
-    public AuthenticationServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserRedisRepository userRedisRepository, UserRoleMappingRepository userRoleMappingRepository, UserCredentialService userCredentialService, UserOrganizationMappingRepository userOrganizationMappingRepository, BranchMasterRepository branchMasterRepository, UserLoginLogRepository userLoginLogRepository, EmployeeRepository employeeRepository, MiscellaneousServiceRepository miscellaneousServiceRepository) {
+    public AuthenticationServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserRedisRepository userRedisRepository, UserRoleMappingRepository userRoleMappingRepository, UserCredentialService userCredentialService, UserOrganizationMappingRepository userOrganizationMappingRepository, BranchMasterRepository branchMasterRepository, UserLoginLogRepository userLoginLogRepository, EmployeeRepository employeeRepository, MiscellaneousServiceRepository miscellaneousServiceRepository,MobileAppConfig mobileAppConfig) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userRedisRepository = userRedisRepository;
@@ -67,8 +90,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         this.userLoginLogRepository = userLoginLogRepository;
         this.employeeRepository = employeeRepository;
         this.miscellaneousServiceRepository = miscellaneousServiceRepository;
-    }
-
+        this.mobileAppConfig=mobileAppConfig;
+     }
+    
     @Override
     public LoginResponse login(LoginRequest loginRequest) throws ObjectNotFoundException, BadRequestException, InternalServerErrorException {
         LoginResponse loginResponse = new LoginResponse();
@@ -115,6 +139,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 log.info("User session saved , userId : {}", loginRequest.getUserId());
                 loginResponse.setAuthToken(authToken);
                 loginResponse.setUserSession(gson.fromJson(userSession.getUserSessionJSON(), UserSession.class));
+                loginResponse.setAppConfigs(mobileAppConfig.getConfig());
                 try {
                     Optional<MiscellaneousService> miscellaneousServices = miscellaneousServiceRepository.findByKey("APP_VERSION");
                     miscellaneousServices.ifPresent(miscellaneousService -> loginResponse.setAppVersion(miscellaneousService.getValue()));
