@@ -390,11 +390,11 @@ public class UserServiceImpl implements UserService {
     }
 
 	@Override
-	public Response<Object> postGeoLocationOfUser(@Valid UserLocationTrackerRequest userLocationTrackerRequest,
+	public Response<Object> postGeoLocationOfUser(UserLocationTrackerRequest userLocationTrackerRequest,
 			String authToken) {
 
 		UserSession userSession = userCredentialService.getUserSession();
-		log.info("Logging geo location lat : {} , long : {} , userId : {}", userLocationTrackerRequest.getLattitude(),
+		log.info("Adding geo location lat : {} , long : {} , userId : {}", userLocationTrackerRequest.getLattitude(),
 				userLocationTrackerRequest.getLongitude(), userSession.getUserId());
 		UserLoginLog userLoginLog = userLoginLogRepository.findByTokenId(authToken.split(" ")[1]);
 		UserLocationTracker userLocationTracker = new UserLocationTracker();
