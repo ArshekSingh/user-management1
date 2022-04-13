@@ -1,10 +1,13 @@
 package com.sts.finncub.usermanagement.service;
 
+import javax.validation.Valid;
+
 import com.sts.finncub.core.dto.UserBranchMappingDto;
 import com.sts.finncub.core.dto.UserRoleMappingDto;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.core.response.Response;
+import com.sts.finncub.usermanagement.request.UserLocationTrackerRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
 
 public interface UserService {
@@ -26,4 +29,6 @@ public interface UserService {
     Response getUserAssignedAndAvailableBranchList(String userId);
 
     Response assignBranchesToUser(UserBranchMappingDto userRoleMappingDto);
+
+	Response postGeoLocationOfUser(@Valid UserLocationTrackerRequest userLocationTrackerRequest, String authorization);
 }

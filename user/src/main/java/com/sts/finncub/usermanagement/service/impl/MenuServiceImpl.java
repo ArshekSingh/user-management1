@@ -56,6 +56,7 @@ public class MenuServiceImpl implements MenuService {
         log.info("Fetching menus for userId -"+userSession.getUserId() +"and organizationId -"+userSession.getOrganizationId());
         List<MenuView> menuList = menuRepository.findMenuList(userSession.getUserId(), userSession.getOrganizationId());
         if(menuList == null || menuList.isEmpty()){
+        	log.warn("No menu found for user : {}",userSession.getName());
             throw  new ObjectNotFoundException("No menu found for user -"+userSession.getName(), HttpStatus.NOT_FOUND);
         }
         log.info(menuList.size()+" Menu(s) found");
