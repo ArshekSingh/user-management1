@@ -219,6 +219,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     userSession.setDepartmentName(employee.getEmployeeDepartmentMaster() != null ? employee.getEmployeeDepartmentMaster().getEmpDepartmentName() : "");
                     userSession.setDesignationName(employee.getEmployeeDesignationMaster() != null ? employee.getEmployeeDesignationMaster().getEmpDesignationName() : "");
                     userSession.setDesignationType(employee.getDesignationType() != null ? employee.getDesignationType() : "");
+                } else {
+                    userSession.setDesignationType("HO");
                 }
             } catch (Exception exception) {
                 log.error("Exception while fetching employee details for userId :{} , message : {}", userSession, exception.getMessage(), exception);
