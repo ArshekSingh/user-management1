@@ -30,8 +30,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import javax.validation.Valid;
-
 @Service
 @Slf4j
 public class UserServiceImpl implements UserService {
@@ -48,8 +46,10 @@ public class UserServiceImpl implements UserService {
     private final UserLocationTrackerRepository userLocationTrackerRepository;
     private final UserLoginLogRepository userLoginLogRepository;
 
+
+
     @Autowired
-    public UserServiceImpl(UserRepository userRepository, UserCredentialService userCredentialService, BCryptPasswordEncoder passwordEncoder, UserOrganizationMappingRepository userOrganizationMappingRepository, UserRoleMappingRepository userRoleMappingRepository, RoleMasterRepository roleMasterRepository, UserBranchMappingRepository userBranchMappingRepository, BranchMasterRepository branchMasterRepository, UserDao userDao,UserLoginLogRepository userLoginLogRepository,UserLocationTrackerRepository userLocationTrackerRepository) {
+    public UserServiceImpl(UserRepository userRepository, UserCredentialService userCredentialService, BCryptPasswordEncoder passwordEncoder, UserOrganizationMappingRepository userOrganizationMappingRepository, UserRoleMappingRepository userRoleMappingRepository, RoleMasterRepository roleMasterRepository, UserBranchMappingRepository userBranchMappingRepository, BranchMasterRepository branchMasterRepository, UserDao userDao, UserLoginLogRepository userLoginLogRepository, UserLocationTrackerRepository userLocationTrackerRepository) {
         this.userRepository = userRepository;
         this.userCredentialService = userCredentialService;
         this.passwordEncoder = passwordEncoder;
@@ -59,8 +59,8 @@ public class UserServiceImpl implements UserService {
         this.userBranchMappingRepository = userBranchMappingRepository;
         this.branchMasterRepository = branchMasterRepository;
         this.userDao = userDao;
-        this.userLocationTrackerRepository=userLocationTrackerRepository;
-        this.userLoginLogRepository=userLoginLogRepository;
+        this.userLocationTrackerRepository = userLocationTrackerRepository;
+        this.userLoginLogRepository = userLoginLogRepository;
     }
 
     @Override
@@ -338,7 +338,7 @@ public class UserServiceImpl implements UserService {
             userBranchMappingDto.setUserId(userId);
             ServerSideDropDownDto userAssignedBranches = new ServerSideDropDownDto();
             userAssignedBranches.setId(userBranchMapping.getBranchMaster().getBranchId().toString());
-            userAssignedBranches.setLabel(userBranchMapping.getBranchMaster().getBranchName());
+            userAssignedBranches.setLabel(userBranchMapping.getBranchMaster().getBranchCode() + "-" + userBranchMapping.getBranchMaster().getBranchName());
             userAssignedBranchesList.add(userAssignedBranches);
             branchList.add(userBranchMapping.getBranchMaster().getBranchId());
         }
@@ -389,24 +389,24 @@ public class UserServiceImpl implements UserService {
         return response;
     }
 
-	@Override
-	public Response<Object> postGeoLocationOfUser(UserLocationTrackerRequest userLocationTrackerRequest,
-			String authToken) {
+    @Override
+    public Response<Object> postGeoLocationOfUser(UserLocationTrackerRequest userLocationTrackerRequest,
+                                                  String authToken) {
 
-		UserSession userSession = userCredentialService.getUserSession();
-		log.info("Adding geo location lat : {} , long : {} , userId : {}", userLocationTrackerRequest.getLattitude(),
-				userLocationTrackerRequest.getLongitude(), userSession.getUserId());
-		UserLoginLog userLoginLog = userLoginLogRepository.findByTokenId(authToken.split(" ")[1]);
-		UserLocationTracker userLocationTracker = new UserLocationTracker();
-		userLocationTracker.setDeviceId(userLoginLog.getDeviceId());
-		userLocationTracker.setIpAddress(userLoginLog.getIpAddress());
-		userLocationTracker.setOrgId(userSession.getOrganizationId());
-		userLocationTracker.setTrackDateTime(LocalDateTime.now());
-		userLocationTracker.setUserId(userSession.getUserId());
-		userLocationTracker.setLattitude(userLocationTrackerRequest.getLattitude());
-		userLocationTracker.setLongitude(userLocationTrackerRequest.getLongitude());
-		userLocationTracker.setInsertedOn(LocalDate.now());
-		userLocationTrackerRepository.save(userLocationTracker);
-		return new Response<>("Success", HttpStatus.OK);
-	}
+        UserSession userSession = userCredentialService.getUserSession();
+        log.info("Adding geo location lat : {} , long : {} , userId : {}", userLocationTrackerRequest.getLattitude(),
+                userLocationTrackerRequest.getLongitude(), userSession.getUserId());
+        UserLoginLog userLoginLog = userLoginLogRepository.findByTokenId(authToken.split(" ")[1]);
+        UserLocationTracker userLocationTracker = new UserLocationTracker();
+        userLocationTracker.setDeviceId(userLoginLog.getDeviceId());
+        userLocationTracker.setIpAddress(userLoginLog.getIpAddress());
+        userLocationTracker.setOrgId(userSession.getOrganizationId());
+        userLocationTracker.setTrackDateTime(LocalDateTime.now());
+        userLocationTracker.setUserId(userSession.getUserId());
+        userLocationTracker.setLattitude(userLocationTrackerRequest.getLattitude());
+        userLocationTracker.setLongitude(userLocationTrackerRequest.getLongitude());
+        userLocationTracker.setInsertedOn(LocalDate.now());
+        userLocationTrackerRepository.save(userLocationTracker);
+        return new Response<>("Success", HttpStatus.OK);
+    }
 }

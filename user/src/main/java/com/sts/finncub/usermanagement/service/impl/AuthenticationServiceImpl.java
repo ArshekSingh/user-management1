@@ -19,6 +19,7 @@ import com.sts.finncub.usermanagement.service.AuthenticationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCrypt;
@@ -45,6 +46,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private Integer passwordFailedCount;
 
     private final String PASSWORD_SEPARATOR = ",,";
+
+    private static final String KEY = "USER_SESSION";
+
+    private final RedisTemplate<String, Object> template;
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final UserRedisRepository userRedisRepository;
@@ -58,7 +63,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final MobileAppConfig mobileAppConfig;
 
     @Autowired
-    public AuthenticationServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserRedisRepository userRedisRepository, UserRoleMappingRepository userRoleMappingRepository, UserCredentialService userCredentialService, UserOrganizationMappingRepository userOrganizationMappingRepository, BranchMasterRepository branchMasterRepository, UserLoginLogRepository userLoginLogRepository, EmployeeRepository employeeRepository, MiscellaneousServiceRepository miscellaneousServiceRepository, MobileAppConfig mobileAppConfig) {
+    public AuthenticationServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder,
+                                     UserRedisRepository userRedisRepository, UserRoleMappingRepository userRoleMappingRepository,
+                                     UserCredentialService userCredentialService, UserOrganizationMappingRepository userOrganizationMappingRepository,
+                                     BranchMasterRepository branchMasterRepository, UserLoginLogRepository userLoginLogRepository,
+                                     EmployeeRepository employeeRepository, MiscellaneousServiceRepository miscellaneousServiceRepository,
+                                     MobileAppConfig mobileAppConfig, RedisTemplate<String, Object> template) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userRedisRepository = userRedisRepository;
@@ -70,6 +80,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         this.employeeRepository = employeeRepository;
         this.miscellaneousServiceRepository = miscellaneousServiceRepository;
         this.mobileAppConfig = mobileAppConfig;
+        this.template = template;
     }
 
     @Override
@@ -112,6 +123,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             }
             log.info("User session enter to get branchMap, ZoneMap , DivisionMap for , userId : {}", loginRequest.getUserId());
             UserSession userSession = toSessionObject(user);
+            if (CollectionUtils.isEmpty(userSession.getRoles())) {
+                throw new BadRequestException("No Role Assigned,Please Contact HR", HttpStatus.BAD_REQUEST);
+            }
             String authToken;
             try {
                 authToken = saveToken(userSession);
@@ -138,6 +152,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 log.error("Exception occurred while login , userId : {} , message : {}", loginRequest.getUserId(), e.getMessage(), e);
                 throw new BadRequestException("Login error - " + e.getMessage(), HttpStatus.BAD_REQUEST);
             }
+
             //save user Login log
             userLoginLog.setTokenId(authToken);
             userLoginLogRepository.save(userLoginLog);
@@ -287,7 +302,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         Response response = new Response();
         String tokenString = request.getHeader("Authorization");
         String token = tokenString.split(" ")[1];
-        userRedisRepository.deleteById(token);
+        template.delete(KEY + ":" + token);
         log.info("logout successful");
         return ResponseEntity.ok(response);
     }
@@ -338,6 +353,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         user.setUpdatedOn(LocalDateTime.now());
         user.setUpdatedBy(userSession.getUserId());
         userRepository.save(user);
+//        userRedisRepository.deleteById(userSession.g);
         log.info("Password updated successfully , userId : {}", request.getUserId());
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);

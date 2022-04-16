@@ -15,9 +15,14 @@ import javax.servlet.http.HttpServletRequest;
 
 public interface AuthenticationService {
     LoginResponse login(LoginRequest loginRequest) throws ObjectNotFoundException, BadRequestException, InternalServerErrorException;
+
     SignupResponse signup(SignupRequest signupRequest) throws BadRequestException;
+
     Response<UserSession> verify(String authToken) throws ObjectNotFoundException;
+
     ResponseEntity<Response> logout(HttpServletRequest request);
+
     ResponseEntity<Response> changePassword(LoginRequest password) throws ObjectNotFoundException, BadRequestException;
+
     ResponseEntity<Response> resetPassword(LoginRequest loginRequest) throws ObjectNotFoundException;
 }
