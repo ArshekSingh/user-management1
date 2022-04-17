@@ -47,7 +47,6 @@ public class UserServiceImpl implements UserService {
     private final UserLoginLogRepository userLoginLogRepository;
 
 
-
     @Autowired
     public UserServiceImpl(UserRepository userRepository, UserCredentialService userCredentialService, BCryptPasswordEncoder passwordEncoder, UserOrganizationMappingRepository userOrganizationMappingRepository, UserRoleMappingRepository userRoleMappingRepository, RoleMasterRepository roleMasterRepository, UserBranchMappingRepository userBranchMappingRepository, BranchMasterRepository branchMasterRepository, UserDao userDao, UserLoginLogRepository userLoginLogRepository, UserLocationTrackerRepository userLocationTrackerRepository) {
         this.userRepository = userRepository;
@@ -352,6 +351,7 @@ public class UserServiceImpl implements UserService {
             ServerSideDropDownDto userAvailableBranches = new ServerSideDropDownDto();
             userAvailableBranches.setId(branchMaster.getBranchId().toString());
             userAvailableBranches.setLabel(branchMaster.getBranchName());
+            userAvailableBranches.setLabel(branchMaster.getBranchCode() + "-" + branchMaster.getBranchName());
             userAvailableBranchesList.add(userAvailableBranches);
         }
         userBranchMappingDto.setAssignedBranches(userAssignedBranchesList);
@@ -390,12 +390,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Response<Object> postGeoLocationOfUser(UserLocationTrackerRequest userLocationTrackerRequest,
-                                                  String authToken) {
+    public Response<Object> postGeoLocationOfUser(UserLocationTrackerRequest userLocationTrackerRequest, String authToken) {
 
         UserSession userSession = userCredentialService.getUserSession();
-        log.info("Adding geo location lat : {} , long : {} , userId : {}", userLocationTrackerRequest.getLattitude(),
-                userLocationTrackerRequest.getLongitude(), userSession.getUserId());
+        log.info("Adding geo location lat : {} , long : {} , userId : {}", userLocationTrackerRequest.getLattitude(), userLocationTrackerRequest.getLongitude(), userSession.getUserId());
         UserLoginLog userLoginLog = userLoginLogRepository.findByTokenId(authToken.split(" ")[1]);
         UserLocationTracker userLocationTracker = new UserLocationTracker();
         userLocationTracker.setDeviceId(userLoginLog.getDeviceId());
