@@ -48,11 +48,11 @@ variable "common_tags" {
 }
 variable "containers_min" {
     type= number
-    default=1
+    default=2
 }
 variable "containers_max" {
     type= number
-    default=4
+    default=5
 }
 variable "clustername" {
     type= string
