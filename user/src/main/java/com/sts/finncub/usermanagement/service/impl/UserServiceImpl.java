@@ -407,4 +407,28 @@ public class UserServiceImpl implements UserService {
         userLocationTrackerRepository.save(userLocationTracker);
         return new Response<>("Success", HttpStatus.OK);
     }
+
+    @Override
+    public Response getAllUserSearchable(String searchUserKey, String userType) {
+        Response response = new Response();
+        List<ServerSideDropDownDto> serverSideDropDownDtoList = new ArrayList<>();
+        List<User> userList;
+        if ("ALL".equalsIgnoreCase(userType)) {
+            userList = userRepository.findByUserIdIsContainingIgnoreCaseOrNameIsContainingIgnoreCase(searchUserKey, searchUserKey);
+        } else {
+            searchUserKey = "%" + searchUserKey + "%";
+            userList = userRepository.getAllUsers(userType, searchUserKey, searchUserKey);
+        }
+        for (User user : userList) {
+            ServerSideDropDownDto serverSideDropDownDto = new ServerSideDropDownDto();
+            serverSideDropDownDto.setId(user.getUserId());
+            serverSideDropDownDto.setLabel(user.getUserId() + "-" + user.getName());
+            serverSideDropDownDtoList.add(serverSideDropDownDto);
+        }
+        response.setCode(HttpStatus.OK.value());
+        response.setStatus(HttpStatus.OK);
+        response.setData(serverSideDropDownDtoList);
+        response.setMessage("Transaction completed successfully.");
+        return response;
+    }
 }
