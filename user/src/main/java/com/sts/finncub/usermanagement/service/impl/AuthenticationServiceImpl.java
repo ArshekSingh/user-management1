@@ -63,12 +63,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final MobileAppConfig mobileAppConfig;
 
     @Autowired
-    public AuthenticationServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder,
-                                     UserRedisRepository userRedisRepository, UserRoleMappingRepository userRoleMappingRepository,
-                                     UserCredentialService userCredentialService, UserOrganizationMappingRepository userOrganizationMappingRepository,
-                                     BranchMasterRepository branchMasterRepository, UserLoginLogRepository userLoginLogRepository,
-                                     EmployeeRepository employeeRepository, MiscellaneousServiceRepository miscellaneousServiceRepository,
-                                     MobileAppConfig mobileAppConfig, RedisTemplate<String, Object> template) {
+    public AuthenticationServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserRedisRepository userRedisRepository, UserRoleMappingRepository userRoleMappingRepository, UserCredentialService userCredentialService, UserOrganizationMappingRepository userOrganizationMappingRepository, BranchMasterRepository branchMasterRepository, UserLoginLogRepository userLoginLogRepository, EmployeeRepository employeeRepository, MiscellaneousServiceRepository miscellaneousServiceRepository, MobileAppConfig mobileAppConfig, RedisTemplate<String, Object> template) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userRedisRepository = userRedisRepository;
