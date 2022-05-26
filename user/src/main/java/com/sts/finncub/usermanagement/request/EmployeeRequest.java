@@ -3,8 +3,6 @@ package com.sts.finncub.usermanagement.request;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Date;
-
 @Getter
 @Setter
 public class EmployeeRequest {
@@ -88,4 +86,7 @@ public class EmployeeRequest {
     private String exitDate;
     private String isFnfClear;
     private String baseLocation;
+	private String isVehicle;
+	private String vehicleType;
+	private String vehicleNumber;
 }

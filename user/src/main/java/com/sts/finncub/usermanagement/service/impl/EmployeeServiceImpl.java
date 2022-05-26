@@ -1,10 +1,32 @@
 package com.sts.finncub.usermanagement.service.impl;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
+
 import com.sts.finncub.core.dto.EmployeeDepartmentDto;
 import com.sts.finncub.core.dto.EmployeeDto;
-import com.sts.finncub.core.entity.*;
+import com.sts.finncub.core.entity.BranchMaster;
+import com.sts.finncub.core.entity.Employee;
+import com.sts.finncub.core.entity.EmployeeDepartmentMaster;
+import com.sts.finncub.core.entity.EmployeeFunctionalTitle;
+import com.sts.finncub.core.entity.UserSession;
 import com.sts.finncub.core.exception.BadRequestException;
-import com.sts.finncub.core.repository.*;
+import com.sts.finncub.core.repository.BranchMasterRepository;
+import com.sts.finncub.core.repository.EmployeeDepartmentRepository;
+import com.sts.finncub.core.repository.EmployeeFunctionalTitleRepository;
+import com.sts.finncub.core.repository.EmployeeRepository;
+import com.sts.finncub.core.repository.UserRepository;
 import com.sts.finncub.core.repository.dao.EmployeeDao;
 import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.core.response.Response;
@@ -14,20 +36,8 @@ import com.sts.finncub.usermanagement.request.EmployeeRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.service.EmployeeService;
 import com.sts.finncub.usermanagement.service.UserService;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 
 // @Author Sumit kumar
 
@@ -171,6 +181,9 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setReferenceName(request.getReferenceName());
         employee.setReferenceId(request.getReferenceId());
         employee.setRelWithEmergPerson(request.getRelWithEmergPerson());
+		employee.setIsVehicle(request.getIsVehicle());
+		employee.setVehicleType(request.getVehicleType());
+		employee.setVehicleNumber(request.getVehicleNumber());
         if (StringUtils.hasText(request.getResignDate())) {
             employee.setResignDate(DateTimeUtil.stringToDate(request.getResignDate()));
         }
@@ -315,6 +328,9 @@ public class EmployeeServiceImpl implements EmployeeService {
         } catch (Exception exception) {
             log.error(exception.getMessage());
         }
+		employeeDto.setIsVehicle(employee.getIsVehicle());
+		employeeDto.setVehicleType(employee.getVehicleType());
+		employeeDto.setVehicleNumber(employee.getVehicleNumber());
         employeeDto.setResignDate(DateTimeUtil.dateToString(employee.getResignDate()));
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);
