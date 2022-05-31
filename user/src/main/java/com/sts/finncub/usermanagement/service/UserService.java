@@ -8,6 +8,8 @@ import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.request.UserLocationTrackerRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
 
+import java.util.List;
+
 import javax.validation.Valid;
 
 public interface UserService {
@@ -30,7 +32,7 @@ public interface UserService {
 
     Response assignBranchesToUser(UserBranchMappingDto userRoleMappingDto);
 
-    Response postGeoLocationOfUser(@Valid UserLocationTrackerRequest userLocationTrackerRequest, String authorization);
+    Response postGeoLocationOfUser(@Valid List<UserLocationTrackerRequest> userLocationTrackerRequest, String authorization);
 
     Response getAllUserSearchable(String searchUserKey, String userType);
 }

@@ -389,25 +389,33 @@ public class UserServiceImpl implements UserService {
         return response;
     }
 
-    @Override
-    public Response<Object> postGeoLocationOfUser(UserLocationTrackerRequest userLocationTrackerRequest, String authToken) {
+	@Override
+	public Response<Object> postGeoLocationOfUser(List<UserLocationTrackerRequest> userLocationTrackerRequests,
+			String authToken) {
 
-        UserSession userSession = userCredentialService.getUserSession();
-        log.info("Adding geo location lat : {} , long : {} , userId : {}", userLocationTrackerRequest.getLattitude(), userLocationTrackerRequest.getLongitude(), userSession.getUserId());
-        UserLoginLog userLoginLog = userLoginLogRepository.findByTokenId(authToken.split(" ")[1]);
-        UserLocationTracker userLocationTracker = new UserLocationTracker();
-        userLocationTracker.setDeviceId(userLoginLog.getDeviceId());
-        userLocationTracker.setIpAddress(userLoginLog.getIpAddress());
-        userLocationTracker.setOrgId(userSession.getOrganizationId());
-        userLocationTracker.setTrackDateTime(LocalDateTime.now());
-        userLocationTracker.setUserId(userSession.getUserId());
-        userLocationTracker.setLattitude(userLocationTrackerRequest.getLattitude());
-        userLocationTracker.setLongitude(userLocationTrackerRequest.getLongitude());
-        userLocationTracker.setInsertedOn(LocalDate.now());
-        userLocationTrackerRepository.save(userLocationTracker);
-        return new Response<>("Success", HttpStatus.OK);
-    }
+		UserSession userSession = userCredentialService.getUserSession();
+		log.info("Adding geo location , userId : {}", userSession.getUserId());
+		UserLoginLog userLoginLog = userLoginLogRepository.findByTokenId(authToken.split(" ")[1]);
+		userLocationTrackerRequests.stream()
+				.forEach(coordinates -> saveGeoLocation(coordinates, userLoginLog, userSession));
 
+		return new Response<>("Success", HttpStatus.OK);
+	}
+
+	private void saveGeoLocation(UserLocationTrackerRequest coordinates, UserLoginLog userLoginLog,
+			UserSession userSession) {
+
+		UserLocationTracker userLocationTracker = new UserLocationTracker();
+		userLocationTracker.setDeviceId(userLoginLog.getDeviceId());
+		userLocationTracker.setIpAddress(userLoginLog.getIpAddress());
+		userLocationTracker.setOrgId(userSession.getOrganizationId());
+		userLocationTracker.setTrackDateTime(LocalDateTime.now());
+		userLocationTracker.setUserId(userSession.getUserId());
+		userLocationTracker.setLattitude(coordinates.getLattitude());
+		userLocationTracker.setLongitude(coordinates.getLongitude());
+		userLocationTracker.setInsertedOn(LocalDate.now());
+		userLocationTrackerRepository.save(userLocationTracker);
+	}
     @Override
     public Response getAllUserSearchable(String searchUserKey, String userType) {
         Response response = new Response();

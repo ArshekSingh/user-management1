@@ -12,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 import javax.validation.Valid;
 
 @Slf4j
@@ -81,9 +83,9 @@ public class UserController {
     }
 
     @PostMapping(value = "postGeoLocationOfUser")
-    public Response postGeoLocationOfUser(@Valid @RequestBody UserLocationTrackerRequest userLocationTrackerRequest, @RequestHeader String authorization) {
+    public Response postGeoLocationOfUser(@Valid @RequestBody List<UserLocationTrackerRequest> userLocationTrackerRequests, @RequestHeader String authorization) {
         log.info("postGeoLocationOfUser() invoked");
-        return userService.postGeoLocationOfUser(userLocationTrackerRequest, authorization);
+        return userService.postGeoLocationOfUser(userLocationTrackerRequests, authorization);
     }
 
     @GetMapping(value = "/getAllUserSearchable/{searchUserKey}/{userType}")
