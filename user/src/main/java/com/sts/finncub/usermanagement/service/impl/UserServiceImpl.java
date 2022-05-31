@@ -430,7 +430,7 @@ public class UserServiceImpl implements UserService {
 		userLocationTracker.setDeviceId(userLoginLog.getDeviceId());
 		userLocationTracker.setIpAddress(userLoginLog.getIpAddress());
 		userLocationTracker.setOrgId(userSession.getOrganizationId());
-		userLocationTracker.setTrackDateTime(LocalDateTime.now());
+		userLocationTracker.setTrackDateTime(DateTimeUtil.stringYYMMDDHHMMSSToDateTime(coordinates.getTrackDateTime()));
 		userLocationTracker.setUserId(userSession.getUserId());
 		userLocationTracker.setLattitude(coordinates.getLattitude());
 		userLocationTracker.setLongitude(coordinates.getLongitude());
