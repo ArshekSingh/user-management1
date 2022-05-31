@@ -417,7 +417,7 @@ public class UserServiceImpl implements UserService {
 		UserSession userSession = userCredentialService.getUserSession();
 		log.info("Adding geo location , userId : {}", userSession.getUserId());
 		UserLoginLog userLoginLog = userLoginLogRepository.findByTokenId(authToken.split(" ")[1]);
-		geoLocationRequest.getSerLocationTrackerRequests().stream()
+		geoLocationRequest.getUserLocationTrackerRequests().stream()
 				.forEach(coordinates -> saveGeoLocation(coordinates, userLoginLog, userSession));
 
 		return new Response<>("Success", HttpStatus.OK);
