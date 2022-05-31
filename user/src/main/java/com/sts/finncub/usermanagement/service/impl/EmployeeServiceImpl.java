@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.beans.BeanUtils;
@@ -20,12 +21,14 @@ import com.sts.finncub.core.entity.BranchMaster;
 import com.sts.finncub.core.entity.Employee;
 import com.sts.finncub.core.entity.EmployeeDepartmentMaster;
 import com.sts.finncub.core.entity.EmployeeFunctionalTitle;
+import com.sts.finncub.core.entity.PincodeMaster;
 import com.sts.finncub.core.entity.UserSession;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.BranchMasterRepository;
 import com.sts.finncub.core.repository.EmployeeDepartmentRepository;
 import com.sts.finncub.core.repository.EmployeeFunctionalTitleRepository;
 import com.sts.finncub.core.repository.EmployeeRepository;
+import com.sts.finncub.core.repository.PincodeRepository;
 import com.sts.finncub.core.repository.UserRepository;
 import com.sts.finncub.core.repository.dao.EmployeeDao;
 import com.sts.finncub.core.request.FilterRequest;
@@ -59,9 +62,14 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     private final EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository;
     private final BranchMasterRepository branchMasterRepository;
+	private final PincodeRepository pincodeRepository;
 
     @Autowired
-    public EmployeeServiceImpl(UserCredentialService userCredentialService, EmployeeRepository employeeRepository, EmployeeDao employeeDao, UserRepository userRepository, UserService userService, EmployeeDepartmentRepository employeeDepartmentRepository, EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository, BranchMasterRepository branchMasterRepository) {
+	public EmployeeServiceImpl(UserCredentialService userCredentialService, EmployeeRepository employeeRepository,
+			EmployeeDao employeeDao, UserRepository userRepository, UserService userService,
+			EmployeeDepartmentRepository employeeDepartmentRepository,
+			EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository,
+			BranchMasterRepository branchMasterRepository, PincodeRepository pincodeRepository) {
         this.userCredentialService = userCredentialService;
         this.employeeRepository = employeeRepository;
         this.employeeDao = employeeDao;
@@ -70,6 +78,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         this.employeeDepartmentRepository = employeeDepartmentRepository;
         this.employeeFunctionalTitleRepository = employeeFunctionalTitleRepository;
         this.branchMasterRepository = branchMasterRepository;
+		this.pincodeRepository = pincodeRepository;
     }
 
     @Override
@@ -290,6 +299,15 @@ public class EmployeeServiceImpl implements EmployeeService {
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         }
         BeanUtils.copyProperties(employee, employeeDto);
+		if (!StringUtils.hasText(employee.getCurrentCity()) && employee.getCurrentPincode() != null) {
+			Optional<PincodeMaster> pincode = pincodeRepository
+					.findByPincodeMasterPK_Pincode(employee.getCurrentPincode().intValue());
+			if (pincode.isPresent()) {
+				PincodeMaster pincodeMaster = pincode.get();
+				if (pincodeMaster != null && pincodeMaster.getDistrictMaster() != null)
+					employeeDto.setCurrentCity(pincodeMaster.getDistrictMaster().getDistrictName());
+			}
+		}
         employeeDto.setDob(DateTimeUtil.dateToString(employee.getDob()));
         employeeDto.setJoiningDate(DateTimeUtil.dateToString(employee.getJoiningDate()));
         employeeDto.setConfirmationDate(DateTimeUtil.dateToString(employee.getConfirmationDate()));
