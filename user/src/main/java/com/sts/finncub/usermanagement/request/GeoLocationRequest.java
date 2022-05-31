@@ -14,6 +14,6 @@ public class GeoLocationRequest {
 	@Valid
 	@NotNull
 	@Size(min = 0,message = "Atleast one geo location set is mandatory")
-	List<UserLocationTrackerRequest> serLocationTrackerRequests;
+	List<UserLocationTrackerRequest> userLocationTrackerRequests;
 
 }
