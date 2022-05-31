@@ -1,35 +1,10 @@
 package com.sts.finncub.usermanagement.service.impl;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
-
 import com.sts.finncub.core.dto.EmployeeDepartmentDto;
 import com.sts.finncub.core.dto.EmployeeDto;
-import com.sts.finncub.core.entity.BranchMaster;
-import com.sts.finncub.core.entity.Employee;
-import com.sts.finncub.core.entity.EmployeeDepartmentMaster;
-import com.sts.finncub.core.entity.EmployeeFunctionalTitle;
-import com.sts.finncub.core.entity.PincodeMaster;
-import com.sts.finncub.core.entity.UserSession;
+import com.sts.finncub.core.entity.*;
 import com.sts.finncub.core.exception.BadRequestException;
-import com.sts.finncub.core.repository.BranchMasterRepository;
-import com.sts.finncub.core.repository.EmployeeDepartmentRepository;
-import com.sts.finncub.core.repository.EmployeeFunctionalTitleRepository;
-import com.sts.finncub.core.repository.EmployeeRepository;
-import com.sts.finncub.core.repository.PincodeRepository;
-import com.sts.finncub.core.repository.UserRepository;
+import com.sts.finncub.core.repository.*;
 import com.sts.finncub.core.repository.dao.EmployeeDao;
 import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.core.response.Response;
@@ -39,8 +14,16 @@ import com.sts.finncub.usermanagement.request.EmployeeRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.service.EmployeeService;
 import com.sts.finncub.usermanagement.service.UserService;
-
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import java.time.LocalDateTime;
+import java.util.*;
 
 // @Author Sumit kumar
 
@@ -62,14 +45,10 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     private final EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository;
     private final BranchMasterRepository branchMasterRepository;
-	private final PincodeRepository pincodeRepository;
+    private final PincodeRepository pincodeRepository;
 
     @Autowired
-	public EmployeeServiceImpl(UserCredentialService userCredentialService, EmployeeRepository employeeRepository,
-			EmployeeDao employeeDao, UserRepository userRepository, UserService userService,
-			EmployeeDepartmentRepository employeeDepartmentRepository,
-			EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository,
-			BranchMasterRepository branchMasterRepository, PincodeRepository pincodeRepository) {
+    public EmployeeServiceImpl(UserCredentialService userCredentialService, EmployeeRepository employeeRepository, EmployeeDao employeeDao, UserRepository userRepository, UserService userService, EmployeeDepartmentRepository employeeDepartmentRepository, EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository, BranchMasterRepository branchMasterRepository, PincodeRepository pincodeRepository) {
         this.userCredentialService = userCredentialService;
         this.employeeRepository = employeeRepository;
         this.employeeDao = employeeDao;
@@ -78,7 +57,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         this.employeeDepartmentRepository = employeeDepartmentRepository;
         this.employeeFunctionalTitleRepository = employeeFunctionalTitleRepository;
         this.branchMasterRepository = branchMasterRepository;
-		this.pincodeRepository = pincodeRepository;
+        this.pincodeRepository = pincodeRepository;
     }
 
     @Override
@@ -190,9 +169,9 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setReferenceName(request.getReferenceName());
         employee.setReferenceId(request.getReferenceId());
         employee.setRelWithEmergPerson(request.getRelWithEmergPerson());
-		employee.setIsVehicle(request.getIsVehicle());
-		employee.setVehicleType(request.getVehicleType());
-		employee.setVehicleNumber(request.getVehicleNumber());
+        employee.setIsVehicle(request.getIsVehicle());
+        employee.setVehicleType(request.getVehicleType());
+        employee.setVehicleNumber(request.getVehicleNumber());
         if (StringUtils.hasText(request.getResignDate())) {
             employee.setResignDate(DateTimeUtil.stringToDate(request.getResignDate()));
         }
@@ -215,9 +194,8 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     private void validateRequest(EmployeeRequest request) throws BadRequestException {
         // validate employee add / update request
-    	if (request == null || !StringUtils.hasText(request.getStatus()) ||
-                !StringUtils.hasText(request.getFirstName()) || !StringUtils.hasText(request.getGender())) {
-        	log.warn("Request failed validation , these field are mandatory : Status {} , FirstName {} , Gender {} ",request.getStatus(),request.getFirstName(),request.getGender());
+        if (request == null || !StringUtils.hasText(request.getStatus()) || !StringUtils.hasText(request.getFirstName()) || !StringUtils.hasText(request.getGender())) {
+            log.warn("Request failed validation , these field are mandatory : Status {} , FirstName {} , Gender {} ", request.getStatus(), request.getFirstName(), request.getGender());
             throw new BadRequestException("Invalid Request", HttpStatus.BAD_REQUEST);
         }
     }
@@ -228,14 +206,15 @@ public class EmployeeServiceImpl implements EmployeeService {
         List<EmployeeDto> employeeDtoList = new ArrayList<>();
         // fetch employee detail list using organizationId
         UserSession userSession = userCredentialService.getUserSession();
+        Long count = null;
         request.setOrganizationId(userSession.getOrganizationId());
-        List<Employee> employeeList = employeeDao.fetchAllEmployeeDetails(request);
-        // fetch Employee details list count
-        Long employeeDetailsCount = employeeDao.findAllFilterEmployeeDetailsCount(request);
-        if (CollectionUtils.isEmpty(employeeList)) {
-            log.info("Employee List Not Found");
-            throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
+        if (request.getStart() == 0) {
+            count = employeeDao.findAllFilterEmployeeDetailsCount(request);
         }
+        if ("Y".equalsIgnoreCase(request.getIsCsv())) {
+            request.setLimit(employeeDao.findAllFilterEmployeeDetailsCount(request).intValue());
+        }
+        List<Employee> employeeList = employeeDao.fetchAllEmployeeDetails(request);
         for (Employee employee : employeeList) {
             EmployeeDto employeeDto = new EmployeeDto();
             BeanUtils.copyProperties(employee, employeeDto);
@@ -271,11 +250,11 @@ public class EmployeeServiceImpl implements EmployeeService {
             }
             if (employee.getBranchId() != null) {
                 BranchMaster branchMaster = branchMasterRepository.findByBranchId(employee.getBranchId().intValue()).orElse(null);
-                employeeDto.setBaseLocation(branchMaster==null?"":branchMaster.getBranchCode() + " " + branchMaster.getBranchName());
+                employeeDto.setBaseLocation(branchMaster == null ? "" : branchMaster.getBranchCode() + " " + branchMaster.getBranchName());
             }
             if (employee.getSubDepartmentId() != null) {
                 EmployeeDepartmentMaster employeeDepartmentMaster = employeeDepartmentRepository.findByOrgIdAndEmpDepartmentId(userSession.getOrganizationId(), employee.getSubDepartmentId());
-                employeeDto.setSubDepartmentName(employeeDepartmentMaster==null?"":employeeDepartmentMaster.getEmpDepartmentName());
+                employeeDto.setSubDepartmentName(employeeDepartmentMaster == null ? "" : employeeDepartmentMaster.getEmpDepartmentName());
             }
             employeeDtoList.add(employeeDto);
         }
@@ -283,7 +262,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         response.setStatus(HttpStatus.OK);
         response.setMessage("Transaction completed successfully.");
         response.setData(employeeDtoList);
-        response.setTotalCount(employeeDetailsCount);
+        response.setTotalCount(count);
         return response;
     }
 
@@ -295,19 +274,18 @@ public class EmployeeServiceImpl implements EmployeeService {
         // fetch employee detail using organizationId and employeeId
         Employee employee = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), employeeId);
         if (employee == null) {
-        	log.warn("Employee not found for employeeId : {} ",employeeId);
+            log.warn("Employee not found for employeeId : {} ", employeeId);
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         }
         BeanUtils.copyProperties(employee, employeeDto);
-		if (!StringUtils.hasText(employee.getCurrentCity()) && employee.getCurrentPincode() != null) {
-			Optional<PincodeMaster> pincode = pincodeRepository
-					.findByPincodeMasterPK_Pincode(employee.getCurrentPincode().intValue());
-			if (pincode.isPresent()) {
-				PincodeMaster pincodeMaster = pincode.get();
-				if (pincodeMaster != null && pincodeMaster.getDistrictMaster() != null)
-					employeeDto.setCurrentCity(pincodeMaster.getDistrictMaster().getDistrictName());
-			}
-		}
+        if (!StringUtils.hasText(employee.getCurrentCity()) && employee.getCurrentPincode() != null) {
+            Optional<PincodeMaster> pincode = pincodeRepository.findByPincodeMasterPK_Pincode(employee.getCurrentPincode().intValue());
+            if (pincode.isPresent()) {
+                PincodeMaster pincodeMaster = pincode.get();
+                if (pincodeMaster != null && pincodeMaster.getDistrictMaster() != null)
+                    employeeDto.setCurrentCity(pincodeMaster.getDistrictMaster().getDistrictName());
+            }
+        }
         employeeDto.setDob(DateTimeUtil.dateToString(employee.getDob()));
         employeeDto.setJoiningDate(DateTimeUtil.dateToString(employee.getJoiningDate()));
         employeeDto.setConfirmationDate(DateTimeUtil.dateToString(employee.getConfirmationDate()));
@@ -334,11 +312,11 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
         if (employee.getBranchId() != null) {
             BranchMaster branchMaster = branchMasterRepository.findByBranchId(employee.getBranchId().intValue()).orElse(null);
-            employeeDto.setBaseLocation(branchMaster==null?"":branchMaster.getBranchCode() + " " + branchMaster.getBranchName());
+            employeeDto.setBaseLocation(branchMaster == null ? "" : branchMaster.getBranchCode() + " " + branchMaster.getBranchName());
         }
-        if(employee.getReferenceId() != null){
-            Employee emp=employeeRepository.findByEmployeeCodeAndOrganizationId(employee.getReferenceId(),userSession.getOrganizationId());
-            employeeDto.setReferenceIdName(emp==null?"":emp.getEmployeeCode() + "-" + emp.getFirstName() + " " + emp.getLastName());
+        if (employee.getReferenceId() != null) {
+            Employee emp = employeeRepository.findByEmployeeCodeAndOrganizationId(employee.getReferenceId(), userSession.getOrganizationId());
+            employeeDto.setReferenceIdName(emp == null ? "" : emp.getEmployeeCode() + "-" + emp.getFirstName() + " " + emp.getLastName());
         }
         try {
             employeeDto.setCurrentVillageName(employee.getCurrentVillageMaster().getVillageName());
@@ -346,9 +324,9 @@ public class EmployeeServiceImpl implements EmployeeService {
         } catch (Exception exception) {
             log.error(exception.getMessage());
         }
-		employeeDto.setIsVehicle(employee.getIsVehicle());
-		employeeDto.setVehicleType(employee.getVehicleType());
-		employeeDto.setVehicleNumber(employee.getVehicleNumber());
+        employeeDto.setIsVehicle(employee.getIsVehicle());
+        employeeDto.setVehicleType(employee.getVehicleType());
+        employeeDto.setVehicleNumber(employee.getVehicleNumber());
         employeeDto.setResignDate(DateTimeUtil.dateToString(employee.getResignDate()));
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);
