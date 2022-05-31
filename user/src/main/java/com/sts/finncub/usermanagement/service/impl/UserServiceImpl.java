@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import com.sts.finncub.core.constants.Constant;
 import com.sts.finncub.core.dto.ServerSideDropDownDto;
 import com.sts.finncub.core.dto.UserBranchMappingDto;
 import com.sts.finncub.core.dto.UserDetailDto;
@@ -430,7 +431,8 @@ public class UserServiceImpl implements UserService {
 		userLocationTracker.setDeviceId(userLoginLog.getDeviceId());
 		userLocationTracker.setIpAddress(userLoginLog.getIpAddress());
 		userLocationTracker.setOrgId(userSession.getOrganizationId());
-		userLocationTracker.setTrackDateTime(DateTimeUtil.stringYYMMDDHHMMSSToDateTime(coordinates.getTrackDateTime()));
+		userLocationTracker.setTrackDateTime(
+				DateTimeUtil.stringToDateTime(coordinates.getTrackDateTime(), Constant.YYYY_MM_DD_HH_MM_SS));
 		userLocationTracker.setUserId(userSession.getUserId());
 		userLocationTracker.setLattitude(coordinates.getLattitude());
 		userLocationTracker.setLongitude(coordinates.getLongitude());
