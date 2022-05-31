@@ -5,6 +5,7 @@ import com.sts.finncub.core.dto.UserRoleMappingDto;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.core.response.Response;
+import com.sts.finncub.usermanagement.request.GeoLocationRequest;
 import com.sts.finncub.usermanagement.request.UserLocationTrackerRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.service.UserService;
@@ -83,9 +84,9 @@ public class UserController {
     }
 
     @PostMapping(value = "postGeoLocationOfUser")
-    public Response postGeoLocationOfUser(@Valid @RequestBody List<UserLocationTrackerRequest> userLocationTrackerRequests, @RequestHeader String authorization) {
+    public Response postGeoLocationOfUser(@Valid @RequestBody GeoLocationRequest geoLocationRequest, @RequestHeader String authorization) {
         log.info("postGeoLocationOfUser() invoked");
-        return userService.postGeoLocationOfUser(userLocationTrackerRequests, authorization);
+        return userService.postGeoLocationOfUser(geoLocationRequest, authorization);
     }
 
     @GetMapping(value = "/getAllUserSearchable/{searchUserKey}/{userType}")

@@ -5,6 +5,7 @@ import com.sts.finncub.core.dto.UserRoleMappingDto;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.core.response.Response;
+import com.sts.finncub.usermanagement.request.GeoLocationRequest;
 import com.sts.finncub.usermanagement.request.UserLocationTrackerRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
 
@@ -32,7 +33,7 @@ public interface UserService {
 
     Response assignBranchesToUser(UserBranchMappingDto userRoleMappingDto);
 
-    Response postGeoLocationOfUser(@Valid List<UserLocationTrackerRequest> userLocationTrackerRequest, String authorization);
+    Response postGeoLocationOfUser(GeoLocationRequest geoLocationRequest, String authorization);
 
     Response getAllUserSearchable(String searchUserKey, String userType);
 }

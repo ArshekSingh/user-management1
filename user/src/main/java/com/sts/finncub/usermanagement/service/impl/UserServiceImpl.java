@@ -1,21 +1,11 @@
 package com.sts.finncub.usermanagement.service.impl;
 
-import com.sts.finncub.core.dto.ServerSideDropDownDto;
-import com.sts.finncub.core.dto.UserBranchMappingDto;
-import com.sts.finncub.core.dto.UserDetailDto;
-import com.sts.finncub.core.dto.UserRoleMappingDto;
-import com.sts.finncub.core.entity.*;
-import com.sts.finncub.core.exception.BadRequestException;
-import com.sts.finncub.core.repository.*;
-import com.sts.finncub.core.repository.dao.UserDao;
-import com.sts.finncub.core.request.FilterRequest;
-import com.sts.finncub.core.response.Response;
-import com.sts.finncub.core.service.UserCredentialService;
-import com.sts.finncub.core.util.DateTimeUtil;
-import com.sts.finncub.usermanagement.request.UserLocationTrackerRequest;
-import com.sts.finncub.usermanagement.request.UserRequest;
-import com.sts.finncub.usermanagement.service.UserService;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,11 +14,42 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import com.sts.finncub.core.dto.ServerSideDropDownDto;
+import com.sts.finncub.core.dto.UserBranchMappingDto;
+import com.sts.finncub.core.dto.UserDetailDto;
+import com.sts.finncub.core.dto.UserRoleMappingDto;
+import com.sts.finncub.core.entity.BranchMaster;
+import com.sts.finncub.core.entity.RoleMaster;
+import com.sts.finncub.core.entity.User;
+import com.sts.finncub.core.entity.UserBranchMapping;
+import com.sts.finncub.core.entity.UserBranchMappingPK;
+import com.sts.finncub.core.entity.UserLocationTracker;
+import com.sts.finncub.core.entity.UserLoginLog;
+import com.sts.finncub.core.entity.UserOrganizationLinkId;
+import com.sts.finncub.core.entity.UserOrganizationMapping;
+import com.sts.finncub.core.entity.UserRoleMapping;
+import com.sts.finncub.core.entity.UserRoleOrganizationLinkId;
+import com.sts.finncub.core.entity.UserSession;
+import com.sts.finncub.core.exception.BadRequestException;
+import com.sts.finncub.core.repository.BranchMasterRepository;
+import com.sts.finncub.core.repository.RoleMasterRepository;
+import com.sts.finncub.core.repository.UserBranchMappingRepository;
+import com.sts.finncub.core.repository.UserLocationTrackerRepository;
+import com.sts.finncub.core.repository.UserLoginLogRepository;
+import com.sts.finncub.core.repository.UserOrganizationMappingRepository;
+import com.sts.finncub.core.repository.UserRepository;
+import com.sts.finncub.core.repository.UserRoleMappingRepository;
+import com.sts.finncub.core.repository.dao.UserDao;
+import com.sts.finncub.core.request.FilterRequest;
+import com.sts.finncub.core.response.Response;
+import com.sts.finncub.core.service.UserCredentialService;
+import com.sts.finncub.core.util.DateTimeUtil;
+import com.sts.finncub.usermanagement.request.GeoLocationRequest;
+import com.sts.finncub.usermanagement.request.UserLocationTrackerRequest;
+import com.sts.finncub.usermanagement.request.UserRequest;
+import com.sts.finncub.usermanagement.service.UserService;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
@@ -390,13 +411,13 @@ public class UserServiceImpl implements UserService {
     }
 
 	@Override
-	public Response<Object> postGeoLocationOfUser(List<UserLocationTrackerRequest> userLocationTrackerRequests,
+	public Response<Object> postGeoLocationOfUser(GeoLocationRequest geoLocationRequest,
 			String authToken) {
 
 		UserSession userSession = userCredentialService.getUserSession();
 		log.info("Adding geo location , userId : {}", userSession.getUserId());
 		UserLoginLog userLoginLog = userLoginLogRepository.findByTokenId(authToken.split(" ")[1]);
-		userLocationTrackerRequests.stream()
+		geoLocationRequest.getSerLocationTrackerRequests().stream()
 				.forEach(coordinates -> saveGeoLocation(coordinates, userLoginLog, userSession));
 
 		return new Response<>("Success", HttpStatus.OK);
