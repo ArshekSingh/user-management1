@@ -1,16 +1,22 @@
 package com.sts.finncub.usermanagement.service.impl;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.servlet.http.HttpServletRequest;
-
+import com.google.gson.Gson;
+import com.sts.finncub.core.constants.RestMappingConstants;
+import com.sts.finncub.core.entity.*;
+import com.sts.finncub.core.exception.BadRequestException;
+import com.sts.finncub.core.exception.InternalServerErrorException;
+import com.sts.finncub.core.exception.ObjectNotFoundException;
+import com.sts.finncub.core.repository.*;
+import com.sts.finncub.core.response.Response;
+import com.sts.finncub.core.service.UserCredentialService;
+import com.sts.finncub.usermanagement.assembler.SignUpConverter;
+import com.sts.finncub.usermanagement.config.MobileAppConfig;
+import com.sts.finncub.usermanagement.request.LoginRequest;
+import com.sts.finncub.usermanagement.request.SignupRequest;
+import com.sts.finncub.usermanagement.response.LoginResponse;
+import com.sts.finncub.usermanagement.response.SignupResponse;
+import com.sts.finncub.usermanagement.service.AuthenticationService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -22,39 +28,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
-import com.google.gson.Gson;
-import com.sts.finncub.core.constants.RestMappingConstants;
-import com.sts.finncub.core.entity.Employee;
-import com.sts.finncub.core.entity.MiscellaneousService;
-import com.sts.finncub.core.entity.Organization;
-import com.sts.finncub.core.entity.User;
-import com.sts.finncub.core.entity.UserLoginLog;
-import com.sts.finncub.core.entity.UserOrganizationMapping;
-import com.sts.finncub.core.entity.UserRoleMapping;
-import com.sts.finncub.core.entity.UserSession;
-import com.sts.finncub.core.exception.BadRequestException;
-import com.sts.finncub.core.exception.InternalServerErrorException;
-import com.sts.finncub.core.exception.ObjectNotFoundException;
-import com.sts.finncub.core.repository.BranchMasterRepository;
-import com.sts.finncub.core.repository.EmployeeRepository;
-import com.sts.finncub.core.repository.MiscellaneousServiceRepository;
-import com.sts.finncub.core.repository.OrganizationRepository;
-import com.sts.finncub.core.repository.UserLoginLogRepository;
-import com.sts.finncub.core.repository.UserOrganizationMappingRepository;
-import com.sts.finncub.core.repository.UserRedisRepository;
-import com.sts.finncub.core.repository.UserRepository;
-import com.sts.finncub.core.repository.UserRoleMappingRepository;
-import com.sts.finncub.core.response.Response;
-import com.sts.finncub.core.service.UserCredentialService;
-import com.sts.finncub.usermanagement.assembler.SignUpConverter;
-import com.sts.finncub.usermanagement.config.MobileAppConfig;
-import com.sts.finncub.usermanagement.request.LoginRequest;
-import com.sts.finncub.usermanagement.request.SignupRequest;
-import com.sts.finncub.usermanagement.response.LoginResponse;
-import com.sts.finncub.usermanagement.response.SignupResponse;
-import com.sts.finncub.usermanagement.service.AuthenticationService;
-
-import lombok.extern.slf4j.Slf4j;
+import javax.servlet.http.HttpServletRequest;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -66,8 +44,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Value("${password.failed.count}")
     private Integer passwordFailedCount;
-
-    private final String PASSWORD_SEPARATOR = ",,";
 
     private static final String KEY = "USER_SESSION";
 
@@ -83,31 +59,24 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final EmployeeRepository employeeRepository;
     private final MiscellaneousServiceRepository miscellaneousServiceRepository;
     private final MobileAppConfig mobileAppConfig;
-	private final OrganizationRepository organizationRepository;
+    private final OrganizationRepository organizationRepository;
 
-	@Autowired
-	public AuthenticationServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder,
-			UserRedisRepository userRedisRepository, UserRoleMappingRepository userRoleMappingRepository,
-			UserCredentialService userCredentialService,
-			UserOrganizationMappingRepository userOrganizationMappingRepository,
-			BranchMasterRepository branchMasterRepository, UserLoginLogRepository userLoginLogRepository,
-			EmployeeRepository employeeRepository, MiscellaneousServiceRepository miscellaneousServiceRepository,
-			MobileAppConfig mobileAppConfig, RedisTemplate<String, Object> template,
-			OrganizationRepository organizationRepository) {
-		this.userRepository = userRepository;
-		this.passwordEncoder = passwordEncoder;
-		this.userRedisRepository = userRedisRepository;
-		this.userRoleMappingRepository = userRoleMappingRepository;
-		this.userCredentialService = userCredentialService;
-		this.userOrganizationMappingRepository = userOrganizationMappingRepository;
-		this.branchMasterRepository = branchMasterRepository;
-		this.userLoginLogRepository = userLoginLogRepository;
-		this.employeeRepository = employeeRepository;
-		this.miscellaneousServiceRepository = miscellaneousServiceRepository;
-		this.mobileAppConfig = mobileAppConfig;
-		this.template = template;
-		this.organizationRepository = organizationRepository;
-	}
+    @Autowired
+    public AuthenticationServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserRedisRepository userRedisRepository, UserRoleMappingRepository userRoleMappingRepository, UserCredentialService userCredentialService, UserOrganizationMappingRepository userOrganizationMappingRepository, BranchMasterRepository branchMasterRepository, UserLoginLogRepository userLoginLogRepository, EmployeeRepository employeeRepository, MiscellaneousServiceRepository miscellaneousServiceRepository, MobileAppConfig mobileAppConfig, RedisTemplate<String, Object> template, OrganizationRepository organizationRepository) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.userRedisRepository = userRedisRepository;
+        this.userRoleMappingRepository = userRoleMappingRepository;
+        this.userCredentialService = userCredentialService;
+        this.userOrganizationMappingRepository = userOrganizationMappingRepository;
+        this.branchMasterRepository = branchMasterRepository;
+        this.userLoginLogRepository = userLoginLogRepository;
+        this.employeeRepository = employeeRepository;
+        this.miscellaneousServiceRepository = miscellaneousServiceRepository;
+        this.mobileAppConfig = mobileAppConfig;
+        this.template = template;
+        this.organizationRepository = organizationRepository;
+    }
 
     @Override
     public LoginResponse login(LoginRequest loginRequest) throws ObjectNotFoundException, BadRequestException, InternalServerErrorException {
@@ -209,9 +178,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             userSession.setType(user.getType());
             userSession.setUserId(user.getUserId());
             userSession.setOrganizationId(getActiveOrganizationId(user));
-			Organization organization = organizationRepository.findByOrgId(userSession.getOrganizationId())
-					.orElse(null);
-			userSession.setOrgCode(organization != null ? organization.getOrgCode() : "");
+            Organization organization = organizationRepository.findByOrgId(userSession.getOrganizationId()).orElse(null);
+            userSession.setOrgCode(organization != null ? organization.getOrgCode() : "");
             userSession.setIsTemporaryPassword(user.getIsTemporaryPassword());
             if (getActiveOrganizationId(user) != null && user.getUserId() != null) {
                 Set<String> userRoleMappingList = userRoleMappingRepository.findRoleName(getActiveOrganizationId(user), user.getUserId());
@@ -259,7 +227,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             try {
                 Employee employee = employeeRepository.findByUserId(user.getUserId()).orElse(null);
                 if (employee != null) {
-                    userSession.setBaseLocation(branchMasterRepository.findBranchName(getActiveOrganizationId(user), employee.getBranchId().intValue()));
+                    userSession.setBaseLocation(branchMasterRepository.findBranchName(getActiveOrganizationId(user), employee.getBranchId()));
                     userSession.setDepartmentName(employee.getEmployeeDepartmentMaster() != null ? employee.getEmployeeDepartmentMaster().getEmpDepartmentName() : "");
                     userSession.setDesignationName(employee.getEmployeeDesignationMaster() != null ? employee.getEmployeeDesignationMaster().getEmpDesignationName() : "");
                     userSession.setDesignationType(employee.getDesignationType() != null ? employee.getDesignationType() : "");
@@ -278,9 +246,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     public Long getActiveOrganizationId(User user) {
         Long activeOrgId = null;
-        for (UserOrganizationMapping orgMapping : user.getUserOrganizationMapping()) {
+        List<UserOrganizationMapping> orgList = userOrganizationMappingRepository.findById_UserId(user.getUserId());
+        for (UserOrganizationMapping orgMapping : orgList) {
             if ("Y".equalsIgnoreCase(orgMapping.getActive())) {
                 activeOrgId = orgMapping.getId().getOrganizationId();
+                break;
             }
         }
         return activeOrgId;
@@ -301,10 +271,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         log.info("Operation user name : {} , email : {} , organizationId : {}", operationUserName, signupRequest.getEmail(), organizationId);
         UserOrganizationMapping userOrganizationMapping = new UserOrganizationMapping(organizationId, newUser.getUserId(), operationUserName);
         userOrganizationMappingRepository.save(userOrganizationMapping);
-//        if (signupRequest.getUserType().equals(UserType.EMP.name())) {
-//            log.info("New user saved to db");
-////            employeeRepository.save(new Employee(organizationId, employeeId, userId));
-//        }
         if (signupRequest.hasRoles()) {
             log.info("Setting roles , userId :{} ", userId);
             userRoleMappingRepository.saveAll(signupRequest.getRoleList().stream().map(id -> new UserRoleMapping(userId, id, organizationId, operationUserName)).collect(Collectors.toSet()));
@@ -353,6 +319,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (oldPassword == null) {
             oldPassword = user.getPassword();
         } else {
+            String PASSWORD_SEPARATOR = ",,";
             String[] oldPasswordList = oldPassword.split(PASSWORD_SEPARATOR);
             for (String pass : oldPasswordList) {
                 if (BCrypt.checkpw(request.getNewPassword(), pass)) {
