@@ -23,7 +23,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 // @Author Sumit kumar
 
@@ -45,10 +48,9 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     private final EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository;
     private final BranchMasterRepository branchMasterRepository;
-    private final PincodeRepository pincodeRepository;
 
     @Autowired
-    public EmployeeServiceImpl(UserCredentialService userCredentialService, EmployeeRepository employeeRepository, EmployeeDao employeeDao, UserRepository userRepository, UserService userService, EmployeeDepartmentRepository employeeDepartmentRepository, EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository, BranchMasterRepository branchMasterRepository, PincodeRepository pincodeRepository) {
+    public EmployeeServiceImpl(UserCredentialService userCredentialService, EmployeeRepository employeeRepository, EmployeeDao employeeDao, UserRepository userRepository, UserService userService, EmployeeDepartmentRepository employeeDepartmentRepository, EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository, BranchMasterRepository branchMasterRepository) {
         this.userCredentialService = userCredentialService;
         this.employeeRepository = employeeRepository;
         this.employeeDao = employeeDao;
@@ -57,7 +59,6 @@ public class EmployeeServiceImpl implements EmployeeService {
         this.employeeDepartmentRepository = employeeDepartmentRepository;
         this.employeeFunctionalTitleRepository = employeeFunctionalTitleRepository;
         this.branchMasterRepository = branchMasterRepository;
-        this.pincodeRepository = pincodeRepository;
     }
 
     @Override
@@ -93,10 +94,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         request.setType("EMP");
         request.setIsActive("Y");
         request.setEmployeeCreate(true);
-        request.setBranchId(employeeRequest.getBranchId());
         request.setDesignationType(employeeRequest.getDesignationType());
         userService.addUser(request);
-
     }
 
     private void saveValueEmployeeMaster(EmployeeRequest request, Employee employee, Long employeeId) {
@@ -195,7 +194,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     private void validateRequest(EmployeeRequest request) throws BadRequestException {
         // validate employee add / update request
         if (request == null || !StringUtils.hasText(request.getStatus()) || !StringUtils.hasText(request.getFirstName()) || !StringUtils.hasText(request.getGender())) {
-            log.warn("Request failed validation , these field are mandatory : Status {} , FirstName {} , Gender {} ", request.getStatus(), request.getFirstName(), request.getGender());
+            log.warn("Request failed validation, these field are mandatory : Status {} , FirstName {} , Gender {} ", StringUtils.hasText(request.getStatus()), request.getFirstName(), request.getGender());
             throw new BadRequestException("Invalid Request", HttpStatus.BAD_REQUEST);
         }
     }
@@ -249,7 +248,7 @@ public class EmployeeServiceImpl implements EmployeeService {
                 employeeDto.setExitDate(DateTimeUtil.dateToString(employee.getExitDate()));
             }
             if (employee.getBranchId() != null) {
-                BranchMaster branchMaster = branchMasterRepository.findByBranchId(employee.getBranchId().intValue()).orElse(null);
+                BranchMaster branchMaster = branchMasterRepository.findByBranchId(employee.getBranchId()).orElse(null);
                 employeeDto.setBaseLocation(branchMaster == null ? "" : branchMaster.getBranchCode() + " " + branchMaster.getBranchName());
             }
             if (employee.getSubDepartmentId() != null) {
@@ -276,58 +275,54 @@ public class EmployeeServiceImpl implements EmployeeService {
         if (employee == null) {
             log.warn("Employee not found for employeeId : {} ", employeeId);
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
-        }
-        BeanUtils.copyProperties(employee, employeeDto);
-        if (!StringUtils.hasText(employee.getCurrentCity()) && employee.getCurrentPincode() != null) {
-            Optional<PincodeMaster> pincode = pincodeRepository.findByPincodeMasterPK_Pincode(employee.getCurrentPincode().intValue());
-            if (pincode.isPresent()) {
-                PincodeMaster pincodeMaster = pincode.get();
-                if (pincodeMaster != null && pincodeMaster.getDistrictMaster() != null)
-                    employeeDto.setCurrentCity(pincodeMaster.getDistrictMaster().getDistrictName());
+        } else {
+            BeanUtils.copyProperties(employee, employeeDto);
+            employeeDto.setDob(DateTimeUtil.dateToString(employee.getDob()));
+            employeeDto.setJoiningDate(DateTimeUtil.dateToString(employee.getJoiningDate()));
+            employeeDto.setConfirmationDate(DateTimeUtil.dateToString(employee.getConfirmationDate()));
+            employeeDto.setRelievingDate(DateTimeUtil.dateToString(employee.getRelievingDate()));
+            employeeDto.setPromotionDate(DateTimeUtil.dateToString(employee.getPromotionDate()));
+            employeeDto.setBranchJoinDate(DateTimeUtil.dateToString(employee.getBranchJoinDate()));
+            employeeDto.setDepartmentName(employee.getEmployeeDepartmentMaster() == null ? "" : employee.getEmployeeDepartmentMaster().getEmpDepartmentName());
+            employeeDto.setDesignationName(employee.getEmployeeDesignationMaster() == null ? "" : employee.getEmployeeDesignationMaster().getEmpDesignationName());
+            if (employee.getSubDepartmentId() != null) {
+                EmployeeDepartmentMaster employeeDepartmentMaster = employeeDepartmentRepository.findByOrgIdAndEmpDepartmentId(userSession.getOrganizationId(), employee.getSubDepartmentId());
+                employeeDto.setSubDepartmentName(employeeDepartmentMaster.getEmpDepartmentName());
             }
+            if (employee.getFunctionalTitleId() != null) {
+                EmployeeFunctionalTitle employeeFunctionalTitle = employeeFunctionalTitleRepository.findByOrgIdAndEmpFuncTitleId(userSession.getOrganizationId(), employee.getFunctionalTitleId());
+                employeeDto.setFunctionalTitleName(employeeFunctionalTitle.getEmpFuncTitleName());
+            }
+            if (employee.getAccManagerId() != null) {
+                Employee accManager = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), employee.getAccManagerId());
+                employeeDto.setAccountManagerName(accManager.getEmployeeId() + " " + accManager.getFirstName());
+            }
+            if (employee.getReportManagerId() != null) {
+                Employee reportManager = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), employee.getReportManagerId());
+                employeeDto.setReportManagerName(reportManager.getEmployeeId() + " " + reportManager.getFirstName());
+            }
+            if (employee.getBranchId() != null) {
+                BranchMaster branchMaster = branchMasterRepository.findByBranchId(employee.getBranchId()).orElse(null);
+                employeeDto.setBaseLocation(branchMaster == null ? "" : branchMaster.getBranchCode() + " " + branchMaster.getBranchName());
+            }
+            if (employee.getReferenceId() != null) {
+                Employee emp = employeeRepository.findByEmployeeCodeAndOrganizationId(employee.getReferenceId(), userSession.getOrganizationId());
+                employeeDto.setReferenceIdName(emp == null ? "" : emp.getEmployeeCode() + "-" + emp.getFirstName() + " " + emp.getLastName());
+            }
+            employeeDto.setCurrentCity(employee.getCurrentCity());
+            employeeDto.setCurrentState(employee.getCurrentState());
+            employeeDto.setCurrentPincode(employee.getCurrentPincode());
+            employeeDto.setCurrentAdd(employee.getCurrentAdd());
+            employeeDto.setPermanentCity(employee.getPermanentCity());
+            employeeDto.setPermanentAdd(employee.getPermanentAdd());
+            employeeDto.setPermanentPincode(employee.getPermanentPincode());
+            employeeDto.setPermanentState(employee.getPermanentState());
+            employeeDto.setIsVehicle(employee.getIsVehicle());
+            employeeDto.setVehicleType(employee.getVehicleType());
+            employeeDto.setVehicleNumber(employee.getVehicleNumber());
+            employeeDto.setResignDate(DateTimeUtil.dateToString(employee.getResignDate()));
+            employeeDto.setExitDate(DateTimeUtil.dateToString(employee.getExitDate()));
         }
-        employeeDto.setDob(DateTimeUtil.dateToString(employee.getDob()));
-        employeeDto.setJoiningDate(DateTimeUtil.dateToString(employee.getJoiningDate()));
-        employeeDto.setConfirmationDate(DateTimeUtil.dateToString(employee.getConfirmationDate()));
-        employeeDto.setRelievingDate(DateTimeUtil.dateToString(employee.getRelievingDate()));
-        employeeDto.setPromotionDate(DateTimeUtil.dateToString(employee.getPromotionDate()));
-        employeeDto.setBranchJoinDate(DateTimeUtil.dateToString(employee.getBranchJoinDate()));
-        employeeDto.setDepartmentName(employee.getEmployeeDepartmentMaster() == null ? "" : employee.getEmployeeDepartmentMaster().getEmpDepartmentName());
-        employeeDto.setDesignationName(employee.getEmployeeDesignationMaster() == null ? "" : employee.getEmployeeDesignationMaster().getEmpDesignationName());
-        if (employee.getSubDepartmentId() != null) {
-            EmployeeDepartmentMaster employeeDepartmentMaster = employeeDepartmentRepository.findByOrgIdAndEmpDepartmentId(userSession.getOrganizationId(), employee.getSubDepartmentId());
-            employeeDto.setSubDepartmentName(employeeDepartmentMaster.getEmpDepartmentName());
-        }
-        if (employee.getFunctionalTitleId() != null) {
-            EmployeeFunctionalTitle employeeFunctionalTitle = employeeFunctionalTitleRepository.findByOrgIdAndEmpFuncTitleId(userSession.getOrganizationId(), employee.getFunctionalTitleId());
-            employeeDto.setFunctionalTitleName(employeeFunctionalTitle.getEmpFuncTitleName());
-        }
-        if (employee.getAccManagerId() != null) {
-            Employee accManager = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), employee.getAccManagerId());
-            employeeDto.setAccountManagerName(accManager.getEmployeeId() + " " + accManager.getFirstName());
-        }
-        if (employee.getReportManagerId() != null) {
-            Employee reportManager = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), employee.getReportManagerId());
-            employeeDto.setReportManagerName(reportManager.getEmployeeId() + " " + reportManager.getFirstName());
-        }
-        if (employee.getBranchId() != null) {
-            BranchMaster branchMaster = branchMasterRepository.findByBranchId(employee.getBranchId().intValue()).orElse(null);
-            employeeDto.setBaseLocation(branchMaster == null ? "" : branchMaster.getBranchCode() + " " + branchMaster.getBranchName());
-        }
-        if (employee.getReferenceId() != null) {
-            Employee emp = employeeRepository.findByEmployeeCodeAndOrganizationId(employee.getReferenceId(), userSession.getOrganizationId());
-            employeeDto.setReferenceIdName(emp == null ? "" : emp.getEmployeeCode() + "-" + emp.getFirstName() + " " + emp.getLastName());
-        }
-        try {
-            employeeDto.setCurrentVillageName(employee.getCurrentVillageMaster().getVillageName());
-            employeeDto.setPermanentVillageName(employee.getPermanentVillageMaster().getVillageName());
-        } catch (Exception exception) {
-            log.error(exception.getMessage());
-        }
-        employeeDto.setIsVehicle(employee.getIsVehicle());
-        employeeDto.setVehicleType(employee.getVehicleType());
-        employeeDto.setVehicleNumber(employee.getVehicleNumber());
-        employeeDto.setResignDate(DateTimeUtil.dateToString(employee.getResignDate()));
         response.setCode(HttpStatus.OK.value());
         response.setStatus(HttpStatus.OK);
         response.setMessage("Transaction completed successfully.");
