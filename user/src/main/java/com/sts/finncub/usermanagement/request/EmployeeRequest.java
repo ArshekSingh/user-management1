@@ -8,6 +8,7 @@ import lombok.Setter;
 public class EmployeeRequest {
     private String employeeCode;
     private Long employeeId;
+    private Long organizationId;
     private String status;
     private String title;
     private String firstName;
@@ -60,7 +61,7 @@ public class EmployeeRequest {
     private String userId;
     private String profileImgPath;
     private String signImgPath;
-    private Long branchId;
+    private Integer branchId;
     private String branchJoinDate;
     private Long departmentId;
     private Long departmentRoleId;
@@ -85,8 +86,7 @@ public class EmployeeRequest {
     private String isSignatory;
     private String exitDate;
     private String isFnfClear;
-    private String baseLocation;
-	private String isVehicle;
-	private String vehicleType;
-	private String vehicleNumber;
+    private String isVehicle;
+    private String vehicleType;
+    private String vehicleNumber;
 }
