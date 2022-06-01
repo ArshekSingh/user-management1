@@ -94,10 +94,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         request.setType("EMP");
         request.setIsActive("Y");
         request.setEmployeeCreate(true);
-        request.setBranchId(employeeRequest.getBranchId().longValue());
         request.setDesignationType(employeeRequest.getDesignationType());
         userService.addUser(request);
-
     }
 
     private void saveValueEmployeeMaster(EmployeeRequest request, Employee employee, Long employeeId) {
