@@ -302,8 +302,8 @@ public class EmployeeServiceImpl implements EmployeeService {
                 employeeDto.setReportManagerName(reportManager.getEmployeeId() + " " + reportManager.getFirstName());
             }
             if (employee.getBranchId() != null) {
-                BranchMaster branchMaster = branchMasterRepository.findByBranchId(employee.getBranchId()).orElse(null);
-                employeeDto.setBaseLocation(branchMaster == null ? "" : branchMaster.getBranchCode() + " " + branchMaster.getBranchName());
+//                BranchMaster branchMaster = branchMasterRepository.findByBranchId(employee.getBranchId()).orElse(null);
+                employeeDto.setBranchId(Long.valueOf(employee.getBranchId()));
             }
             if (employee.getReferenceId() != null) {
                 Employee emp = employeeRepository.findByEmployeeCodeAndOrganizationId(employee.getReferenceId(), userSession.getOrganizationId());
