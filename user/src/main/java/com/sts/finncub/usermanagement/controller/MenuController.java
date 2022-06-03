@@ -32,7 +32,7 @@ public class MenuController {
     }
 
     @GetMapping("menu")
-    public ResponseEntity<Response<MenuResponse>> menu() {
+	public ResponseEntity<Response> menu() {
         log.info("Request received to fetch menus");
         MenuResponse response  = null;
         try {
@@ -40,7 +40,7 @@ public class MenuController {
         } catch(Exception e){
             log.error("Exception -{}",e);
         }
-        return  ResponseEntity.ok(new Response<>(RestMappingConstants.SUCCESS,response,HttpStatus.OK));
+		return ResponseEntity.ok(new Response(RestMappingConstants.SUCCESS, response, HttpStatus.OK));
     }
 
     @GetMapping(value = "/menu/{menuSearchableKey}")
