@@ -16,8 +16,6 @@ import com.sts.finncub.core.exception.ObjectNotFoundException;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.request.LoginRequest;
 import com.sts.finncub.usermanagement.request.SignupRequest;
-import com.sts.finncub.usermanagement.response.LoginResponse;
-import com.sts.finncub.usermanagement.response.SignupResponse;
 import com.sts.finncub.usermanagement.service.AuthenticationService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -34,9 +32,9 @@ public class AuthenticationController {
     }
 
     @PostMapping("login")
-    public ResponseEntity<Response<LoginResponse>> login(@RequestBody LoginRequest loginRequest) throws BadRequestException,
+	public ResponseEntity<Response> login(@RequestBody LoginRequest loginRequest) throws BadRequestException,
             ObjectNotFoundException, InternalServerErrorException {
-        Response<LoginResponse> response = new Response<>();
+		Response response = new Response();
         if (!loginRequest.isValid()) {
 			log.error("Invalid Login Request received , userId : {}", loginRequest.getUserId());
             throw new BadRequestException("Invalid userId / password", HttpStatus.BAD_REQUEST);
@@ -51,11 +49,11 @@ public class AuthenticationController {
 
     // API replaces with User Controller Add user API
     @PostMapping("/api/signup")
-    public ResponseEntity<Response<SignupResponse>> signup(@RequestBody SignupRequest signupRequest) throws BadRequestException {
+    public ResponseEntity<Response> signup(@RequestBody SignupRequest signupRequest) throws BadRequestException {
         signupRequest.validate();
 		log.info("Signup Request received , email : {} , userType : {}", signupRequest.getEmail(),
 				signupRequest.getUserType());
-        return ResponseEntity.ok(new Response<>(RestMappingConstants.SUCCESS,
+        return ResponseEntity.ok(new Response(RestMappingConstants.SUCCESS,
                 authenticationService.signup(signupRequest), HttpStatus.OK));
     }
 
