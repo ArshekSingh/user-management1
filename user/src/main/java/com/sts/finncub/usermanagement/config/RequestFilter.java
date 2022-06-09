@@ -1,16 +1,12 @@
 package com.sts.finncub.usermanagement.config;
 
-import java.io.IOException;
-
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sts.finncub.core.constants.RestMappingConstants;
+import com.sts.finncub.core.entity.UserSession;
+import com.sts.finncub.core.exception.UnauthorizedException;
+import com.sts.finncub.core.response.Response;
+import com.sts.finncub.core.util.TokenValidator;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
@@ -19,14 +15,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sts.finncub.core.constants.RestMappingConstants;
-import com.sts.finncub.core.entity.UserSession;
-import com.sts.finncub.core.exception.UnauthorizedException;
-import com.sts.finncub.core.response.Response;
-import com.sts.finncub.core.util.TokenValidator;
-
-import lombok.extern.slf4j.Slf4j;
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 @Slf4j
 @Component
@@ -71,8 +63,8 @@ public class RequestFilter implements Filter {
             log.info("Request is valid");
             filterChain.doFilter(servletRequest, servletResponse);
         } else {
-			byte[] response = restResponseBytes(
-					new Response(RestMappingConstants.AUTHENTICATION_FAILED, HttpStatus.UNAUTHORIZED));
+            byte[] response = restResponseBytes(
+                    new Response(RestMappingConstants.AUTHENTICATION_FAILED, HttpStatus.UNAUTHORIZED));
             servletResponse.getOutputStream().write(response);
             ((HttpServletResponse) servletResponse).setHeader("Content-Type", "application/json");
             ((HttpServletResponse) servletResponse).setStatus(401);
