@@ -59,7 +59,7 @@ pipeline {
                     [$class: 'RequesterRecipientProvider']
                     ],
                     replyTo: '$DEFAULT_REPLYTO',
-                    to: 'Finncub.dev@sastechstudio.com'
+                    to: 'kranthi.cherukuri@cloud4c.com'
                 }
                 if (currentBuild.currentResult == 'FAILURE') {
                     emailext subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - FAILED!!!',
@@ -68,7 +68,7 @@ pipeline {
                     [$class: 'RequesterRecipientProvider']
                     ],
                     replyTo: '$DEFAULT_REPLYTO',
-                    to: 'Finncub.dev@sastechstudio.com'
+                    to: 'kranthi.cherukuri@cloud4c.com'
                 }
             }
         }
