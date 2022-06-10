@@ -73,6 +73,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         final String employeeId = userEmployeeId.split(",")[1];
         employee.setOrganizationId(userSession.getOrganizationId());
         employee.setEmployeeCode(employeeId);
+        employee.setEmployeeId(Long.valueOf(employeeId));
         // save value in employee master
         saveValueEmployeeMaster(request, employee, request.getEmployeeId());
         log.info("Employee save success fully");
@@ -336,7 +337,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         validateRequest(request);
         UserSession userSession = userCredentialService.getUserSession();
         // fetch employee detail using organizationId and employeeId
-        Employee employee = new Employee();
+        Employee employee;
         if (request.getEmployeeId() != null) {
             try {
                 employee = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), request.getEmployeeId());
