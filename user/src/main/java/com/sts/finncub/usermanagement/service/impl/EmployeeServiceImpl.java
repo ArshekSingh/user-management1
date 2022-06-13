@@ -68,13 +68,14 @@ public class EmployeeServiceImpl implements EmployeeService {
         UserSession userSession = userCredentialService.getUserSession();
         validateRequest(request);
         Employee employee = new Employee();
-        String userEmployeeId = userRepository.getGeneratedUserEmployeeId(userCredentialService.getUserSession().getOrganizationId(), "EMP");
+        String userEmployeeId = userRepository.getGeneratedUserEmployeeId(userSession.getOrganizationId(), "EMP");
         final String userId = userEmployeeId.split(",")[0];
         final String employeeId = userEmployeeId.split(",")[1];
         employee.setOrganizationId(userSession.getOrganizationId());
         employee.setEmployeeCode(employeeId);
+        employee.setEmployeeId(Long.valueOf(employeeId));
         // save value in employee master
-        saveValueEmployeeMaster(request, employee, request.getEmployeeId());
+        saveValueEmployeeMaster(request, employee, request.getEmployeeId(), userSession);
         log.info("Employee save success fully");
         // create  employee user details in user master
         SaveValueInUserMaster(userId, request);
@@ -98,7 +99,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         userService.addUser(request);
     }
 
-    private void saveValueEmployeeMaster(EmployeeRequest request, Employee employee, Long employeeId) {
+    private void saveValueEmployeeMaster(EmployeeRequest request, Employee employee, Long employeeId, UserSession userSession) {
         employee.setFirstName(request.getFirstName());
         employee.setMiddleName(request.getMiddleName());
         employee.setLastName(request.getLastName());
@@ -183,10 +184,10 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setIsFnfClear(request.getIsFnfClear());
         if (employeeId == null) {
             employee.setInsertedOn(LocalDateTime.now());
-            employee.setInsertedBy(userCredentialService.getUserSession().getUserId());
+            employee.setInsertedBy(userSession.getUserId());
         } else {
             employee.setUpdatedOn(LocalDateTime.now());
-            employee.setUpdatedBy(userCredentialService.getUserSession().getUserId());
+            employee.setUpdatedBy(userSession.getUserId());
         }
         employeeRepository.save(employee);
     }
@@ -336,7 +337,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         validateRequest(request);
         UserSession userSession = userCredentialService.getUserSession();
         // fetch employee detail using organizationId and employeeId
-        Employee employee = new Employee();
+        Employee employee;
         if (request.getEmployeeId() != null) {
             try {
                 employee = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), request.getEmployeeId());
@@ -345,7 +346,7 @@ public class EmployeeServiceImpl implements EmployeeService {
             }
             if (employee != null) {
                 // save value in employee master table
-                saveValueEmployeeMaster(request, employee, request.getEmployeeId());
+                saveValueEmployeeMaster(request, employee, request.getEmployeeId(), userSession);
                 response.setCode(HttpStatus.OK.value());
                 response.setStatus(HttpStatus.OK);
                 response.setMessage("Transaction completed successfully.");
