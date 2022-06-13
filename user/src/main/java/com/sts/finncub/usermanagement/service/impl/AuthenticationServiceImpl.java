@@ -1,17 +1,22 @@
 package com.sts.finncub.usermanagement.service.impl;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.servlet.http.HttpServletRequest;
-
+import com.google.gson.Gson;
+import com.sts.finncub.core.constants.RestMappingConstants;
+import com.sts.finncub.core.entity.*;
+import com.sts.finncub.core.exception.BadRequestException;
+import com.sts.finncub.core.exception.InternalServerErrorException;
+import com.sts.finncub.core.exception.ObjectNotFoundException;
+import com.sts.finncub.core.repository.*;
+import com.sts.finncub.core.response.Response;
+import com.sts.finncub.core.service.UserCredentialService;
+import com.sts.finncub.usermanagement.assembler.SignUpConverter;
+import com.sts.finncub.usermanagement.config.MobileAppConfig;
+import com.sts.finncub.usermanagement.request.LoginRequest;
+import com.sts.finncub.usermanagement.request.SignupRequest;
+import com.sts.finncub.usermanagement.response.LoginResponse;
+import com.sts.finncub.usermanagement.response.SignupResponse;
+import com.sts.finncub.usermanagement.service.AuthenticationService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -23,39 +28,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
-import com.google.gson.Gson;
-import com.sts.finncub.core.constants.RestMappingConstants;
-import com.sts.finncub.core.entity.Employee;
-import com.sts.finncub.core.entity.MiscellaneousService;
-import com.sts.finncub.core.entity.Organization;
-import com.sts.finncub.core.entity.User;
-import com.sts.finncub.core.entity.UserLoginLog;
-import com.sts.finncub.core.entity.UserOrganizationMapping;
-import com.sts.finncub.core.entity.UserRoleMapping;
-import com.sts.finncub.core.entity.UserSession;
-import com.sts.finncub.core.exception.BadRequestException;
-import com.sts.finncub.core.exception.InternalServerErrorException;
-import com.sts.finncub.core.exception.ObjectNotFoundException;
-import com.sts.finncub.core.repository.BranchMasterRepository;
-import com.sts.finncub.core.repository.EmployeeRepository;
-import com.sts.finncub.core.repository.MiscellaneousServiceRepository;
-import com.sts.finncub.core.repository.OrganizationRepository;
-import com.sts.finncub.core.repository.UserLoginLogRepository;
-import com.sts.finncub.core.repository.UserOrganizationMappingRepository;
-import com.sts.finncub.core.repository.UserRedisRepository;
-import com.sts.finncub.core.repository.UserRepository;
-import com.sts.finncub.core.repository.UserRoleMappingRepository;
-import com.sts.finncub.core.response.Response;
-import com.sts.finncub.core.service.UserCredentialService;
-import com.sts.finncub.usermanagement.assembler.SignUpConverter;
-import com.sts.finncub.usermanagement.config.MobileAppConfig;
-import com.sts.finncub.usermanagement.request.LoginRequest;
-import com.sts.finncub.usermanagement.request.SignupRequest;
-import com.sts.finncub.usermanagement.response.LoginResponse;
-import com.sts.finncub.usermanagement.response.SignupResponse;
-import com.sts.finncub.usermanagement.service.AuthenticationService;
-
-import lombok.extern.slf4j.Slf4j;
+import javax.servlet.http.HttpServletRequest;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -143,19 +120,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             UserSession userSession = toSessionObject(user);
             if (CollectionUtils.isEmpty(userSession.getRoles())) {
                 throw new BadRequestException("No Role Assigned,Please Contact HR", HttpStatus.BAD_REQUEST);
-            }
-            Organization organizationMaster = organizationRepository.findByOrgId(userSession.getOrganizationId()).orElse(null);
-            if (organizationMaster != null) {
-                LocalTime appLoginTime = organizationMaster.getAppLoginTime().toLocalTime();
-                LocalTime appLogoutTime = organizationMaster.getAppLogoutTime().toLocalTime();
-                LocalTime now = LocalTime.now();
-                int start = now.compareTo(appLoginTime);
-                int end = now.compareTo(appLogoutTime);
-                if (!(start > 0 && end < 0)) {
-                    if (!userSession.getRoles().contains("ROLE_ADMIN")) {
-                        throw new BadRequestException("Please login between 04:30 am - 11:30 pm", HttpStatus.BAD_REQUEST);
-                    }
-                }
             }
             String authToken;
             try {
@@ -296,9 +260,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public SignupResponse signup(SignupRequest signupRequest) {
         User newUser = SignUpConverter.convertToUser(signupRequest);
-        UserSession userSession = userCredentialService.getUserSession();
-        String operationUserName = userSession.getName();
-        final Long organizationId = userSession.getOrganizationId();
+        String operationUserName = userCredentialService.getUserSession().getName();
+        final Long organizationId = userCredentialService.getUserSession().getOrganizationId();
         newUser.setPassword(passwordEncoder, signupRequest.getPassword());
         String userEmployeeId = userRepository.getGeneratedUserEmployeeId(organizationId, signupRequest.getUserType());
         final String userId = userEmployeeId.split(",")[0];
