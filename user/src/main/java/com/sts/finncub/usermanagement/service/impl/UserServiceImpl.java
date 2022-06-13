@@ -201,7 +201,6 @@ public class UserServiceImpl implements UserService, Constant {
 
     @Override
     public Response updateUserDetails(UserRequest request) throws BadRequestException {
-        Response response = new Response();
         UserSession userSession = userCredentialService.getUserSession();
         if (!StringUtils.hasText(request.getUserId())) {
             throw new BadRequestException("Invalid User Id", HttpStatus.BAD_REQUEST);
@@ -210,28 +209,25 @@ public class UserServiceImpl implements UserService, Constant {
         if (user.isEmpty()) {
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         }
-        updateUser(request, userSession, user);
+        updateUser(request, userSession, user.get());
         return new Response(SUCCESS, HttpStatus.OK);
     }
 
-    private void updateUser(UserRequest request, UserSession userSession, Optional<User> user) {
-        if (user.isPresent()) {
-            User userDetail = user.get();
-            userDetail.setName(request.getName());
-            userDetail.setMobileNumber(request.getMobileNumber());
-            userDetail.setType(request.getType());
-            if (!userDetail.getIsActive().equalsIgnoreCase(request.getIsActive())) {
-                if ("Y".equalsIgnoreCase(request.getIsActive())) {
-                    userDetail.setDisabledOn(null);
-                } else {
-                    userDetail.setDisabledOn(LocalDate.now());
-                }
+    private void updateUser(UserRequest request, UserSession userSession, User userDetail) {
+        userDetail.setName(request.getName());
+        userDetail.setMobileNumber(request.getMobileNumber());
+        userDetail.setType(request.getType());
+        if (!userDetail.getIsActive().equalsIgnoreCase(request.getIsActive())) {
+            if ("Y".equalsIgnoreCase(request.getIsActive())) {
+                userDetail.setDisabledOn(null);
+            } else {
+                userDetail.setDisabledOn(LocalDate.now());
             }
-            userDetail.setIsActive(request.getIsActive());
-            userDetail.setUpdatedBy(userSession.getUserId());
-            userDetail.setUpdatedOn(LocalDateTime.now());
-            userRepository.save(userDetail);
         }
+        userDetail.setIsActive(request.getIsActive());
+        userDetail.setUpdatedBy(userSession.getUserId());
+        userDetail.setUpdatedOn(LocalDateTime.now());
+        userRepository.save(userDetail);
     }
 
     @Override
@@ -395,7 +391,7 @@ public class UserServiceImpl implements UserService, Constant {
         log.info("Adding geo location , userId : {}", userSession.getUserId());
         UserLoginLog userLoginLog = userLoginLogRepository.findByTokenId(authToken.split(" ")[1]);
         geoLocationRequest.getUserLocationTrackerRequests().forEach(coordinates -> saveGeoLocation(coordinates, userLoginLog, userSession));
-        return new Response("Success", HttpStatus.OK);
+        return new Response(SUCCESS, HttpStatus.OK);
     }
 
     private void saveGeoLocation(UserLocationTrackerRequest coordinates, UserLoginLog userLoginLog, UserSession userSession) {
