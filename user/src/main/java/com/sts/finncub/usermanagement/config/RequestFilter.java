@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sts.finncub.core.constants.RestMappingConstants;
 import com.sts.finncub.core.entity.UserSession;
 import com.sts.finncub.core.exception.UnauthorizedException;
+import com.sts.finncub.core.response.Response;
 import com.sts.finncub.core.util.TokenValidator;
-import com.sts.finncub.usermanagement.response.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
@@ -63,7 +63,8 @@ public class RequestFilter implements Filter {
             log.info("Request is valid");
             filterChain.doFilter(servletRequest, servletResponse);
         } else {
-            byte[] response = restResponseBytes(new Response<>(RestMappingConstants.AUTHENTICATION_FAILED, HttpStatus.UNAUTHORIZED));
+            byte[] response = restResponseBytes(
+                    new Response(RestMappingConstants.AUTHENTICATION_FAILED, HttpStatus.UNAUTHORIZED));
             servletResponse.getOutputStream().write(response);
             ((HttpServletResponse) servletResponse).setHeader("Content-Type", "application/json");
             ((HttpServletResponse) servletResponse).setStatus(401);

@@ -412,7 +412,7 @@ public class UserServiceImpl implements UserService {
     }
 
 	@Override
-	public Response<Object> postGeoLocationOfUser(GeoLocationRequest geoLocationRequest,
+	public Response postGeoLocationOfUser(GeoLocationRequest geoLocationRequest,
 			String authToken) {
 
 		UserSession userSession = userCredentialService.getUserSession();
@@ -421,7 +421,7 @@ public class UserServiceImpl implements UserService {
 		geoLocationRequest.getUserLocationTrackerRequests().stream()
 				.forEach(coordinates -> saveGeoLocation(coordinates, userLoginLog, userSession));
 
-		return new Response<>("Success", HttpStatus.OK);
+		return new Response("Success", HttpStatus.OK);
 	}
 
 	private void saveGeoLocation(UserLocationTrackerRequest coordinates, UserLoginLog userLoginLog,

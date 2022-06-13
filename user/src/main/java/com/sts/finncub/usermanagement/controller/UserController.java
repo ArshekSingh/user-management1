@@ -6,14 +6,11 @@ import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.request.GeoLocationRequest;
-import com.sts.finncub.usermanagement.request.UserLocationTrackerRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 import javax.validation.Valid;
 
@@ -24,7 +21,7 @@ public class UserController {
 
     private final UserService userService;
 
-    @Autowired
+	@Autowired
     public UserController(UserService userService) {
         this.userService = userService;
     }
@@ -84,7 +81,8 @@ public class UserController {
     }
 
     @PostMapping(value = "postGeoLocationOfUser")
-    public Response postGeoLocationOfUser(@Valid @RequestBody GeoLocationRequest geoLocationRequest, @RequestHeader String authorization) {
+    public Response postGeoLocationOfUser(@Valid @RequestBody GeoLocationRequest geoLocationRequest,
+                                          @RequestHeader String authorization) {
         log.info("postGeoLocationOfUser() invoked");
         return userService.postGeoLocationOfUser(geoLocationRequest, authorization);
     }

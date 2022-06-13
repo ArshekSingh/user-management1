@@ -280,9 +280,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public Response<UserSession> verify(String authToken) throws ObjectNotFoundException {
+    public Response verify(String authToken) throws ObjectNotFoundException {
         UserSession userSession = userRedisRepository.findById(authToken).orElseThrow(() -> new ObjectNotFoundException("User session not found, " + "Please login again!", HttpStatus.NOT_FOUND));
-        return new Response<>(RestMappingConstants.SUCCESS, userSession, HttpStatus.OK);
+        return new Response(RestMappingConstants.SUCCESS, userSession, HttpStatus.OK);
     }
 
     private String saveToken(UserSession userSession) {
