@@ -1,45 +1,13 @@
 package com.sts.finncub.usermanagement.service.impl;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
-
 import com.sts.finncub.core.constants.Constant;
 import com.sts.finncub.core.dto.ServerSideDropDownDto;
 import com.sts.finncub.core.dto.UserBranchMappingDto;
 import com.sts.finncub.core.dto.UserDetailDto;
 import com.sts.finncub.core.dto.UserRoleMappingDto;
-import com.sts.finncub.core.entity.BranchMaster;
-import com.sts.finncub.core.entity.RoleMaster;
-import com.sts.finncub.core.entity.User;
-import com.sts.finncub.core.entity.UserBranchMapping;
-import com.sts.finncub.core.entity.UserBranchMappingPK;
-import com.sts.finncub.core.entity.UserLocationTracker;
-import com.sts.finncub.core.entity.UserLoginLog;
-import com.sts.finncub.core.entity.UserOrganizationLinkId;
-import com.sts.finncub.core.entity.UserOrganizationMapping;
-import com.sts.finncub.core.entity.UserRoleMapping;
-import com.sts.finncub.core.entity.UserRoleOrganizationLinkId;
-import com.sts.finncub.core.entity.UserSession;
+import com.sts.finncub.core.entity.*;
 import com.sts.finncub.core.exception.BadRequestException;
-import com.sts.finncub.core.repository.BranchMasterRepository;
-import com.sts.finncub.core.repository.RoleMasterRepository;
-import com.sts.finncub.core.repository.UserBranchMappingRepository;
-import com.sts.finncub.core.repository.UserLocationTrackerRepository;
-import com.sts.finncub.core.repository.UserLoginLogRepository;
-import com.sts.finncub.core.repository.UserOrganizationMappingRepository;
-import com.sts.finncub.core.repository.UserRepository;
-import com.sts.finncub.core.repository.UserRoleMappingRepository;
+import com.sts.finncub.core.repository.*;
 import com.sts.finncub.core.repository.dao.UserDao;
 import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.core.response.Response;
@@ -49,8 +17,20 @@ import com.sts.finncub.usermanagement.request.GeoLocationRequest;
 import com.sts.finncub.usermanagement.request.UserLocationTrackerRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.service.UserService;
-
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -168,7 +148,7 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
         //Save in user organization
         try {
-            saveValueInUserOrganizationMapping(request.getUserId(), userSession.getOrganizationId(), "Y");
+            saveValueInUserOrganizationMapping(request.getUserId(), userSession);
         } catch (Exception exception) {
             log.debug("Error while mapping user - {}, to organization - {}", request.getUserId(), userSession.getOrganizationId());
             log.error(exception.getMessage());
@@ -189,15 +169,15 @@ public class UserServiceImpl implements UserService {
         return response;
     }
 
-    private void saveValueInUserOrganizationMapping(String userId, Long organizationId, String isActive) {
+    private void saveValueInUserOrganizationMapping(String userId, UserSession userSession) {
         UserOrganizationLinkId userOrganizationLinkId = new UserOrganizationLinkId();
-        userOrganizationLinkId.setOrganizationId(organizationId);
+        userOrganizationLinkId.setOrganizationId(userSession.getOrganizationId());
         userOrganizationLinkId.setUserId(userId);
         UserOrganizationMapping userOrganizationMapping = new UserOrganizationMapping();
         userOrganizationMapping.setId(userOrganizationLinkId);
-        userOrganizationMapping.setActive(isActive);
+        userOrganizationMapping.setActive("Y");
         userOrganizationMapping.setInsertedOn(LocalDateTime.now());
-        userOrganizationMapping.setInsertedBy(userCredentialService.getUserSession().getUserId());
+        userOrganizationMapping.setInsertedBy(userSession.getUserId());
         userOrganizationMappingRepository.save(userOrganizationMapping);
     }
 
@@ -411,34 +391,31 @@ public class UserServiceImpl implements UserService {
         return response;
     }
 
-	@Override
-	public Response postGeoLocationOfUser(GeoLocationRequest geoLocationRequest,
-			String authToken) {
+    @Override
+    public Response postGeoLocationOfUser(GeoLocationRequest geoLocationRequest, String authToken) {
 
-		UserSession userSession = userCredentialService.getUserSession();
-		log.info("Adding geo location , userId : {}", userSession.getUserId());
-		UserLoginLog userLoginLog = userLoginLogRepository.findByTokenId(authToken.split(" ")[1]);
-		geoLocationRequest.getUserLocationTrackerRequests().stream()
-				.forEach(coordinates -> saveGeoLocation(coordinates, userLoginLog, userSession));
+        UserSession userSession = userCredentialService.getUserSession();
+        log.info("Adding geo location , userId : {}", userSession.getUserId());
+        UserLoginLog userLoginLog = userLoginLogRepository.findByTokenId(authToken.split(" ")[1]);
+        geoLocationRequest.getUserLocationTrackerRequests().stream().forEach(coordinates -> saveGeoLocation(coordinates, userLoginLog, userSession));
 
-		return new Response("Success", HttpStatus.OK);
-	}
+        return new Response("Success", HttpStatus.OK);
+    }
 
-	private void saveGeoLocation(UserLocationTrackerRequest coordinates, UserLoginLog userLoginLog,
-			UserSession userSession) {
+    private void saveGeoLocation(UserLocationTrackerRequest coordinates, UserLoginLog userLoginLog, UserSession userSession) {
 
-		UserLocationTracker userLocationTracker = new UserLocationTracker();
-		userLocationTracker.setDeviceId(userLoginLog.getDeviceId());
-		userLocationTracker.setIpAddress(userLoginLog.getIpAddress());
-		userLocationTracker.setOrgId(userSession.getOrganizationId());
-		userLocationTracker.setTrackDateTime(
-				DateTimeUtil.stringToDateTime(coordinates.getTrackDateTime(), Constant.YYYY_MM_DD_HH_MM_SS));
-		userLocationTracker.setUserId(userSession.getUserId());
-		userLocationTracker.setLattitude(coordinates.getLattitude());
-		userLocationTracker.setLongitude(coordinates.getLongitude());
-		userLocationTracker.setInsertedOn(LocalDate.now());
-		userLocationTrackerRepository.save(userLocationTracker);
-	}
+        UserLocationTracker userLocationTracker = new UserLocationTracker();
+        userLocationTracker.setDeviceId(userLoginLog.getDeviceId());
+        userLocationTracker.setIpAddress(userLoginLog.getIpAddress());
+        userLocationTracker.setOrgId(userSession.getOrganizationId());
+        userLocationTracker.setTrackDateTime(DateTimeUtil.stringToDateTime(coordinates.getTrackDateTime(), Constant.YYYY_MM_DD_HH_MM_SS));
+        userLocationTracker.setUserId(userSession.getUserId());
+        userLocationTracker.setLattitude(coordinates.getLattitude());
+        userLocationTracker.setLongitude(coordinates.getLongitude());
+        userLocationTracker.setInsertedOn(LocalDate.now());
+        userLocationTrackerRepository.save(userLocationTracker);
+    }
+
     @Override
     public Response getAllUserSearchable(String searchUserKey, String userType) {
         Response response = new Response();

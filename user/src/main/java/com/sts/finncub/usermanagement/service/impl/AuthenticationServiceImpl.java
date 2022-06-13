@@ -274,8 +274,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public SignupResponse signup(SignupRequest signupRequest) {
         User newUser = SignUpConverter.convertToUser(signupRequest);
-        String operationUserName = userCredentialService.getUserSession().getName();
-        final Long organizationId = userCredentialService.getUserSession().getOrganizationId();
+        UserSession userSession = userCredentialService.getUserSession();
+        String operationUserName = userSession.getName();
+        final Long organizationId = userSession.getOrganizationId();
         newUser.setPassword(passwordEncoder, signupRequest.getPassword());
         String userEmployeeId = userRepository.getGeneratedUserEmployeeId(organizationId, signupRequest.getUserType());
         final String userId = userEmployeeId.split(",")[0];
