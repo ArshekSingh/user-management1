@@ -34,7 +34,7 @@ import java.util.Optional;
 
 @Service
 @Slf4j
-public class UserServiceImpl implements UserService {
+public class UserServiceImpl implements UserService, Constant {
 
     private final UserRepository userRepository;
     private final UserCredentialService userCredentialService;
@@ -210,12 +210,11 @@ public class UserServiceImpl implements UserService {
         if (user.isEmpty()) {
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         }
-        updateUser(request, response, userSession, user);
-
-        return response;
+        updateUser(request, userSession, user);
+        return new Response(SUCCESS, HttpStatus.OK);
     }
 
-    private void updateUser(UserRequest request, Response response, UserSession userSession, Optional<User> user) {
+    private void updateUser(UserRequest request, UserSession userSession, Optional<User> user) {
         if (user.isPresent()) {
             User userDetail = user.get();
             userDetail.setName(request.getName());
@@ -233,9 +232,6 @@ public class UserServiceImpl implements UserService {
             userDetail.setUpdatedOn(LocalDateTime.now());
             userRepository.save(userDetail);
         }
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setMessage("Transaction completed successfully.");
     }
 
     @Override
