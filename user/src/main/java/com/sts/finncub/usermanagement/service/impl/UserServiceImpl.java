@@ -134,6 +134,7 @@ public class UserServiceImpl implements UserService, Constant {
         }
         User user = new User();
         BeanUtils.copyProperties(request, user);
+        user.setBcId(request.getBcId());
         user.setPasswordResetDate(LocalDate.now());
         user.setType(request.getType());
         user.setUserId(request.getUserId());

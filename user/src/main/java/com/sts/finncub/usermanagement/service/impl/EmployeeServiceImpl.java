@@ -96,6 +96,15 @@ public class EmployeeServiceImpl implements EmployeeService {
         request.setIsActive("Y");
         request.setEmployeeCreate(true);
         request.setDesignationType(employeeRequest.getDesignationType());
+        List<String> bcId = employeeRequest.getBcId();
+        StringBuilder stringBuilder = new StringBuilder();
+        for (String string : bcId) {
+            if (stringBuilder.length() != 0) {
+                stringBuilder.append(",");
+            }
+            stringBuilder.append(string);
+        }
+        request.setBcId(stringBuilder.toString());
         userService.addUser(request);
     }
 
