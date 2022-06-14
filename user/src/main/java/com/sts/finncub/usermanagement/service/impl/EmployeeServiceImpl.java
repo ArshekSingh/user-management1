@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
@@ -98,11 +99,13 @@ public class EmployeeServiceImpl implements EmployeeService {
         request.setDesignationType(employeeRequest.getDesignationType());
         List<String> bcId = employeeRequest.getBcId();
         StringBuilder stringBuilder = new StringBuilder();
-        for (String string : bcId) {
-            if (stringBuilder.length() != 0) {
-                stringBuilder.append(",");
+        if (!CollectionUtils.isEmpty(bcId)) {
+            for (String string : bcId) {
+                if (stringBuilder.length() != 0) {
+                    stringBuilder.append(",");
+                }
+                stringBuilder.append(string);
             }
-            stringBuilder.append(string);
         }
         request.setBcId(stringBuilder.toString());
         userService.addUser(request);
