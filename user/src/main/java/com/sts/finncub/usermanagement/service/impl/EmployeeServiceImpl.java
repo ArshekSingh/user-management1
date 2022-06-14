@@ -73,6 +73,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         final String employeeId = userEmployeeId.split(",")[1];
         employee.setOrganizationId(userSession.getOrganizationId());
         employee.setEmployeeCode(employeeId);
+        request.setUserId(userId);
         employee.setEmployeeId(Long.valueOf(employeeId));
         // save value in employee master
         saveValueEmployeeMaster(request, employee, request.getEmployeeId(), userSession);
@@ -188,6 +189,9 @@ public class EmployeeServiceImpl implements EmployeeService {
         } else {
             employee.setUpdatedOn(LocalDateTime.now());
             employee.setUpdatedBy(userSession.getUserId());
+        }
+        if(StringUtils.hasText(request.getUserId())) {
+            employee.setUserId(request.getUserId());
         }
         employeeRepository.save(employee);
     }
