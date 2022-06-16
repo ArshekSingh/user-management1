@@ -18,4 +18,5 @@ public class UserRequest {
     private boolean employeeCreate;
     private Long branchId;
     private String designationType;
+    private String bcId;
 }
