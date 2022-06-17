@@ -3,6 +3,8 @@ package com.sts.finncub.usermanagement.request;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 public class EmployeeRequest {
@@ -89,4 +91,5 @@ public class EmployeeRequest {
     private String isVehicle;
     private String vehicleType;
     private String vehicleNumber;
+    private List<String> bcId;
 }
