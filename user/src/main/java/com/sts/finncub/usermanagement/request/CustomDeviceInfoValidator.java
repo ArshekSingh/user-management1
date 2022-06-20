@@ -1,13 +1,10 @@
 package com.sts.finncub.usermanagement.request;
 
 
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
-import java.util.Collection;
-import java.util.Collections;
 
 public class CustomDeviceInfoValidator implements ConstraintValidator<DeviceInfoValidator, Object> {
     @Override
@@ -16,11 +13,11 @@ public class CustomDeviceInfoValidator implements ConstraintValidator<DeviceInfo
     }
 
     @Override
-    public boolean isValid(Object value, ConstraintValidatorContext context) {
-        boolean isValidUser = false;
-        if (value != null && StringUtils.hasText(value.toString())) {
-            isValidUser = true;
+    public boolean isValid(Object deviceInfo, ConstraintValidatorContext context) {
+        boolean isValidDeviceInfoObject = false;
+        if (deviceInfo != null && StringUtils.hasText(deviceInfo.toString())) {
+            isValidDeviceInfoObject = true;
         }
-        return isValidUser;
+        return isValidDeviceInfoObject;
     }
 }
