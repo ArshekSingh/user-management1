@@ -2,10 +2,7 @@ package com.sts.finncub.usermanagement.request;
 
 import java.math.BigDecimal;
 
-import javax.validation.constraints.Digits;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
+import javax.validation.constraints.*;
 
 import lombok.Builder;
 import lombok.Data;
@@ -27,4 +24,8 @@ public class UserLocationTrackerRequest {
 	@NotEmpty
 	@Pattern(regexp = YYYY_MM_DD_HH_MM_SS, message = "Time stamp should be in yyyy-MM-dd HH:mm:ss format")
 	private String trackDateTime;
+
+	@NotNull
+	@DeviceInfoValidator
+	private Object deviceInfo;
 }
