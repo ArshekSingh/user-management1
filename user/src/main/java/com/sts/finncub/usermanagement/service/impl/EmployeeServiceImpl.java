@@ -1,15 +1,18 @@
 package com.sts.finncub.usermanagement.service.impl;
 
+import com.sts.finncub.core.constants.Constant;
 import com.sts.finncub.core.dto.EmployeeDepartmentDto;
 import com.sts.finncub.core.dto.EmployeeDto;
 import com.sts.finncub.core.entity.*;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.*;
 import com.sts.finncub.core.repository.dao.EmployeeDao;
+import com.sts.finncub.core.request.EmployeeTransferRequest;
 import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.core.util.DateTimeUtil;
+import com.sts.finncub.core.util.ValidationUtils;
 import com.sts.finncub.usermanagement.request.EmployeeRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.service.EmployeeService;
@@ -33,7 +36,7 @@ import java.util.Set;
 
 @Slf4j
 @Service
-public class EmployeeServiceImpl implements EmployeeService {
+public class EmployeeServiceImpl implements EmployeeService, Constant {
 
     private final UserCredentialService userCredentialService;
 
@@ -65,7 +68,6 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     @Transactional
     public Response addEmployee(EmployeeRequest request) throws BadRequestException {
-        Response response = new Response();
         UserSession userSession = userCredentialService.getUserSession();
         validateRequest(request);
         Employee employee = new Employee();
@@ -80,14 +82,11 @@ public class EmployeeServiceImpl implements EmployeeService {
         saveValueEmployeeMaster(request, employee, request.getEmployeeId(), userSession);
         log.info("Employee save success fully");
         // create  employee user details in user master
-        SaveValueInUserMaster(userId, request);
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setMessage("Transaction completed successfully.");
-        return response;
+		saveValueInUserMaster(userId, request);
+		return new Response(SUCCESS, HttpStatus.OK);
     }
 
-    private void SaveValueInUserMaster(String userId, EmployeeRequest employeeRequest) throws BadRequestException {
+	private void saveValueInUserMaster(String userId, EmployeeRequest employeeRequest) throws BadRequestException {
         UserRequest request = new UserRequest();
         request.setPassword(userId);
         request.setUserId(userId);
@@ -218,7 +217,6 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public Response getAllEmployeeDetails(FilterRequest request) throws BadRequestException {
-        Response response = new Response();
         List<EmployeeDto> employeeDtoList = new ArrayList<>();
         // fetch employee detail list using organizationId
         UserSession userSession = userCredentialService.getUserSession();
@@ -274,17 +272,11 @@ public class EmployeeServiceImpl implements EmployeeService {
             }
             employeeDtoList.add(employeeDto);
         }
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setMessage("Transaction completed successfully.");
-        response.setData(employeeDtoList);
-        response.setTotalCount(count);
-        return response;
+		return new Response(SUCCESS, employeeDtoList, count, HttpStatus.OK);
     }
 
     @Override
     public Response getEmployeeDetail(Long employeeId) throws BadRequestException {
-        Response response = new Response();
         EmployeeDto employeeDto = new EmployeeDto();
         UserSession userSession = userCredentialService.getUserSession();
         // fetch employee detail using organizationId and employeeId
@@ -319,7 +311,6 @@ public class EmployeeServiceImpl implements EmployeeService {
                 employeeDto.setReportManagerName(reportManager.getEmployeeId() + " " + reportManager.getFirstName());
             }
             if (employee.getBranchId() != null) {
-//                BranchMaster branchMaster = branchMasterRepository.findByBranchId(employee.getBranchId()).orElse(null);
                 employeeDto.setBranchId(Long.valueOf(employee.getBranchId()));
             }
             if (employee.getReferenceId() != null) {
@@ -340,11 +331,7 @@ public class EmployeeServiceImpl implements EmployeeService {
             employeeDto.setResignDate(DateTimeUtil.dateToString(employee.getResignDate()));
             employeeDto.setExitDate(DateTimeUtil.dateToString(employee.getExitDate()));
         }
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setMessage("Transaction completed successfully.");
-        response.setData(employeeDto);
-        return response;
+		return new Response(SUCCESS, employeeDto, HttpStatus.OK);
     }
 
     @Override
@@ -401,7 +388,6 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public Response getSubEmpDeptByEmpDepartmentId(Long empDepartmentId) {
         UserSession userSession = userCredentialService.getUserSession();
-        Response response = new Response();
         List<EmployeeDepartmentMaster> employeeDepartmentMasterList = employeeDepartmentRepository.findByOrgIdAndMainEmpDeptIdAndIsMainEmpDept(userSession.getOrganizationId(), empDepartmentId, "N");
         Set<EmployeeDepartmentDto> employeeSubDeptMap = new HashSet<>();
         for (EmployeeDepartmentMaster employeeDepartmentMaster : employeeDepartmentMasterList) {
@@ -411,10 +397,28 @@ public class EmployeeServiceImpl implements EmployeeService {
             employeeDepartmentDto.setUpdatedOn(DateTimeUtil.dateTimeToString(employeeDepartmentMaster.getUpdatedOn()));
             employeeSubDeptMap.add(employeeDepartmentDto);
         }
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setData(employeeSubDeptMap);
-        response.setMessage("Transaction completed successfully.");
-        return response;
+		return new Response(SUCCESS, employeeSubDeptMap, HttpStatus.OK);
     }
+
+	@Override
+	public Response transferEmployee(EmployeeTransferRequest transferRequest) throws BadRequestException {
+		ValidationUtils.validateTransferRequest(transferRequest);
+		UserSession userSession = userCredentialService.getUserSession();
+		log.info("Request received to transfer employee {}", transferRequest.getEmployeeId());
+		FilterRequest request = new FilterRequest();
+		request.setEmployeeId(transferRequest.getEmployeeId() != null ? transferRequest.getEmployeeId() : 0L);
+		request.setEmplDesigType(
+				StringUtils.hasText(transferRequest.getEmpDesignationType()) ? transferRequest.getEmpDesignationType()
+						: "");
+		request.setEmplDesigAreaId(
+				transferRequest.getEmpDestAreaId() != null ? transferRequest.getBaseLocationId() : 0L);
+		request.setIsManager(StringUtils.hasText(transferRequest.getIsManager()) ? transferRequest.getIsManager() : "");
+		request.setIsMeetingTransfer(
+				StringUtils.hasText(transferRequest.getIsMeetingTransfer()) ? transferRequest.getIsMeetingTransfer()
+						: "");
+		request.setBasedLocationId(
+				transferRequest.getBaseLocationId() != null ? transferRequest.getBaseLocationId() : 0L);
+		return employeeDao.employeeTransferPackageCall(request, userSession.getOrganizationId(),
+				userSession.getUserId());
+	}
 }
