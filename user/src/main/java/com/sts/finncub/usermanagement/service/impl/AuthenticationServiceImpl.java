@@ -31,6 +31,7 @@ import org.springframework.util.CollectionUtils;
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -120,6 +121,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             UserSession userSession = toSessionObject(user);
             if (CollectionUtils.isEmpty(userSession.getRoles())) {
                 throw new BadRequestException("No Role Assigned,Please Contact HR", HttpStatus.BAD_REQUEST);
+            }
+            Organization organizationMaster = organizationRepository.findByOrgId(userSession.getOrganizationId()).orElse(null);
+            if (organizationMaster != null) {
+                LocalTime appLoginTime = organizationMaster.getAppLoginTime().toLocalTime();
+                LocalTime appLogoutTime = organizationMaster.getAppLogoutTime().toLocalTime();
+                LocalTime now = LocalTime.now();
+                int start = now.compareTo(appLoginTime);
+                int end = now.compareTo(appLogoutTime);
+                if (!(start > 0 && end < 0)) {
+                    if (!userSession.getRoles().contains("ROLE_ADMIN")) {
+                        throw new BadRequestException("System is under maintenance. Login is allowed between " + organizationMaster.getAppLoginTime().toLocalTime() + " AM - " + organizationMaster.getAppLogoutTime().toLocalTime() + " PM.", HttpStatus.BAD_REQUEST);
+                    }
+                }
             }
             String authToken;
             try {
