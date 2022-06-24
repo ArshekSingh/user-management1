@@ -1,5 +1,6 @@
 package com.sts.finncub.usermanagement.service.impl;
 
+import com.google.gson.Gson;
 import com.sts.finncub.core.constants.Constant;
 import com.sts.finncub.core.dto.ServerSideDropDownDto;
 import com.sts.finncub.core.dto.UserBranchMappingDto;
@@ -47,6 +48,8 @@ public class UserServiceImpl implements UserService, Constant {
     private final UserDao userDao;
     private final UserLocationTrackerRepository userLocationTrackerRepository;
     private final UserLoginLogRepository userLoginLogRepository;
+    @Autowired
+    Gson gson;
 
 
     @Autowired
@@ -406,6 +409,7 @@ public class UserServiceImpl implements UserService, Constant {
         userLocationTracker.setLattitude(coordinates.getLattitude());
         userLocationTracker.setLongitude(coordinates.getLongitude());
         userLocationTracker.setInsertedOn(LocalDate.now());
+        userLocationTracker.setDeviceInfo(gson.toJson(coordinates.getDeviceInfo()));
         userLocationTrackerRepository.save(userLocationTracker);
     }
 
