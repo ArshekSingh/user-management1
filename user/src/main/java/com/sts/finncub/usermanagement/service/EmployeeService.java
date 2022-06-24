@@ -1,6 +1,7 @@
 package com.sts.finncub.usermanagement.service;
 
 import com.sts.finncub.core.exception.BadRequestException;
+import com.sts.finncub.core.request.EmployeeTransferRequest;
 import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.request.EmployeeRequest;
@@ -18,4 +19,6 @@ public interface EmployeeService {
     Response employeeTransferPackageCall(FilterRequest filterRequest) throws BadRequestException;
 
     Response getSubEmpDeptByEmpDepartmentId(Long empDepartmentId);
+
+	Response transferEmployee(EmployeeTransferRequest employeeTransferRequest) throws BadRequestException;
 }
