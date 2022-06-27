@@ -404,12 +404,15 @@ public class UserServiceImpl implements UserService, Constant {
         userLocationTracker.setDeviceId(userLoginLog.getDeviceId());
         userLocationTracker.setIpAddress(userLoginLog.getIpAddress());
         userLocationTracker.setOrgId(userSession.getOrganizationId());
-        userLocationTracker.setTrackDateTime(DateTimeUtil.stringToDateTime(coordinates.getTrackDateTime(), Constant.YYYY_MM_DD_HH_MM_SS));
+		if (StringUtils.hasText(coordinates.getTrackDateTime()))
+			userLocationTracker.setTrackDateTime(
+					DateTimeUtil.stringToDateTime(coordinates.getTrackDateTime(), Constant.YYYY_MM_DD_HH_MM_SS));
         userLocationTracker.setUserId(userSession.getUserId());
         userLocationTracker.setLattitude(coordinates.getLattitude());
         userLocationTracker.setLongitude(coordinates.getLongitude());
         userLocationTracker.setInsertedOn(LocalDate.now());
-        userLocationTracker.setDeviceInfo(gson.toJson(coordinates.getDeviceInfo()));
+		if (coordinates.getDeviceInfo() != null)
+			userLocationTracker.setDeviceInfo(gson.toJson(coordinates.getDeviceInfo()));
         userLocationTrackerRepository.save(userLocationTracker);
     }
 
