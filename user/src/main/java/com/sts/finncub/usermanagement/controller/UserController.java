@@ -1,5 +1,14 @@
 package com.sts.finncub.usermanagement.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.sts.finncub.core.dto.UserBranchMappingDto;
 import com.sts.finncub.core.dto.UserRoleMappingDto;
 import com.sts.finncub.core.exception.BadRequestException;
@@ -8,15 +17,12 @@ import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.request.GeoLocationRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.service.UserService;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
-@RequestMapping(value = "api")
+@RequestMapping(value = "/api")
 public class UserController {
 
     private final UserService userService;
@@ -62,30 +68,30 @@ public class UserController {
         return userService.getUserRoleListAssignedOrAvailable(userId);
     }
 
-    @PostMapping(value = "assignRolesToUser")
+    @PostMapping(value = "/assignRolesToUser")
     public Response assignRolesToUser(@RequestBody UserRoleMappingDto userRoleMappingDto) {
         log.info("assignRolesToUser() invoked , userId : {}", userRoleMappingDto.getUserId());
         return userService.assignRolesToUser(userRoleMappingDto);
     }
 
-    @GetMapping(value = "getUserBranchList/{userId}")
+    @GetMapping(value = "/getUserBranchList/{userId}")
     public Response getUserAssignedAndAvailableBranchList(@PathVariable String userId) {
         log.info("getUserAssignedAndAvailableBranchList() invoked , userId : {}", userId);
         return userService.getUserAssignedAndAvailableBranchList(userId);
     }
 
-    @PostMapping(value = "assignBranchesToUser")
+    @PostMapping(value = "/assignBranchesToUser")
     public Response assignBranchesToUser(@RequestBody UserBranchMappingDto userRoleMappingDto) {
         log.info("assignBranchesToUser() invoked , userId : {}", userRoleMappingDto.getUserId());
         return userService.assignBranchesToUser(userRoleMappingDto);
     }
 
-    @PostMapping(value = "postGeoLocationOfUser")
-    public Response postGeoLocationOfUser(@Valid @RequestBody GeoLocationRequest geoLocationRequest,
-                                          @RequestHeader String authorization) {
-        log.info("postGeoLocationOfUser() invoked");
-        return userService.postGeoLocationOfUser(geoLocationRequest, authorization);
-    }
+	@PostMapping(value = "/postGeoLocationOfUser")
+	public Response postGeoLocationOfUser(@RequestBody GeoLocationRequest geoLocationRequest,
+			@RequestHeader String authorization) {
+		log.info("postGeoLocationOfUser() invoked");
+		return userService.postGeoLocationOfUser(geoLocationRequest, authorization);
+	}
 
     @GetMapping(value = "/getAllUserSearchable/{searchUserKey}/{userType}")
     public Response getAllUserSearchable(@PathVariable String searchUserKey, @PathVariable String userType) {
