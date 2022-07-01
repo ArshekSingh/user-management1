@@ -52,7 +52,7 @@ variable "containers_min" {
 }
 variable "containers_max" {
     type= number
-    default=2
+    default=3
 }
 variable "clustername" {
     type= string

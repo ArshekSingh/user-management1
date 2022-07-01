@@ -12,9 +12,9 @@ import lombok.Data;
 public class GeoLocationRequest {
 	
 	
-	@NotNull
-	@Size(min = 1,message = "Atleast one geo location set is mandatory")
-	@Valid
+//	@NotNull
+//	@Size(min = 1,message = "Atleast one geo location set is mandatory")
+//	@Valid
 	List<UserLocationTrackerRequest> userLocationTrackerRequests;
 
 }
