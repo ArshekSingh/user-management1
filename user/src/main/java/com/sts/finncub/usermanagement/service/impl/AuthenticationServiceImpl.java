@@ -129,7 +129,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 LocalTime now = LocalTime.now();
                 int start = now.compareTo(appLoginTime);
                 int end = now.compareTo(appLogoutTime);
-                if (!(start > 0 && end < 0)) {
+                if (!(start >= 0 && end <= 0)) {
                     if (!userSession.getRoles().contains("ROLE_ADMIN")) {
                         throw new BadRequestException("System is under maintenance. Login is allowed between " + organizationMaster.getAppLoginTime().toLocalTime() + " AM - " + organizationMaster.getAppLogoutTime().toLocalTime() + " PM.", HttpStatus.BAD_REQUEST);
                     }
