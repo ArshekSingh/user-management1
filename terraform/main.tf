@@ -167,7 +167,7 @@ resource "aws_cloudwatch_metric_alarm" "api_service_memory_low" {
   namespace           = "AWS/ECS"
   period              = "300"
   statistic           = "Average"
-  threshold           = "5"
+  threshold           = "40"
   # tags                = var.common_tags
 
   dimensions = {
