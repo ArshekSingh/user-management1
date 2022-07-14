@@ -4,8 +4,16 @@ import com.sts.finncub.core.constants.Constant;
 import com.sts.finncub.core.dto.EmployeeDepartmentDto;
 import com.sts.finncub.core.dto.EmployeeDto;
 import com.sts.finncub.core.entity.*;
+import com.sts.finncub.core.enums.Gender;
+import com.sts.finncub.core.enums.Language;
+import com.sts.finncub.core.enums.MaritalStatus;
 import com.sts.finncub.core.exception.BadRequestException;
-import com.sts.finncub.core.repository.*;
+import com.sts.finncub.core.repository.BranchMasterRepository;
+import com.sts.finncub.core.repository.EmployeeDepartmentRepository;
+import com.sts.finncub.core.repository.EmployeeFunctionalTitleRepository;
+import com.sts.finncub.core.repository.EmployeeRepository;
+import com.sts.finncub.core.repository.StateRepository;
+import com.sts.finncub.core.repository.UserRepository;
 import com.sts.finncub.core.repository.dao.EmployeeDao;
 import com.sts.finncub.core.request.EmployeeTransferRequest;
 import com.sts.finncub.core.request.FilterRequest;
@@ -17,6 +25,8 @@ import com.sts.finncub.usermanagement.request.EmployeeRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.service.EmployeeService;
 import com.sts.finncub.usermanagement.service.UserService;
+
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,34 +46,18 @@ import java.util.Set;
 
 @Slf4j
 @Service
+@AllArgsConstructor
 public class EmployeeServiceImpl implements EmployeeService, Constant {
 
-    private final UserCredentialService userCredentialService;
-
-    private final EmployeeRepository employeeRepository;
-
-    private final EmployeeDao employeeDao;
-
-    private final UserRepository userRepository;
-
     private final UserService userService;
-
-    private final EmployeeDepartmentRepository employeeDepartmentRepository;
-
-    private final EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository;
+    private final EmployeeDao employeeDao;
+    private final UserRepository userRepository;
+    private final StateRepository stateRepository;
+    private final EmployeeRepository employeeRepository;
+    private final UserCredentialService userCredentialService;
     private final BranchMasterRepository branchMasterRepository;
-
-    @Autowired
-    public EmployeeServiceImpl(UserCredentialService userCredentialService, EmployeeRepository employeeRepository, EmployeeDao employeeDao, UserRepository userRepository, UserService userService, EmployeeDepartmentRepository employeeDepartmentRepository, EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository, BranchMasterRepository branchMasterRepository) {
-        this.userCredentialService = userCredentialService;
-        this.employeeRepository = employeeRepository;
-        this.employeeDao = employeeDao;
-        this.userRepository = userRepository;
-        this.userService = userService;
-        this.employeeDepartmentRepository = employeeDepartmentRepository;
-        this.employeeFunctionalTitleRepository = employeeFunctionalTitleRepository;
-        this.branchMasterRepository = branchMasterRepository;
-    }
+    private final EmployeeDepartmentRepository employeeDepartmentRepository;
+    private final EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository;
 
     @Override
     @Transactional
@@ -232,6 +226,9 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         for (Employee employee : employeeList) {
             EmployeeDto employeeDto = new EmployeeDto();
             BeanUtils.copyProperties(employee, employeeDto);
+            employeeDto.setGender(Gender.findByKey(employee.getGender()));
+            employeeDto.setMaritalStatus(MaritalStatus.findByKey(employee.getMaritalStatus()));
+            employeeDto.setLanguageKnown(Language.findByKey(employee.getLanguageKnown()));
             employeeDto.setJoiningDate(DateTimeUtil.dateToString(employee.getJoiningDate()));
             employeeDto.setConfirmationDate(DateTimeUtil.dateToString(employee.getConfirmationDate()));
             employeeDto.setRelievingDate(DateTimeUtil.dateToString(employee.getRelievingDate()));
@@ -264,12 +261,19 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             }
             if (employee.getBranchId() != null) {
                 BranchMaster branchMaster = branchMasterRepository.findByBranchId(employee.getBranchId()).orElse(null);
-                employeeDto.setBaseLocation(branchMaster == null ? "" : branchMaster.getBranchCode() + " " + branchMaster.getBranchName());
+				employeeDto.setBaseLocation(
+						branchMaster == null ? "" : branchMaster.getBranchCode() + " " + branchMaster.getBranchName());
+				if (branchMaster.getStateId() != null) {
+					StateMaster stateMaster = stateRepository.findByStateId(branchMaster.getStateId()).orElse(null);
+					employeeDto.setStateName(stateMaster != null ? stateMaster.getStateName() : "");
+				}
             }
             if (employee.getSubDepartmentId() != null) {
                 EmployeeDepartmentMaster employeeDepartmentMaster = employeeDepartmentRepository.findByOrgIdAndEmpDepartmentId(userSession.getOrganizationId(), employee.getSubDepartmentId());
                 employeeDto.setSubDepartmentName(employeeDepartmentMaster == null ? "" : employeeDepartmentMaster.getEmpDepartmentName());
             }
+            employeeDto.setEmergencyCon(employee.getEmergencyCon());
+           
             employeeDtoList.add(employeeDto);
         }
 		return new Response(SUCCESS, employeeDtoList, count, HttpStatus.OK);
