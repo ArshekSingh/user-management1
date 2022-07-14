@@ -196,7 +196,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             Organization organization = organizationRepository.findByOrgId(userSession.getOrganizationId()).orElse(null);
             if(organization != null) {
                 userSession.setOrgCode(organization.getOrgCode()!= null ? organization.getOrgCode() : "");
-                userSession.setCashCollAdjusted(StringUtils.hasText(organization.getCashCollAdjusted())?organization.getCashCollAdjusted():"N");
             }
             userSession.setIsTemporaryPassword(user.getIsTemporaryPassword());
             if (getActiveOrganizationId(user) != null && user.getUserId() != null) {
