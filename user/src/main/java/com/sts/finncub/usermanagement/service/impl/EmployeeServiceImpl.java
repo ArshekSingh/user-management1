@@ -220,7 +220,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             count = employeeDao.findAllFilterEmployeeDetailsCount(request);
         }
         if ("Y".equalsIgnoreCase(request.getIsCsv())) {
-            request.setLimit(employeeDao.findAllFilterEmployeeDetailsCount(request).intValue());
+            request.setLimit(count.intValue());
         }
         List<Employee> employeeList = employeeDao.fetchAllEmployeeDetails(request);
         for (Employee employee : employeeList) {
