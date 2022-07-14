@@ -6,7 +6,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class UserRequest {
-
     private String name;
     private String userId;
     private String email;
@@ -19,4 +18,5 @@ public class UserRequest {
     private Long branchId;
     private String designationType;
     private String bcId;
+    private String extUserId;
 }
