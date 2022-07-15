@@ -221,6 +221,7 @@ public class UserServiceImpl implements UserService, Constant {
         userDetail.setName(request.getName());
         userDetail.setMobileNumber(request.getMobileNumber());
         userDetail.setType(request.getType());
+        userDetail.setExtUserId(request.getExtUserId());
         if (!userDetail.getIsActive().equalsIgnoreCase(request.getIsActive())) {
             if ("Y".equalsIgnoreCase(request.getIsActive())) {
                 userDetail.setDisabledOn(null);
@@ -404,15 +405,14 @@ public class UserServiceImpl implements UserService, Constant {
         userLocationTracker.setDeviceId(userLoginLog.getDeviceId());
         userLocationTracker.setIpAddress(userLoginLog.getIpAddress());
         userLocationTracker.setOrgId(userSession.getOrganizationId());
-		if (StringUtils.hasText(coordinates.getTrackDateTime()))
-			userLocationTracker.setTrackDateTime(
-					DateTimeUtil.stringToDateTime(coordinates.getTrackDateTime(), Constant.YYYY_MM_DD_HH_MM_SS));
+        if (StringUtils.hasText(coordinates.getTrackDateTime()))
+            userLocationTracker.setTrackDateTime(DateTimeUtil.stringToDateTime(coordinates.getTrackDateTime(), Constant.YYYY_MM_DD_HH_MM_SS));
         userLocationTracker.setUserId(userSession.getUserId());
         userLocationTracker.setLattitude(coordinates.getLattitude());
         userLocationTracker.setLongitude(coordinates.getLongitude());
         userLocationTracker.setInsertedOn(LocalDate.now());
-		if (coordinates.getDeviceInfo() != null)
-			userLocationTracker.setDeviceInfo(gson.toJson(coordinates.getDeviceInfo()));
+        if (coordinates.getDeviceInfo() != null)
+            userLocationTracker.setDeviceInfo(gson.toJson(coordinates.getDeviceInfo()));
         userLocationTrackerRepository.save(userLocationTracker);
     }
 
