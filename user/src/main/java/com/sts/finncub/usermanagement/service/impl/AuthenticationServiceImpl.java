@@ -27,6 +27,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
@@ -193,7 +194,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             userSession.setUserId(user.getUserId());
             userSession.setOrganizationId(getActiveOrganizationId(user));
             Organization organization = organizationRepository.findByOrgId(userSession.getOrganizationId()).orElse(null);
-            userSession.setOrgCode(organization != null ? organization.getOrgCode() : "");
+            if(organization != null) {
+                userSession.setOrgCode(organization.getOrgCode()!= null ? organization.getOrgCode() : "");
+            }
             userSession.setIsTemporaryPassword(user.getIsTemporaryPassword());
             if (getActiveOrganizationId(user) != null && user.getUserId() != null) {
                 Set<String> userRoleMappingList = userRoleMappingRepository.findRoleName(getActiveOrganizationId(user), user.getUserId());
