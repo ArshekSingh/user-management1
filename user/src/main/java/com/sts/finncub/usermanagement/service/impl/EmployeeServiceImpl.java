@@ -4,9 +4,11 @@ import com.sts.finncub.core.constants.Constant;
 import com.sts.finncub.core.dto.EmployeeDepartmentDto;
 import com.sts.finncub.core.dto.EmployeeDto;
 import com.sts.finncub.core.entity.*;
+import com.sts.finncub.core.enums.ApplicationStatus;
 import com.sts.finncub.core.enums.Gender;
 import com.sts.finncub.core.enums.Language;
 import com.sts.finncub.core.enums.MaritalStatus;
+import com.sts.finncub.core.enums.Qualification;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.BranchMasterRepository;
 import com.sts.finncub.core.repository.EmployeeDepartmentRepository;
@@ -225,9 +227,11 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         for (Employee employee : employeeList) {
             EmployeeDto employeeDto = new EmployeeDto();
             BeanUtils.copyProperties(employee, employeeDto);
+            employeeDto.setStatus(ApplicationStatus.findByName(employee.getStatus()));
             employeeDto.setGender(Gender.findByKey(employee.getGender()));
             employeeDto.setMaritalStatus(MaritalStatus.findByKey(employee.getMaritalStatus()));
             employeeDto.setLanguageKnown(Language.findByKey(employee.getLanguageKnown()));
+            employeeDto.setQualification(Qualification.findByName(employee.getQualification()));
             employeeDto.setJoiningDate(DateTimeUtil.dateToString(employee.getJoiningDate()));
             employeeDto.setConfirmationDate(DateTimeUtil.dateToString(employee.getConfirmationDate()));
             employeeDto.setRelievingDate(DateTimeUtil.dateToString(employee.getRelievingDate()));
