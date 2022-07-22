@@ -48,6 +48,19 @@ pipeline {
                 }
             }
         }
+        stage('Triggering CD Job') {
+            steps{
+                script {
+                    build job: "../CD-Micro-Services/User-Management",
+                    parameters: [
+                        [ $class: 'StringParameterValue', name: 'ImageNumber', value: "${BUILD_NUMBER}"],
+                        [ $class: 'StringParameterValue', name: 'Branch', value: "develop"],
+                        [ $class: 'StringParameterValue', name: 'env', value: "uat"],
+                        [ $class: 'StringParameterValue', name: 'cluster_name', value: "SASTech-Devops-Preprod"]                      
+                    ]
+                }
+            }
+        }
     }
     post {
         always {
