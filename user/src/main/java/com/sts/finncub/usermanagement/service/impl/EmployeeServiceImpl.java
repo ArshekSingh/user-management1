@@ -37,6 +37,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 // @Author Sumit kumar
 
@@ -353,12 +355,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             if(request.getEmployeeId() != null) {
                 if(StringUtils.hasText(request.getStatus()) && !employee.getStatus().equalsIgnoreCase(request.getStatus())) {
                     String id=Long.toString(request.getEmployeeId());
-                    List<String> statusList=new ArrayList<>();
-                    statusList.add("A");
-                    statusList.add("C");
-                    statusList.add("R");
-                    statusList.add("C2");
-                    statusList.add("G");
+                    List<String> statusList= Stream.of("A","C","R","C2","G").collect(Collectors.toList());
                     List<CenterMaster> centerMasterList = centerMasterRepository.findByAssignedToAndStatusIn(id,statusList);
                     if (!CollectionUtils.isEmpty(centerMasterList)) {
                         log.info("You can't mark this employee as Inactive because center is active for this employee {} " , employee.getEmployeeId());
