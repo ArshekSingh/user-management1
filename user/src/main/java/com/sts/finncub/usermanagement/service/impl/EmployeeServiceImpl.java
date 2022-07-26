@@ -10,12 +10,7 @@ import com.sts.finncub.core.enums.Language;
 import com.sts.finncub.core.enums.MaritalStatus;
 import com.sts.finncub.core.enums.Qualification;
 import com.sts.finncub.core.exception.BadRequestException;
-import com.sts.finncub.core.repository.BranchMasterRepository;
-import com.sts.finncub.core.repository.EmployeeDepartmentRepository;
-import com.sts.finncub.core.repository.EmployeeFunctionalTitleRepository;
-import com.sts.finncub.core.repository.EmployeeRepository;
-import com.sts.finncub.core.repository.StateRepository;
-import com.sts.finncub.core.repository.UserRepository;
+import com.sts.finncub.core.repository.*;
 import com.sts.finncub.core.repository.dao.EmployeeDao;
 import com.sts.finncub.core.request.EmployeeTransferRequest;
 import com.sts.finncub.core.request.FilterRequest;
@@ -59,6 +54,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     private final BranchMasterRepository branchMasterRepository;
     private final EmployeeDepartmentRepository employeeDepartmentRepository;
     private final EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository;
+    private final CenterMasterRepository centerMasterRepository;
 
     @Override
     @Transactional
@@ -353,6 +349,22 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 employee = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), request.getEmployeeId());
             } catch (Exception exception) {
                 throw new BadRequestException(exception.getMessage(), HttpStatus.BAD_REQUEST);
+            }
+            if(request.getEmployeeId() != null) {
+                if(StringUtils.hasText(request.getStatus()) && !employee.getStatus().equalsIgnoreCase(request.getStatus())) {
+                    String id=Long.toString(request.getEmployeeId());
+                    List<String> statusList=new ArrayList<>();
+                    statusList.add("A");
+                    statusList.add("C");
+                    statusList.add("R");
+                    statusList.add("C2");
+                    statusList.add("G");
+                    List<CenterMaster> centerMasterList = centerMasterRepository.findByAssignedToAndStatusIn(id,statusList);
+                    if (!CollectionUtils.isEmpty(centerMasterList)) {
+                        log.info("You can't mark this employee as Inactive because center is active for this employee {} " , employee.getEmployeeId());
+                        throw new BadRequestException("You can't mark this employee as Inactive ", HttpStatus.BAD_REQUEST);
+                    }
+                }
             }
             if (employee != null) {
                 // save value in employee master table
