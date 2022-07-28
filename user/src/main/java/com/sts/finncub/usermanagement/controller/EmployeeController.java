@@ -2,6 +2,7 @@ package com.sts.finncub.usermanagement.controller;
 
 import javax.validation.Valid;
 
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,15 +24,11 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
+@AllArgsConstructor
 @RequestMapping(value = "/api/employee")
 public class EmployeeController {
 
     private final EmployeeService employeeService;
-
-    @Autowired
-    public EmployeeController(EmployeeService employeeService) {
-        this.employeeService = employeeService;
-    }
 
     @PostMapping("/fetchAllEmployee")
     public Response getAllEmployeeDetails(@RequestBody FilterRequest request) throws BadRequestException {
