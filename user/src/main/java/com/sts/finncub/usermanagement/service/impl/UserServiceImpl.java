@@ -18,6 +18,7 @@ import com.sts.finncub.usermanagement.request.GeoLocationRequest;
 import com.sts.finncub.usermanagement.request.UserLocationTrackerRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.service.UserService;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +36,7 @@ import java.util.Optional;
 
 @Service
 @Slf4j
+@AllArgsConstructor
 public class UserServiceImpl implements UserService, Constant {
 
     private final UserRepository userRepository;
@@ -51,25 +53,8 @@ public class UserServiceImpl implements UserService, Constant {
     @Autowired
     Gson gson;
 
-
-    @Autowired
-    public UserServiceImpl(UserRepository userRepository, UserCredentialService userCredentialService, BCryptPasswordEncoder passwordEncoder, UserOrganizationMappingRepository userOrganizationMappingRepository, UserRoleMappingRepository userRoleMappingRepository, RoleMasterRepository roleMasterRepository, UserBranchMappingRepository userBranchMappingRepository, BranchMasterRepository branchMasterRepository, UserDao userDao, UserLoginLogRepository userLoginLogRepository, UserLocationTrackerRepository userLocationTrackerRepository) {
-        this.userRepository = userRepository;
-        this.userCredentialService = userCredentialService;
-        this.passwordEncoder = passwordEncoder;
-        this.userOrganizationMappingRepository = userOrganizationMappingRepository;
-        this.userRoleMappingRepository = userRoleMappingRepository;
-        this.roleMasterRepository = roleMasterRepository;
-        this.userBranchMappingRepository = userBranchMappingRepository;
-        this.branchMasterRepository = branchMasterRepository;
-        this.userDao = userDao;
-        this.userLocationTrackerRepository = userLocationTrackerRepository;
-        this.userLoginLogRepository = userLoginLogRepository;
-    }
-
     @Override
     public Response getAllUserDetailsByFilterRequest(FilterRequest request) throws BadRequestException {
-        Response response = new Response();
         List<UserDetailDto> userDetailDtos = new ArrayList<>();
         List<User> userList = userDao.getAllUserDetailsByFilterRequest(request);
         long count = 0L;
@@ -87,18 +72,12 @@ public class UserServiceImpl implements UserService, Constant {
                 userDetailDto.setUpdatedOn(DateTimeUtil.dateTimeToString(user.getUpdatedOn()));
                 userDetailDtos.add(userDetailDto);
             }
-            response.setCode(HttpStatus.OK.value());
-            response.setStatus(HttpStatus.OK);
-            response.setData(userDetailDtos);
-            response.setTotalCount(count);
-            response.setMessage("Transaction completed successfully.");
         }
-        return response;
+        return new Response(SUCCESS, userDetailDtos, count, HttpStatus.OK);
     }
 
     @Override
     public Response getUserDetail(String userId) throws BadRequestException {
-        Response response = new Response();
         if (!StringUtils.hasText(userId)) {
             throw new BadRequestException("Invalid User Id", HttpStatus.BAD_REQUEST);
         }
@@ -112,16 +91,11 @@ public class UserServiceImpl implements UserService, Constant {
         userDetailDto.setApprovedOn(DateTimeUtil.dateToString(user.get().getApprovedOn()));
         userDetailDto.setInsertedOn(DateTimeUtil.dateTimeToString(user.get().getInsertedOn()));
         userDetailDto.setUpdatedOn(DateTimeUtil.dateTimeToString(user.get().getUpdatedOn()));
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setData(userDetailDto);
-        response.setMessage("Transaction completed successfully.");
-        return response;
+        return new Response(SUCCESS, userDetailDto, HttpStatus.OK);
     }
 
     @Override
     public Response addUser(UserRequest request) throws BadRequestException {
-        Response response = new Response();
         validateRequest(request);
         UserSession userSession = userCredentialService.getUserSession();
         if (!request.isEmployeeCreate()) {
@@ -129,7 +103,6 @@ public class UserServiceImpl implements UserService, Constant {
                 throw new BadRequestException("Please create Employee", HttpStatus.BAD_REQUEST);
             }
         }
-
         if (!request.isEmployeeCreate()) {
             String userEmployeeId = userRepository.getGeneratedUserEmployeeId(userSession.getOrganizationId(), request.getType());
             final String userId = userEmployeeId.split(",")[0];
@@ -157,7 +130,7 @@ public class UserServiceImpl implements UserService, Constant {
             log.debug("Error while mapping user - {}, to organization - {}", request.getUserId(), userSession.getOrganizationId());
             log.error(exception.getMessage());
         }
-        //Save in user branch mapping if branch Id is present
+        //Save in user branch mapping if branchId is present
         try {
             //TODO Need to handle different designation type as well
             if ("B".equalsIgnoreCase(request.getDesignationType())) {
@@ -167,10 +140,7 @@ public class UserServiceImpl implements UserService, Constant {
             log.debug("Error while mapping user - {}, to branch - {}", request.getUserId(), request.getBranchId());
             log.error(exception.getMessage());
         }
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setMessage("Transaction completed successfully.");
-        return response;
+        return new Response(SUCCESS, HttpStatus.OK);
     }
 
     private void saveValueInUserOrganizationMapping(String userId, UserSession userSession) {
@@ -237,7 +207,6 @@ public class UserServiceImpl implements UserService, Constant {
 
     @Override
     public Response getUserSearchable(String userSearchableKey, String userType) {
-        Response response = new Response();
         List<ServerSideDropDownDto> serverSideDropDownDtoList = new ArrayList<>();
         List<User> userList;
         if ("ALL".equalsIgnoreCase(userType)) {
@@ -252,22 +221,16 @@ public class UserServiceImpl implements UserService, Constant {
             serverSideDropDownDto.setLabel(user.getUserId() + "-" + user.getName());
             serverSideDropDownDtoList.add(serverSideDropDownDto);
         }
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setData(serverSideDropDownDtoList);
-        response.setMessage("Transaction completed successfully.");
-        return response;
+        return new Response(SUCCESS, serverSideDropDownDtoList, HttpStatus.OK);
     }
 
     @Override
     public Response getUserRoleListAssignedOrAvailable(String userId) {
-        Response response = new Response();
         List<UserRoleMapping> userRoleMappingList = userRoleMappingRepository.findById_UserIdContainingIgnoreCase(userId);
         UserRoleMappingDto userRoleMappingDto = new UserRoleMappingDto();
         List<ServerSideDropDownDto> userAssignedRolesList = new ArrayList<>();
         List<ServerSideDropDownDto> userAvailableRolesList = new ArrayList<>();
         List<Long> roleList = new ArrayList<>();
-
         for (UserRoleMapping userRoleMapping : userRoleMappingList) {
             userRoleMappingDto.setUserId(userId);
             ServerSideDropDownDto userAssignedRoles = new ServerSideDropDownDto();
@@ -290,17 +253,11 @@ public class UserServiceImpl implements UserService, Constant {
         }
         userRoleMappingDto.setAssignedRoles(userAssignedRolesList);
         userRoleMappingDto.setAvailableRoles(userAvailableRolesList);
-
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setData(userRoleMappingDto);
-        response.setMessage("Transaction completed successfully.");
-        return response;
+        return new Response(SUCCESS, userRoleMappingDto, HttpStatus.OK);
     }
 
     @Override
     public Response assignRolesToUser(UserRoleMappingDto userRoleMappingDto) {
-        Response response = new Response();
         UserSession userSession = userCredentialService.getUserSession();
         List<UserRoleMapping> userRoleMappingList = userRoleMappingRepository.findById_UserIdContainingIgnoreCase(userRoleMappingDto.getUserId());
         if (!CollectionUtils.isEmpty(userRoleMappingList)) {
@@ -318,16 +275,11 @@ public class UserServiceImpl implements UserService, Constant {
             userRoleMapping.setInsertedBy(userSession.getUserId());
             userRoleMappingRepository.save(userRoleMapping);
         }
-
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setMessage("Transaction completed successfully.");
-        return response;
+        return new Response(SUCCESS, HttpStatus.OK);
     }
 
     @Override
     public Response getUserAssignedAndAvailableBranchList(String userId) {
-        Response response = new Response();
         UserSession userSession = userCredentialService.getUserSession();
         List<UserBranchMapping> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_UserIdContainingIgnoreCase(userId);
         UserBranchMappingDto userBranchMappingDto = new UserBranchMappingDto();
@@ -357,16 +309,11 @@ public class UserServiceImpl implements UserService, Constant {
         }
         userBranchMappingDto.setAssignedBranches(userAssignedBranchesList);
         userBranchMappingDto.setAvailableBranches(userAvailableBranchesList);
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setData(userBranchMappingDto);
-        response.setMessage("Transaction completed successfully.");
-        return response;
+        return new Response(SUCCESS, userBranchMappingDto, HttpStatus.OK);
     }
 
     @Override
     public Response assignBranchesToUser(UserBranchMappingDto userBranchMappingDto) {
-        Response response = new Response();
         UserSession userSession = userCredentialService.getUserSession();
         List<UserBranchMapping> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_UserIdContainingIgnoreCase(userBranchMappingDto.getUserId());
         if (!CollectionUtils.isEmpty(userBranchMappingList)) {
@@ -384,10 +331,7 @@ public class UserServiceImpl implements UserService, Constant {
             userBranchMapping.setInsertedBy(userSession.getUserId());
             userBranchMappingRepository.save(userBranchMapping);
         }
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setMessage("Transaction completed successfully.");
-        return response;
+        return new Response(SUCCESS, HttpStatus.OK);
     }
 
     @Override
@@ -400,25 +344,26 @@ public class UserServiceImpl implements UserService, Constant {
     }
 
     private void saveGeoLocation(UserLocationTrackerRequest coordinates, UserLoginLog userLoginLog, UserSession userSession) {
-
         UserLocationTracker userLocationTracker = new UserLocationTracker();
         userLocationTracker.setDeviceId(userLoginLog.getDeviceId());
         userLocationTracker.setIpAddress(userLoginLog.getIpAddress());
         userLocationTracker.setOrgId(userSession.getOrganizationId());
-        if (StringUtils.hasText(coordinates.getTrackDateTime()))
+        if (StringUtils.hasText(coordinates.getTrackDateTime())) {
             userLocationTracker.setTrackDateTime(DateTimeUtil.stringToDateTime(coordinates.getTrackDateTime(), Constant.YYYY_MM_DD_HH_MM_SS));
+        }
         userLocationTracker.setUserId(userSession.getUserId());
         userLocationTracker.setLattitude(coordinates.getLattitude());
         userLocationTracker.setLongitude(coordinates.getLongitude());
         userLocationTracker.setInsertedOn(LocalDate.now());
-        if (coordinates.getDeviceInfo() != null)
+        userLocationTracker.setTrackType(coordinates.getTrackType());
+        if (coordinates.getDeviceInfo() != null) {
             userLocationTracker.setDeviceInfo(gson.toJson(coordinates.getDeviceInfo()));
+        }
         userLocationTrackerRepository.save(userLocationTracker);
     }
 
     @Override
     public Response getAllUserSearchable(String searchUserKey, String userType) {
-        Response response = new Response();
         List<ServerSideDropDownDto> serverSideDropDownDtoList = new ArrayList<>();
         List<User> userList;
         if ("ALL".equalsIgnoreCase(userType)) {
@@ -433,10 +378,6 @@ public class UserServiceImpl implements UserService, Constant {
             serverSideDropDownDto.setLabel(user.getUserId() + "-" + user.getName());
             serverSideDropDownDtoList.add(serverSideDropDownDto);
         }
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setData(serverSideDropDownDtoList);
-        response.setMessage("Transaction completed successfully.");
-        return response;
+        return new Response(SUCCESS, serverSideDropDownDtoList, HttpStatus.OK);
     }
 }
