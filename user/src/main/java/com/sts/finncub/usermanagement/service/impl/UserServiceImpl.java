@@ -355,7 +355,6 @@ public class UserServiceImpl implements UserService, Constant {
         userLocationTracker.setLattitude(coordinates.getLattitude());
         userLocationTracker.setLongitude(coordinates.getLongitude());
         userLocationTracker.setInsertedOn(LocalDate.now());
-        userLocationTracker.setTrackType(coordinates.getTrackType());
         if (coordinates.getDeviceInfo() != null) {
             userLocationTracker.setDeviceInfo(gson.toJson(coordinates.getDeviceInfo()));
         }
