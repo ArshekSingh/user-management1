@@ -1,14 +1,5 @@
 package com.sts.finncub.usermanagement.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.sts.finncub.core.dto.UserBranchMappingDto;
 import com.sts.finncub.core.dto.UserRoleMappingDto;
 import com.sts.finncub.core.exception.BadRequestException;
@@ -17,20 +8,17 @@ import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.request.GeoLocationRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.service.UserService;
-
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
 @RequestMapping(value = "/api")
+@AllArgsConstructor
 public class UserController {
 
     private final UserService userService;
-
-	@Autowired
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
 
     @PostMapping("/fetchAllUsers")
     public Response getAllUserDetailsByFilter(@RequestBody FilterRequest request) throws BadRequestException {
@@ -86,12 +74,11 @@ public class UserController {
         return userService.assignBranchesToUser(userRoleMappingDto);
     }
 
-	@PostMapping(value = "/postGeoLocationOfUser")
-	public Response postGeoLocationOfUser(@RequestBody GeoLocationRequest geoLocationRequest,
-			@RequestHeader String authorization) {
-		log.info("postGeoLocationOfUser() invoked");
-		return userService.postGeoLocationOfUser(geoLocationRequest, authorization);
-	}
+    @PostMapping(value = "/postGeoLocationOfUser")
+    public Response postGeoLocationOfUser(@RequestBody GeoLocationRequest geoLocationRequest, @RequestHeader String authorization) {
+        log.info("postGeoLocationOfUser() invoked");
+        return userService.postGeoLocationOfUser(geoLocationRequest, authorization);
+    }
 
     @GetMapping(value = "/getAllUserSearchable/{searchUserKey}/{userType}")
     public Response getAllUserSearchable(@PathVariable String searchUserKey, @PathVariable String userType) {
