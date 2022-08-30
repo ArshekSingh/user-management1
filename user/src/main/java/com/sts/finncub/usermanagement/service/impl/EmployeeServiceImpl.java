@@ -197,6 +197,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         if(StringUtils.hasText(request.getUserId())) {
             employee.setUserId(request.getUserId());
         }
+        employee.setSubDepartmentId(request.getSubDepartmentId());
         employeeRepository.save(employee);
     }
 
