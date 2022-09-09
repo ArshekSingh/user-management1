@@ -4,11 +4,7 @@ import com.sts.finncub.core.constants.Constant;
 import com.sts.finncub.core.dto.EmployeeDepartmentDto;
 import com.sts.finncub.core.dto.EmployeeDto;
 import com.sts.finncub.core.entity.*;
-import com.sts.finncub.core.enums.ApplicationStatus;
-import com.sts.finncub.core.enums.Gender;
-import com.sts.finncub.core.enums.Language;
-import com.sts.finncub.core.enums.MaritalStatus;
-import com.sts.finncub.core.enums.Qualification;
+import com.sts.finncub.core.enums.*;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.*;
 import com.sts.finncub.core.repository.dao.EmployeeDao;
@@ -22,7 +18,6 @@ import com.sts.finncub.usermanagement.request.EmployeeRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.service.EmployeeService;
 import com.sts.finncub.usermanagement.service.UserService;
-
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -225,7 +220,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         for (Employee employee : employeeList) {
             EmployeeDto employeeDto = new EmployeeDto();
             BeanUtils.copyProperties(employee, employeeDto);
-            employeeDto.setStatus(ApplicationStatus.findByName(employee.getStatus()));
+            employeeDto.setStatus(ActivityStatus.findByName(employee.getStatus()));
             employeeDto.setGender(Gender.findByKey(employee.getGender()));
             employeeDto.setMaritalStatus(MaritalStatus.findByKey(employee.getMaritalStatus()));
             employeeDto.setLanguageKnown(Language.findByKey(employee.getLanguageKnown()));
@@ -262,12 +257,15 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             }
             if (employee.getBranchId() != null) {
                 BranchMaster branchMaster = branchMasterRepository.findByBranchId(employee.getBranchId()).orElse(null);
-				employeeDto.setBaseLocation(
-						branchMaster == null ? "" : branchMaster.getBranchCode() + " " + branchMaster.getBranchName());
-				if (branchMaster.getStateId() != null) {
-					StateMaster stateMaster = stateRepository.findByStateId(branchMaster.getStateId()).orElse(null);
-					employeeDto.setStateName(stateMaster != null ? stateMaster.getStateName() : "");
-				}
+                if (branchMaster != null) {
+                    employeeDto.setBranchBcName(branchMaster.getBusinessPartner());
+                    employeeDto.setBaseLocation(branchMaster.getBranchName());
+                    employeeDto.setBaseLocationCode(branchMaster.getBranchCode());
+                    if (branchMaster.getStateId() != null) {
+                        StateMaster stateMaster = stateRepository.findByStateId(branchMaster.getStateId()).orElse(null);
+                        employeeDto.setStateName(stateMaster != null ? stateMaster.getStateName() : "");
+                    }
+                }
             }
             if (employee.getSubDepartmentId() != null) {
                 EmployeeDepartmentMaster employeeDepartmentMaster = employeeDepartmentRepository.findByOrgIdAndEmpDepartmentId(userSession.getOrganizationId(), employee.getSubDepartmentId());
