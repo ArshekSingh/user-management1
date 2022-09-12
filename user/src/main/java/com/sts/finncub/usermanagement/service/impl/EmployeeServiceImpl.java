@@ -177,9 +177,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         }
         employee.setTypeOfExit(request.getTypeOfExit());
         employee.setGrade(request.getGrade());
-        if (StringUtils.hasText(request.getExitDate())) {
-            employee.setExitDate(DateTimeUtil.stringToDate(request.getExitDate()));
-        }
+        employee.setExitDate(StringUtils.hasText(request.getExitDate()) ? DateTimeUtil.stringToDate(request.getExitDate()) : null);
         employee.setIsSignatory(request.getIsSignatory());
         employee.setIsFnfClear(request.getIsFnfClear());
         if (employeeId == null) {
@@ -199,6 +197,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     private void validateRequest(EmployeeRequest request) throws BadRequestException {
         // validate employee add / update request
         if (request == null || !StringUtils.hasText(request.getStatus()) || !StringUtils.hasText(request.getFirstName()) || !StringUtils.hasText(request.getGender())) {
+            assert request != null;
             log.warn("Request failed validation, these field are mandatory : Status {} , FirstName {} , Gender {} ", StringUtils.hasText(request.getStatus()), request.getFirstName(), request.getGender());
             throw new BadRequestException("Invalid Request", HttpStatus.BAD_REQUEST);
         }
@@ -215,6 +214,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             count = employeeDao.findAllFilterEmployeeDetailsCount(request);
         }
         if ("Y".equalsIgnoreCase(request.getIsCsv())) {
+            assert count != null;
             request.setLimit(count.intValue());
         }
         List<Employee> employeeList = employeeDao.fetchAllEmployeeDetails(request);
@@ -420,18 +420,11 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         log.info("Request received to transfer employee {}", transferRequest.getEmployeeId());
         FilterRequest request = new FilterRequest();
         request.setEmployeeId(transferRequest.getEmployeeId() != null ? transferRequest.getEmployeeId() : 0L);
-        request.setEmplDesigType(
-                StringUtils.hasText(transferRequest.getEmpDesignationType()) ? transferRequest.getEmpDesignationType()
-                        : "");
-        request.setEmplDesigAreaId(
-                transferRequest.getEmpDestAreaId() != null ? transferRequest.getBaseLocationId() : 0L);
+        request.setEmplDesigType(StringUtils.hasText(transferRequest.getEmpDesignationType()) ? transferRequest.getEmpDesignationType() : "");
+        request.setEmplDesigAreaId(transferRequest.getEmpDestAreaId() != null ? transferRequest.getBaseLocationId() : 0L);
         request.setIsManager(StringUtils.hasText(transferRequest.getIsManager()) ? transferRequest.getIsManager() : "");
-        request.setIsMeetingTransfer(
-                StringUtils.hasText(transferRequest.getIsMeetingTransfer()) ? transferRequest.getIsMeetingTransfer()
-                        : "");
-        request.setBasedLocationId(
-                transferRequest.getBaseLocationId() != null ? transferRequest.getBaseLocationId() : 0L);
-        return employeeDao.employeeTransferPackageCall(request, userSession.getOrganizationId(),
-                userSession.getUserId());
+        request.setIsMeetingTransfer(StringUtils.hasText(transferRequest.getIsMeetingTransfer()) ? transferRequest.getIsMeetingTransfer() : "");
+        request.setBasedLocationId(transferRequest.getBaseLocationId() != null ? transferRequest.getBaseLocationId() : 0L);
+        return employeeDao.employeeTransferPackageCall(request, userSession.getOrganizationId(), userSession.getUserId());
     }
 }

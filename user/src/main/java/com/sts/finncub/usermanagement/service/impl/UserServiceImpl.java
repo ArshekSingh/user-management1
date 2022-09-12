@@ -65,6 +65,7 @@ public class UserServiceImpl implements UserService, Constant {
             for (User user : userList) {
                 UserDetailDto userDetailDto = new UserDetailDto();
                 BeanUtils.copyProperties(user, userDetailDto);
+                userDetailDto.setBcId(user.getBcId());
                 userDetailDto.setPasswordResetDate(DateTimeUtil.dateToString(user.getPasswordResetDate()));
                 userDetailDto.setDisabledOn(DateTimeUtil.dateToString(user.getDisabledOn()));
                 userDetailDto.setApprovedOn(DateTimeUtil.dateToString(user.getApprovedOn()));
@@ -87,6 +88,7 @@ public class UserServiceImpl implements UserService, Constant {
         }
         UserDetailDto userDetailDto = new UserDetailDto();
         BeanUtils.copyProperties(user.get(), userDetailDto);
+        userDetailDto.setBcId(user.get().getBcId());
         userDetailDto.setDisabledOn(DateTimeUtil.dateToString(user.get().getDisabledOn()));
         userDetailDto.setApprovedOn(DateTimeUtil.dateToString(user.get().getApprovedOn()));
         userDetailDto.setInsertedOn(DateTimeUtil.dateTimeToString(user.get().getInsertedOn()));
@@ -199,6 +201,7 @@ public class UserServiceImpl implements UserService, Constant {
                 userDetail.setDisabledOn(LocalDate.now());
             }
         }
+        userDetail.setBcId(StringUtils.hasText(request.getBcId()) ? request.getBcId() : "");
         userDetail.setIsActive(request.getIsActive());
         userDetail.setUpdatedBy(userSession.getUserId());
         userDetail.setUpdatedOn(LocalDateTime.now());
