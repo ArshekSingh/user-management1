@@ -70,11 +70,11 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         saveValueEmployeeMaster(request, employee, request.getEmployeeId(), userSession);
         log.info("Employee save success fully");
         // create  employee user details in user master
-		saveValueInUserMaster(userId, request);
-		return new Response(SUCCESS, HttpStatus.OK);
+        saveValueInUserMaster(userId, request);
+        return new Response(SUCCESS, HttpStatus.OK);
     }
 
-	private void saveValueInUserMaster(String userId, EmployeeRequest employeeRequest) throws BadRequestException {
+    private void saveValueInUserMaster(String userId, EmployeeRequest employeeRequest) throws BadRequestException {
         UserRequest request = new UserRequest();
         request.setPassword(userId);
         request.setUserId(userId);
@@ -189,7 +189,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employee.setUpdatedOn(LocalDateTime.now());
             employee.setUpdatedBy(userSession.getUserId());
         }
-        if(StringUtils.hasText(request.getUserId())) {
+        if (StringUtils.hasText(request.getUserId())) {
             employee.setUserId(request.getUserId());
         }
         employee.setSubDepartmentId(request.getSubDepartmentId());
@@ -221,7 +221,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         for (Employee employee : employeeList) {
             EmployeeDto employeeDto = new EmployeeDto();
             BeanUtils.copyProperties(employee, employeeDto);
-            employeeDto.setStatus(ActivityStatus.findByName(employee.getStatus()));
+            employeeDto.setStatus(EmployeeStatus.findByName(employee.getStatus()));
             employeeDto.setGender(Gender.findByKey(employee.getGender()));
             employeeDto.setMaritalStatus(MaritalStatus.findByKey(employee.getMaritalStatus()));
             employeeDto.setLanguageKnown(Language.findByKey(employee.getLanguageKnown()));
@@ -259,12 +259,11 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             if (employee.getBranchId() != null) {
                 BranchMaster branchMaster = branchMasterRepository.findByBranchId(employee.getBranchId()).orElse(null);
                 if (branchMaster != null) {
-                    employeeDto.setBranchBcName(branchMaster.getBusinessPartner());
-                    employeeDto.setBaseLocation(branchMaster.getBranchName());
-                    employeeDto.setBaseLocationCode(branchMaster.getBranchCode());
+                    employeeDto.setBranchBcName(StringUtils.hasText(branchMaster.getBusinessPartner()) ? branchMaster.getBusinessPartner() : "");
+                    employeeDto.setBaseLocationName(StringUtils.hasText(branchMaster.getBranchName()) ? branchMaster.getBranchName() : "");
+                    employeeDto.setBaseLocationCode(StringUtils.hasText(branchMaster.getBranchCode()) ? branchMaster.getBranchCode() : "");
                     if (branchMaster.getStateId() != null) {
-                        StateMaster stateMaster = stateRepository.findByStateId(branchMaster.getStateId()).orElse(null);
-                        employeeDto.setStateName(stateMaster != null ? stateMaster.getStateName() : "");
+                        stateRepository.findByStateId(branchMaster.getStateId()).ifPresent(stateMaster -> employeeDto.setBranchStateName(StringUtils.hasText(stateMaster.getStateName()) ? stateMaster.getStateName() : ""));
                     }
                 }
             }
@@ -273,10 +272,9 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 employeeDto.setSubDepartmentName(employeeDepartmentMaster == null ? "" : employeeDepartmentMaster.getEmpDepartmentName());
             }
             employeeDto.setEmergencyCon(employee.getEmergencyCon());
-           
             employeeDtoList.add(employeeDto);
         }
-		return new Response(SUCCESS, employeeDtoList, count, HttpStatus.OK);
+        return new Response(SUCCESS, employeeDtoList, count, HttpStatus.OK);
     }
 
     @Override
@@ -335,7 +333,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employeeDto.setResignDate(DateTimeUtil.dateToString(employee.getResignDate()));
             employeeDto.setExitDate(DateTimeUtil.dateToString(employee.getExitDate()));
         }
-		return new Response(SUCCESS, employeeDto, HttpStatus.OK);
+        return new Response(SUCCESS, employeeDto, HttpStatus.OK);
     }
 
     @Override
@@ -351,13 +349,13 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             } catch (Exception exception) {
                 throw new BadRequestException(exception.getMessage(), HttpStatus.BAD_REQUEST);
             }
-            if(request.getEmployeeId() != null) {
-                if(StringUtils.hasText(request.getStatus()) && !employee.getStatus().equalsIgnoreCase(request.getStatus())) {
-                    String id=Long.toString(request.getEmployeeId());
-                    List<String> statusList= Stream.of("A","C","R","C2","G").collect(Collectors.toList());
-                    List<CenterMaster> centerMasterList = centerMasterRepository.findByAssignedToAndStatusIn(id,statusList);
+            if (request.getEmployeeId() != null) {
+                if (StringUtils.hasText(request.getStatus()) && !employee.getStatus().equalsIgnoreCase(request.getStatus())) {
+                    String id = Long.toString(request.getEmployeeId());
+                    List<String> statusList = Stream.of("A", "C", "R", "C2", "G").collect(Collectors.toList());
+                    List<CenterMaster> centerMasterList = centerMasterRepository.findByAssignedToAndStatusIn(id, statusList);
                     if (!CollectionUtils.isEmpty(centerMasterList)) {
-                        log.info("You can't mark this employee as Inactive because center is active for this employee {} " , employee.getEmployeeId());
+                        log.info("You can't mark this employee as Inactive because center is active for this employee {} ", employee.getEmployeeId());
                         throw new BadRequestException("You can't mark this employee as Inactive ", HttpStatus.BAD_REQUEST);
                     }
                 }
@@ -412,28 +410,28 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employeeDepartmentDto.setUpdatedOn(DateTimeUtil.dateTimeToString(employeeDepartmentMaster.getUpdatedOn()));
             employeeSubDeptMap.add(employeeDepartmentDto);
         }
-		return new Response(SUCCESS, employeeSubDeptMap, HttpStatus.OK);
+        return new Response(SUCCESS, employeeSubDeptMap, HttpStatus.OK);
     }
 
-	@Override
-	public Response transferEmployee(EmployeeTransferRequest transferRequest) throws BadRequestException {
-		ValidationUtils.validateTransferRequest(transferRequest);
-		UserSession userSession = userCredentialService.getUserSession();
-		log.info("Request received to transfer employee {}", transferRequest.getEmployeeId());
-		FilterRequest request = new FilterRequest();
-		request.setEmployeeId(transferRequest.getEmployeeId() != null ? transferRequest.getEmployeeId() : 0L);
-		request.setEmplDesigType(
-				StringUtils.hasText(transferRequest.getEmpDesignationType()) ? transferRequest.getEmpDesignationType()
-						: "");
-		request.setEmplDesigAreaId(
-				transferRequest.getEmpDestAreaId() != null ? transferRequest.getBaseLocationId() : 0L);
-		request.setIsManager(StringUtils.hasText(transferRequest.getIsManager()) ? transferRequest.getIsManager() : "");
-		request.setIsMeetingTransfer(
-				StringUtils.hasText(transferRequest.getIsMeetingTransfer()) ? transferRequest.getIsMeetingTransfer()
-						: "");
-		request.setBasedLocationId(
-				transferRequest.getBaseLocationId() != null ? transferRequest.getBaseLocationId() : 0L);
-		return employeeDao.employeeTransferPackageCall(request, userSession.getOrganizationId(),
-				userSession.getUserId());
-	}
+    @Override
+    public Response transferEmployee(EmployeeTransferRequest transferRequest) throws BadRequestException {
+        ValidationUtils.validateTransferRequest(transferRequest);
+        UserSession userSession = userCredentialService.getUserSession();
+        log.info("Request received to transfer employee {}", transferRequest.getEmployeeId());
+        FilterRequest request = new FilterRequest();
+        request.setEmployeeId(transferRequest.getEmployeeId() != null ? transferRequest.getEmployeeId() : 0L);
+        request.setEmplDesigType(
+                StringUtils.hasText(transferRequest.getEmpDesignationType()) ? transferRequest.getEmpDesignationType()
+                        : "");
+        request.setEmplDesigAreaId(
+                transferRequest.getEmpDestAreaId() != null ? transferRequest.getBaseLocationId() : 0L);
+        request.setIsManager(StringUtils.hasText(transferRequest.getIsManager()) ? transferRequest.getIsManager() : "");
+        request.setIsMeetingTransfer(
+                StringUtils.hasText(transferRequest.getIsMeetingTransfer()) ? transferRequest.getIsMeetingTransfer()
+                        : "");
+        request.setBasedLocationId(
+                transferRequest.getBaseLocationId() != null ? transferRequest.getBaseLocationId() : 0L);
+        return employeeDao.employeeTransferPackageCall(request, userSession.getOrganizationId(),
+                userSession.getUserId());
+    }
 }
