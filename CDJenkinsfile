@@ -38,7 +38,7 @@ pipeline {
                     sh 'terraform init'
                     sh 'terraform validate'
                     sh 'terraform plan -var="tag=${app}-${ImageNumber}"'
-                    sh 'terraform apply --refresh-only --auto-approve -var="tag=${app}-${ImageNumber}"'
+                    sh 'terraform apply --auto-approve -var="tag=${app}-${ImageNumber}"'
                 }
             }
         }
