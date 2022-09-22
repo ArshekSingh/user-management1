@@ -55,11 +55,10 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     public Response addEmployee(EmployeeRequest request) throws BadRequestException {
         UserSession userSession = userCredentialService.getUserSession();
         validateRequest(request);
-
         //check if given Aadhaar card exists.
         Optional<List<Employee>> employeeByAadharId = employeeRepository.findEmployeeByAadharId(request.getAadharCard());
         if (employeeByAadharId.isPresent() && !employeeByAadharId.get().isEmpty()) {
-            log.info("Employee with aadhaar card :{}", request.getAadharCard() + " already exists.");
+            log.info("Employee with aadhaar card : {}", request.getAadharCard() + " already exists.");
             throw new BadRequestException("Aadhaar card number already exists!", HttpStatus.BAD_REQUEST);
         }
         Employee employee = new Employee();
@@ -371,7 +370,6 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             if (employee != null) {
                 //validate Aadhaar card
                 validateAadhaar(employee, request.getAadharCard());
-
                 // save value in employee master table
                 saveValueEmployeeMaster(request, employee, request.getEmployeeId(), userSession);
                 //save value in user master table
