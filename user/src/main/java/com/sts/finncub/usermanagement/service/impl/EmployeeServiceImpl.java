@@ -28,10 +28,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -58,6 +55,13 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     public Response addEmployee(EmployeeRequest request) throws BadRequestException {
         UserSession userSession = userCredentialService.getUserSession();
         validateRequest(request);
+
+        //check if given Aadhaar card exists.
+        Optional<List<Employee>> employeeByAadharId = employeeRepository.findEmployeeByAadharId(request.getAadharCard());
+        if (employeeByAadharId.isPresent() && !employeeByAadharId.get().isEmpty()) {
+            log.info("Employee with aadhaar card :{}", request.getAadharCard() + " already exists.");
+            throw new BadRequestException("Aadhaar card number already exists!", HttpStatus.BAD_REQUEST);
+        }
         Employee employee = new Employee();
         String userEmployeeId = userRepository.getGeneratedUserEmployeeId(userSession.getOrganizationId(), "EMP");
         final String userId = userEmployeeId.split(",")[0];
@@ -70,11 +74,11 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         saveValueEmployeeMaster(request, employee, request.getEmployeeId(), userSession);
         log.info("Employee save success fully");
         // create  employee user details in user master
-        saveValueInUserMaster(userId, request);
+        saveValueInUserMaster(userId, request, true);
         return new Response(SUCCESS, HttpStatus.OK);
     }
 
-    private void saveValueInUserMaster(String userId, EmployeeRequest employeeRequest) throws BadRequestException {
+    private void saveValueInUserMaster(String userId, EmployeeRequest employeeRequest, Boolean isActive) throws BadRequestException {
         UserRequest request = new UserRequest();
         request.setPassword(userId);
         request.setUserId(userId);
@@ -82,7 +86,11 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         request.setName(employeeRequest.getFirstName());
         request.setMobileNumber(employeeRequest.getPersonalMob() == null ? null : "" + employeeRequest.getPersonalMob());
         request.setType("EMP");
-        request.setIsActive("Y");
+        if (isActive) {
+            request.setIsActive("Y");
+        } else {
+            request.setIsActive("N");
+        }
         request.setEmployeeCreate(true);
         request.setDesignationType(employeeRequest.getDesignationType());
         List<String> bcId = employeeRequest.getBcId();
@@ -361,8 +369,17 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 }
             }
             if (employee != null) {
+                //validate Aadhaar card
+                validateAadhaar(employee, request.getAadharCard());
+
                 // save value in employee master table
                 saveValueEmployeeMaster(request, employee, request.getEmployeeId(), userSession);
+                //save value in user master table
+                if (request.getStatus().equals("A") || request.getStatus().equals("Active")) {
+                    saveValueInUserMaster(request.getUserId(), request, true);
+                } else if (request.getStatus().equals("X") || request.getStatus().equals("Inactive")) {
+                    saveValueInUserMaster(request.getUserId(), request, false);
+                }
                 response.setCode(HttpStatus.OK.value());
                 response.setStatus(HttpStatus.OK);
                 response.setMessage("Transaction completed successfully.");
@@ -373,6 +390,23 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             throw new BadRequestException("Invalid Request Parameters", HttpStatus.BAD_REQUEST);
         }
         return response;
+    }
+
+    private void validateAadhaar(Employee employee, Long aadhaar) throws BadRequestException {
+        Optional<List<Employee>> employees = employeeRepository.findEmployeeByAadharId(aadhaar);
+        if (employees.isPresent() && !employees.get().isEmpty()) {
+            if (employees.get().size() > 1) {
+                throw new BadRequestException("Found more than 1 employees with same aadhaar card number. Data Inconsistent", HttpStatus.BAD_REQUEST);
+            } else {
+                if (employees.get().get(Constant.FIRST_ELEMENT).getEmployeeId().equals(employee.getEmployeeId())) {
+                    if (!employees.get().get(Constant.FIRST_ELEMENT).getAadharCard().equals(employee.getAadharCard())) {
+                        throw new BadRequestException("Aadhaar card number already exists!", HttpStatus.BAD_REQUEST);
+                    }
+                } else {
+                    throw new BadRequestException("Aadhaar card number already exists!", HttpStatus.BAD_REQUEST);
+                }
+            }
+        }
     }
 
     @Override
