@@ -370,8 +370,13 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             if (employee != null) {
                 //validate Aadhaar card
                 validateAadhaar(employee, request.getAadharCard());
+
+                //Check for relieving date of employee
+                checkRelievingDate(request, employee);
+
                 // save value in employee master table
                 saveValueEmployeeMaster(request, employee, request.getEmployeeId(), userSession);
+
                 //save value in user master table
                 if (request.getStatus().equals("A") || request.getStatus().equals("Active")) {
                     saveValueInUserMaster(request.getUserId(), request, true);
@@ -388,6 +393,18 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             throw new BadRequestException("Invalid Request Parameters", HttpStatus.BAD_REQUEST);
         }
         return response;
+    }
+
+    private void checkRelievingDate(EmployeeRequest request, Employee employee) throws BadRequestException {
+        if (request.getRelievingDate() != null) {
+            List<String> status = new ArrayList<>();
+            status.add("A");
+            List<CenterMaster> centerMasters = centerMasterRepository.findByBranchIdAndOrgIdAndStatusInAndAssignedTo
+                    (employee.getBranchId(), employee.getOrganizationId(), status, employee.getEmployeeCode());
+            if (centerMasters != null && !centerMasters.isEmpty()) {
+                throw new BadRequestException("Cannot edit relieving date of an employee when active center is assigned!", HttpStatus.BAD_REQUEST);
+            }
+        }
     }
 
     private void validateAadhaar(Employee employee, Long aadhaar) throws BadRequestException {
