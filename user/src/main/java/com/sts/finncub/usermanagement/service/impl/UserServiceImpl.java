@@ -203,6 +203,7 @@ public class UserServiceImpl implements UserService, Constant {
         }
         userDetail.setBcId(StringUtils.hasText(request.getBcId()) ? request.getBcId() : "");
         userDetail.setIsActive(request.getIsActive());
+        userDetail.setIsFrozenBookFlag(request.getIsFrozenBookFlag());
         userDetail.setUpdatedBy(userSession.getUserId());
         userDetail.setUpdatedOn(LocalDateTime.now());
         userRepository.save(userDetail);
