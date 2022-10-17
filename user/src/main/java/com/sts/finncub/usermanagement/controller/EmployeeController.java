@@ -1,26 +1,18 @@
 package com.sts.finncub.usermanagement.controller;
 
-import javax.validation.Valid;
-
-import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.request.EmployeeTransferRequest;
 import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.request.EmployeeRequest;
 import com.sts.finncub.usermanagement.service.EmployeeService;
-
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
 
 @Slf4j
 @RestController
@@ -64,12 +56,21 @@ public class EmployeeController {
     public Response getSubEmpDeptByEmpDepartmentId(@PathVariable Long empDepartmentId) {
         return employeeService.getSubEmpDeptByEmpDepartmentId(empDepartmentId);
     }
-    
-	@PostMapping(value = "/transferEmployee")
-	public ResponseEntity<Response> transferEmployee(@RequestBody @Valid EmployeeTransferRequest request)
-			throws BadRequestException {
-		log.info("Request initiated to transfer employee {}", request.getEmployeeId());
-		Response response = employeeService.transferEmployee(request);
-		return new ResponseEntity<>(response, HttpStatus.OK);
-	}
+
+    @PostMapping(value = "/transferEmployee")
+    public ResponseEntity<Response> transferEmployee(@RequestBody @Valid EmployeeTransferRequest request) throws BadRequestException {
+        log.info("Request initiated to transfer employee {}", request.getEmployeeId());
+        Response response = employeeService.transferEmployee(request);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping(value = "validateAadhaarPanMobForSaveEmployee")
+    public Response validateAadhaarPanMobForSaveEmployee(@RequestBody EmployeeRequest request) {
+        return employeeService.validateAadhaarPanMobForSaveEmployee(request);
+    }
+
+    @PostMapping(value = "validateAadhaarPanMobForUpdateEmployee")
+    public Response validateAadhaarPanMobForUpdateEmployee(@RequestBody EmployeeRequest request) {
+        return employeeService.validateAadhaarPanMobForUpdateEmployee(request);
+    }
 }

@@ -28,7 +28,10 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -55,12 +58,6 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     public Response addEmployee(EmployeeRequest request) throws BadRequestException {
         UserSession userSession = userCredentialService.getUserSession();
         validateRequest(request);
-        //check if given Aadhaar card exists.
-        Optional<List<Employee>> employeeByAadharId = employeeRepository.findEmployeeByAadharId(request.getAadharCard());
-        if (employeeByAadharId.isPresent() && !employeeByAadharId.get().isEmpty()) {
-            log.info("Employee with aadhaar card : {}", request.getAadharCard() + " already exists.");
-            throw new BadRequestException("Aadhaar card number already exists!", HttpStatus.BAD_REQUEST);
-        }
         Employee employee = new Employee();
         String userEmployeeId = userRepository.getGeneratedUserEmployeeId(userSession.getOrganizationId(), "EMP");
         final String userId = userEmployeeId.split(",")[0];
@@ -344,6 +341,69 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     }
 
     @Override
+    public Response validateAadhaarPanMobForSaveEmployee(EmployeeRequest request) {
+        //check dedupe by Aadhaar card/Pan card/mobile number
+        List<String> messages = new ArrayList<>();
+        if (request.getAadharCard() != null) {
+            List<Employee> employeesWithAadhaar = employeeRepository.findByAadharCardNumber(request.getAadharCard().toString());
+            if (!CollectionUtils.isEmpty(employeesWithAadhaar)) {
+                messages.add("Existing Employees found with employeeCode " + employeesWithAadhaar.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Aadhaar-" + request.getAadharCard());
+            }
+        }
+        if (StringUtils.hasText(request.getPancardNo())) {
+            List<Employee> employeesWithPan = employeeRepository.findByPancardNumber(request.getPancardNo());
+            if (!CollectionUtils.isEmpty(employeesWithPan)) {
+                messages.add("Existing Employees found with employeeCode " + employeesWithPan.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and PAN-" + request.getPancardNo());
+            }
+        }
+        if (request.getPersonalMob() != null) {
+            List<Employee> employeesWithMobile = employeeRepository.findByPersonalMobileNumber(request.getPersonalMob());
+            if (!CollectionUtils.isEmpty(employeesWithMobile)) {
+                messages.add("Existing Employees found with employeeCode " + employeesWithMobile.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Mobile-" + request.getPersonalMob());
+            }
+        }
+
+        return new Response(SUCCESS, messages, HttpStatus.OK);
+    }
+
+    @Override
+    public Response validateAadhaarPanMobForUpdateEmployee(EmployeeRequest request) {
+        //check dedupe by Aadhaar card/Pan card/mobile number
+        List<String> messages = new ArrayList<>();
+        if (request.getAadharCard() != null) {
+            List<Employee> employeesWithAadhaar = employeeRepository.findByAadharCardNumber(request.getAadharCard().toString());
+            if (employeesWithAadhaar.size() > 1) {
+                messages.add("Existing Employees found with employeeCode " + employeesWithAadhaar.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Aadhaar-" + request.getAadharCard());
+            } else if (employeesWithAadhaar.size() == 1) {
+                if (!CollectionUtils.isEmpty(employeesWithAadhaar) && request.getAadharCard().equals(employeesWithAadhaar.get(0).getAadharCard())) {
+                    messages.add("Existing Employee with employeeCode " + employeesWithAadhaar.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Aadhaar-" + request.getAadharCard() + " is getting update.");
+                }
+            }
+        }
+        if (StringUtils.hasText(request.getPancardNo())) {
+            List<Employee> employeesWithPan = employeeRepository.findByPancardNumber(request.getPancardNo());
+            if (!CollectionUtils.isEmpty(employeesWithPan)) {
+                messages.add("Existing Employees found with employeeCode " + employeesWithPan.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and PAN-" + request.getPancardNo());
+            } else if (employeesWithPan.size() == 1) {
+                if (!CollectionUtils.isEmpty(employeesWithPan) && request.getPancardNo().equals(employeesWithPan.get(0).getPancardNo())) {
+                    messages.add("Existing Employee with employeeCode " + employeesWithPan.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and PAN-" + request.getPancardNo() + " is getting update.");
+                }
+            }
+        }
+        if (request.getPersonalMob() != null) {
+            List<Employee> employeesWithMobile = employeeRepository.findByPersonalMobileNumber(request.getPersonalMob());
+            if (!CollectionUtils.isEmpty(employeesWithMobile)) {
+                messages.add("Existing Employees found with employeeCode " + employeesWithMobile.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Mobile-" + request.getPersonalMob());
+            } else if (employeesWithMobile.size() == 1) {
+                if (!CollectionUtils.isEmpty(employeesWithMobile) && request.getPersonalMob().equals(employeesWithMobile.get(0).getPersonalMob())) {
+                    messages.add("Existing Employee with employeeCode " + employeesWithMobile.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Mobile-" + request.getPersonalMob() + " is getting update.");
+                }
+            }
+        }
+        return new Response(SUCCESS, messages, HttpStatus.OK);
+    }
+
+    @Override
     public Response updateEmployeeDetails(EmployeeRequest request) throws BadRequestException {
         Response response = new Response();
         validateRequest(request);
@@ -368,9 +428,6 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 }
             }
             if (employee != null) {
-                //validate Aadhaar card
-                validateAadhaar(employee, request.getAadharCard());
-
                 //Check for relieving date of employee
                 checkRelievingDate(request, employee);
 
@@ -399,27 +456,9 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         if (request.getRelievingDate() != null) {
             List<String> status = new ArrayList<>();
             status.add("A");
-            List<CenterMaster> centerMasters = centerMasterRepository.findByBranchIdAndOrgIdAndStatusInAndAssignedTo
-                    (employee.getBranchId(), employee.getOrganizationId(), status, employee.getEmployeeCode());
+            List<CenterMaster> centerMasters = centerMasterRepository.findByBranchIdAndOrgIdAndStatusInAndAssignedTo(employee.getBranchId(), employee.getOrganizationId(), status, employee.getEmployeeCode());
             if (centerMasters != null && !centerMasters.isEmpty()) {
                 throw new BadRequestException("Cannot edit relieving date of an employee when active center is assigned!", HttpStatus.BAD_REQUEST);
-            }
-        }
-    }
-
-    private void validateAadhaar(Employee employee, Long aadhaar) throws BadRequestException {
-        Optional<List<Employee>> employees = employeeRepository.findEmployeeByAadharId(aadhaar);
-        if (employees.isPresent() && !employees.get().isEmpty()) {
-            if (employees.get().size() > 1) {
-                throw new BadRequestException("Found more than 1 employees with same aadhaar card number. Data Inconsistent", HttpStatus.BAD_REQUEST);
-            } else {
-                if (employees.get().get(Constant.FIRST_ELEMENT).getEmployeeId().equals(employee.getEmployeeId())) {
-                    if (!employees.get().get(Constant.FIRST_ELEMENT).getAadharCard().equals(employee.getAadharCard())) {
-                        throw new BadRequestException("Aadhaar card number already exists!", HttpStatus.BAD_REQUEST);
-                    }
-                } else {
-                    throw new BadRequestException("Aadhaar card number already exists!", HttpStatus.BAD_REQUEST);
-                }
             }
         }
     }
