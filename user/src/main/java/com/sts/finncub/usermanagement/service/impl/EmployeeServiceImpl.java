@@ -28,10 +28,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -345,7 +342,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         //check dedupe by Aadhaar card/Pan card/mobile number
         List<String> messages = new ArrayList<>();
         if (request.getAadharCard() != null) {
-            List<Employee> employeesWithAadhaar = employeeRepository.findByAadharCardNumber(request.getAadharCard().toString());
+            List<Employee> employeesWithAadhaar = employeeRepository.findByAadharCardNumber(request.getAadharCard());
             if (!CollectionUtils.isEmpty(employeesWithAadhaar)) {
                 messages.add("Existing Employees found with employeeCode " + employeesWithAadhaar.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Aadhaar-" + request.getAadharCard());
             }
@@ -371,32 +368,35 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         //check dedupe by Aadhaar card/Pan card/mobile number
         List<String> messages = new ArrayList<>();
         if (request.getAadharCard() != null) {
-            List<Employee> employeesWithAadhaar = employeeRepository.findByAadharCardNumber(request.getAadharCard().toString());
+            List<Employee> employeesWithAadhaar = employeeRepository.findByAadharCardNumber(request.getAadharCard());
             if (employeesWithAadhaar.size() > 1) {
                 messages.add("Existing Employees found with employeeCode " + employeesWithAadhaar.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Aadhaar-" + request.getAadharCard());
             } else if (employeesWithAadhaar.size() == 1) {
-                if (!CollectionUtils.isEmpty(employeesWithAadhaar) && request.getAadharCard().equals(employeesWithAadhaar.get(0).getAadharCard())) {
-                    messages.add("Existing Employee with employeeCode " + employeesWithAadhaar.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Aadhaar-" + request.getAadharCard() + " is getting update.");
+                Optional<Employee> first = employeesWithAadhaar.stream().filter(o -> o.getEmployeeId().equals(request.getEmployeeId())).findFirst();
+                if (first.isEmpty()) {
+                    messages.add("Employee-" + employeesWithAadhaar.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " already exist with Aadhaar-" + request.getAadharCard());
                 }
             }
         }
         if (StringUtils.hasText(request.getPancardNo())) {
             List<Employee> employeesWithPan = employeeRepository.findByPancardNumber(request.getPancardNo());
-            if (!CollectionUtils.isEmpty(employeesWithPan)) {
+            if (employeesWithPan.size() > 1) {
                 messages.add("Existing Employees found with employeeCode " + employeesWithPan.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and PAN-" + request.getPancardNo());
             } else if (employeesWithPan.size() == 1) {
-                if (!CollectionUtils.isEmpty(employeesWithPan) && request.getPancardNo().equals(employeesWithPan.get(0).getPancardNo())) {
-                    messages.add("Existing Employee with employeeCode " + employeesWithPan.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and PAN-" + request.getPancardNo() + " is getting update.");
+                Optional<Employee> first = employeesWithPan.stream().filter(o -> o.getEmployeeId().equals(request.getEmployeeId())).findFirst();
+                if (first.isEmpty()) {
+                    messages.add("Employee-" + employeesWithPan.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " already exist with PAN-" + request.getPancardNo());
                 }
             }
         }
         if (request.getPersonalMob() != null) {
             List<Employee> employeesWithMobile = employeeRepository.findByPersonalMobileNumber(request.getPersonalMob());
-            if (!CollectionUtils.isEmpty(employeesWithMobile)) {
+            if (employeesWithMobile.size() > 1) {
                 messages.add("Existing Employees found with employeeCode " + employeesWithMobile.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Mobile-" + request.getPersonalMob());
             } else if (employeesWithMobile.size() == 1) {
-                if (!CollectionUtils.isEmpty(employeesWithMobile) && request.getPersonalMob().equals(employeesWithMobile.get(0).getPersonalMob())) {
-                    messages.add("Existing Employee with employeeCode " + employeesWithMobile.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Mobile-" + request.getPersonalMob() + " is getting update.");
+                Optional<Employee> first = employeesWithMobile.stream().filter(o -> o.getEmployeeId().equals(request.getEmployeeId())).findFirst();
+                if (first.isEmpty()) {
+                    messages.add("Employee-" + employeesWithMobile.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " already exist with Mobile-" + request.getPersonalMob());
                 }
             }
         }
