@@ -20,5 +20,9 @@ public interface EmployeeService {
 
     Response getSubEmpDeptByEmpDepartmentId(Long empDepartmentId);
 
-	Response transferEmployee(EmployeeTransferRequest employeeTransferRequest) throws BadRequestException;
+    Response transferEmployee(EmployeeTransferRequest employeeTransferRequest) throws BadRequestException;
+
+    Response validateAadhaarPanMobForSaveEmployee(EmployeeRequest request);
+
+    Response validateAadhaarPanMobForUpdateEmployee(EmployeeRequest request);
 }
