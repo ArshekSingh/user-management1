@@ -19,4 +19,5 @@ public class UserRequest {
     private String designationType;
     private String bcId;
     private String extUserId;
+    private String isFrozenBookFlag;
 }
