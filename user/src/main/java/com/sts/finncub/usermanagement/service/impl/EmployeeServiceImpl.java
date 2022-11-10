@@ -50,8 +50,6 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     private final EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository;
     private final CenterMasterRepository centerMasterRepository;
 
-    public String EXISTING_EMPLOYEE_MSG = "Existing Employees found with employeeCode";
-
     @Override
     @Transactional
     public Response addEmployee(EmployeeRequest request) throws BadRequestException {
