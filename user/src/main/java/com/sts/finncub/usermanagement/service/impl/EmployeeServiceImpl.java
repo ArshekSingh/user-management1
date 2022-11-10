@@ -439,6 +439,8 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                     saveValueInUserMaster(request.getUserId(), request, true);
                 } else if (request.getStatus().equals("X") || request.getStatus().equals("Inactive")) {
                     saveValueInUserMaster(request.getUserId(), request, false);
+                    Optional<User> user = userRepository.findByUserId(request.getUserId());
+                    user.ifPresent(userService::deleteTokenByUserId);
                 }
                 response.setCode(HttpStatus.OK.value());
                 response.setStatus(HttpStatus.OK);

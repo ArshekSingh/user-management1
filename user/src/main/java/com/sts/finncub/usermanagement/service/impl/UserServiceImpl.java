@@ -21,7 +21,6 @@ import com.sts.finncub.usermanagement.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -50,8 +49,8 @@ public class UserServiceImpl implements UserService, Constant {
     private final UserDao userDao;
     private final UserLocationTrackerRepository userLocationTrackerRepository;
     private final UserLoginLogRepository userLoginLogRepository;
-    @Autowired
-    Gson gson;
+    private final UserRedisRepository userRedisRepository;
+    private final Gson gson;
 
     @Override
     public Response getAllUserDetailsByFilterRequest(FilterRequest request) throws BadRequestException {
@@ -202,11 +201,29 @@ public class UserServiceImpl implements UserService, Constant {
             }
         }
         userDetail.setBcId(StringUtils.hasText(request.getBcId()) ? request.getBcId() : "");
-        userDetail.setIsActive(request.getIsActive());
+        if (StringUtils.hasText(request.getIsActive())) {
+            if (request.getIsActive().equals("N")) {
+                userDetail.setIsActive(request.getIsActive());
+                deleteTokenByUserId(userDetail);
+            } else {
+                userDetail.setIsActive(request.getIsActive());
+            }
+        }
         userDetail.setIsFrozenBookFlag(request.getIsFrozenBookFlag());
         userDetail.setUpdatedBy(userSession.getUserId());
         userDetail.setUpdatedOn(LocalDateTime.now());
         userRepository.save(userDetail);
+    }
+
+    @Override
+    public void deleteTokenByUserId(User userDetail) {
+        Iterable<UserSession> userSessionList = userRedisRepository.findAll();
+        for (UserSession userSessionCheckForUser : userSessionList) {
+            if (userSessionCheckForUser.getUserId().equalsIgnoreCase(userDetail.getUserId())) {
+                Optional<UserSession> userSessionForParticularUser = userRedisRepository.findById(userSessionCheckForUser.getId());
+                userSessionForParticularUser.ifPresent(userRedisRepository::delete);
+            }
+        }
     }
 
     @Override
