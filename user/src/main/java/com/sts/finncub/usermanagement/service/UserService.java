@@ -2,6 +2,7 @@ package com.sts.finncub.usermanagement.service;
 
 import com.sts.finncub.core.dto.UserBranchMappingDto;
 import com.sts.finncub.core.dto.UserRoleMappingDto;
+import com.sts.finncub.core.entity.User;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.core.response.Response;
@@ -31,4 +32,6 @@ public interface UserService {
     Response postGeoLocationOfUser(GeoLocationRequest geoLocationRequest, String authorization);
 
     Response getAllUserSearchable(String searchUserKey, String userType);
+
+    void deleteTokenByUserId(User userDetail);
 }
