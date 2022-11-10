@@ -50,6 +50,8 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     private final EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository;
     private final CenterMasterRepository centerMasterRepository;
 
+    public String EXISTING_EMPLOYEE_MSG = "Existing Employees found with employeeCode";
+
     @Override
     @Transactional
     public Response addEmployee(EmployeeRequest request) throws BadRequestException {
@@ -79,7 +81,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         request.setName(employeeRequest.getFirstName());
         request.setMobileNumber(employeeRequest.getPersonalMob() == null ? null : "" + employeeRequest.getPersonalMob());
         request.setType("EMP");
-        if (isActive) {
+        if (Boolean.TRUE.equals(isActive)) {
             request.setIsActive("Y");
         } else {
             request.setIsActive("N");
@@ -134,7 +136,14 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         employee.setConfirmationDate(StringUtils.hasText(request.getConfirmationDate()) ? DateTimeUtil.stringToDate(request.getConfirmationDate()) : null);
         employee.setPromotionDate(StringUtils.hasText(request.getPromotionDate()) ? DateTimeUtil.stringToDate(request.getPromotionDate()) : null);
         employee.setRelievingDate(StringUtils.hasText(request.getRelievingDate()) ? DateTimeUtil.stringToDate(request.getRelievingDate()) : null);
-        employee.setAadharCard(request.getAadharCard());
+        if (StringUtils.hasText(request.getAadharCard())) {
+            String lastFourDigits;
+            if (employee.getAadharCard().length() == 12) {
+                lastFourDigits = employee.getAadharCard().substring(employee.getAadharCard().length() - 4);
+                employee.setAadharCard(AADHAR_MASKED_DIGITS + lastFourDigits);
+            }
+            employee.setAadharCardNumberOrig(request.getAadharCard());
+        }
         employee.setPancardNo(request.getPancardNo());
         employee.setPfNumber(request.getPfNumber());
         employee.setUanNo(request.getUanNo());
@@ -222,6 +231,13 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         for (Employee employee : employeeList) {
             EmployeeDto employeeDto = new EmployeeDto();
             BeanUtils.copyProperties(employee, employeeDto);
+            if (StringUtils.hasText(employee.getAadharCard())) {
+                String lastFourDigits;
+                if (employee.getAadharCard().length() == 12) {
+                    lastFourDigits = employee.getAadharCard().substring(employee.getAadharCard().length() - 4);
+                    employeeDto.setAadharCard(AADHAR_MASKED_DIGITS + lastFourDigits);
+                }
+            }
             employeeDto.setStatus(EmployeeStatus.findByName(employee.getStatus()));
             employeeDto.setGender(Gender.findByKey(employee.getGender()));
             employeeDto.setMaritalStatus(MaritalStatus.findByKey(employee.getMaritalStatus()));
@@ -289,6 +305,13 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         } else {
             BeanUtils.copyProperties(employee, employeeDto);
+            if (StringUtils.hasText(employee.getAadharCard())) {
+                String lastFourDigits;
+                if (employee.getAadharCard().length() == 12) {
+                    lastFourDigits = employee.getAadharCard().substring(employee.getAadharCard().length() - 4);
+                    employeeDto.setAadharCard(AADHAR_MASKED_DIGITS + lastFourDigits);
+                }
+            }
             employeeDto.setDob(DateTimeUtil.dateToString(employee.getDob()));
             employeeDto.setJoiningDate(DateTimeUtil.dateToString(employee.getJoiningDate()));
             employeeDto.setConfirmationDate(DateTimeUtil.dateToString(employee.getConfirmationDate()));
@@ -344,19 +367,19 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         if (request.getAadharCard() != null) {
             List<Employee> employeesWithAadhaar = employeeRepository.findByAadharCardNumber(request.getAadharCard());
             if (!CollectionUtils.isEmpty(employeesWithAadhaar)) {
-                messages.add("Existing Employees found with employeeCode " + employeesWithAadhaar.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Aadhaar-" + request.getAadharCard());
+                messages.add(EXISTING_EMPLOYEE_MSG + employeesWithAadhaar.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Aadhaar-" + request.getAadharCard());
             }
         }
         if (StringUtils.hasText(request.getPancardNo())) {
             List<Employee> employeesWithPan = employeeRepository.findByPancardNumber(request.getPancardNo());
             if (!CollectionUtils.isEmpty(employeesWithPan)) {
-                messages.add("Existing Employees found with employeeCode " + employeesWithPan.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and PAN-" + request.getPancardNo());
+                messages.add(EXISTING_EMPLOYEE_MSG + employeesWithPan.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and PAN-" + request.getPancardNo());
             }
         }
         if (request.getPersonalMob() != null) {
             List<Employee> employeesWithMobile = employeeRepository.findByPersonalMobileNumber(request.getPersonalMob());
             if (!CollectionUtils.isEmpty(employeesWithMobile)) {
-                messages.add("Existing Employees found with employeeCode " + employeesWithMobile.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Mobile-" + request.getPersonalMob());
+                messages.add(EXISTING_EMPLOYEE_MSG + employeesWithMobile.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Mobile-" + request.getPersonalMob());
             }
         }
 
@@ -370,7 +393,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         if (request.getAadharCard() != null) {
             List<Employee> employeesWithAadhaar = employeeRepository.findByAadharCardNumber(request.getAadharCard());
             if (employeesWithAadhaar.size() > 1) {
-                messages.add("Existing Employees found with employeeCode " + employeesWithAadhaar.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Aadhaar-" + request.getAadharCard());
+                messages.add(EXISTING_EMPLOYEE_MSG + employeesWithAadhaar.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Aadhaar-" + request.getAadharCard());
             } else if (employeesWithAadhaar.size() == 1) {
                 Optional<Employee> first = employeesWithAadhaar.stream().filter(o -> o.getEmployeeId().equals(request.getEmployeeId())).findFirst();
                 if (first.isEmpty()) {
@@ -381,7 +404,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         if (StringUtils.hasText(request.getPancardNo())) {
             List<Employee> employeesWithPan = employeeRepository.findByPancardNumber(request.getPancardNo());
             if (employeesWithPan.size() > 1) {
-                messages.add("Existing Employees found with employeeCode " + employeesWithPan.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and PAN-" + request.getPancardNo());
+                messages.add(EXISTING_EMPLOYEE_MSG + employeesWithPan.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and PAN-" + request.getPancardNo());
             } else if (employeesWithPan.size() == 1) {
                 Optional<Employee> first = employeesWithPan.stream().filter(o -> o.getEmployeeId().equals(request.getEmployeeId())).findFirst();
                 if (first.isEmpty()) {
@@ -392,7 +415,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         if (request.getPersonalMob() != null) {
             List<Employee> employeesWithMobile = employeeRepository.findByPersonalMobileNumber(request.getPersonalMob());
             if (employeesWithMobile.size() > 1) {
-                messages.add("Existing Employees found with employeeCode " + employeesWithMobile.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Mobile-" + request.getPersonalMob());
+                messages.add(EXISTING_EMPLOYEE_MSG + employeesWithMobile.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Mobile-" + request.getPersonalMob());
             } else if (employeesWithMobile.size() == 1) {
                 Optional<Employee> first = employeesWithMobile.stream().filter(o -> o.getEmployeeId().equals(request.getEmployeeId())).findFirst();
                 if (first.isEmpty()) {
