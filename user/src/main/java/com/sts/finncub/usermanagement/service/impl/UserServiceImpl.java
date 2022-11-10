@@ -219,7 +219,13 @@ public class UserServiceImpl implements UserService, Constant {
     public void deleteTokenByUserId(User userDetail) {
         Iterable<UserSession> userSessionList = userRedisRepository.findAll();
         for (UserSession userSessionCheckForUser : userSessionList) {
-            if (userSessionCheckForUser.getUserId().equalsIgnoreCase(userDetail.getUserId())) {
+            if (userSessionCheckForUser != null && userDetail != null) {
+                if (!StringUtils.hasText(userDetail.getUserId()) || !StringUtils.hasText(userSessionCheckForUser.getUserId())) {
+                    continue;
+                }
+                if (!userSessionCheckForUser.getUserId().equalsIgnoreCase(userDetail.getUserId())) {
+                    continue;
+                }
                 Optional<UserSession> userSessionForParticularUser = userRedisRepository.findById(userSessionCheckForUser.getId());
                 userSessionForParticularUser.ifPresent(userRedisRepository::delete);
             }
