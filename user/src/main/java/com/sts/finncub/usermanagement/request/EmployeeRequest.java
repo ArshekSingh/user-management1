@@ -48,7 +48,7 @@ public class EmployeeRequest {
     private String confirmationDate;
     private String promotionDate;
     private String relievingDate;
-    private Long aadharCard;
+    private String aadharCard;
     private String pancardNo;
     private String pfNumber;
     private Long uanNo;
@@ -94,4 +94,5 @@ public class EmployeeRequest {
     private String vehicleType;
     private String vehicleNumber;
     private List<String> bcId;
+    private String aadharCardNumberOrig;
 }
