@@ -134,14 +134,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         employee.setConfirmationDate(StringUtils.hasText(request.getConfirmationDate()) ? DateTimeUtil.stringToDate(request.getConfirmationDate()) : null);
         employee.setPromotionDate(StringUtils.hasText(request.getPromotionDate()) ? DateTimeUtil.stringToDate(request.getPromotionDate()) : null);
         employee.setRelievingDate(StringUtils.hasText(request.getRelievingDate()) ? DateTimeUtil.stringToDate(request.getRelievingDate()) : null);
-        if (StringUtils.hasText(request.getAadharCard())) {
-            String lastFourDigits;
-            if (employee.getAadharCard().length() == 12) {
-                lastFourDigits = employee.getAadharCard().substring(employee.getAadharCard().length() - 4);
-                employee.setAadharCard(AADHAR_MASKED_DIGITS + lastFourDigits);
-            }
-            employee.setAadharCardNumberOrig(request.getAadharCard());
-        }
+        employee.setAadharCard(request.getAadharCard());
         employee.setPancardNo(request.getPancardNo());
         employee.setPfNumber(request.getPfNumber());
         employee.setUanNo(request.getUanNo());
@@ -229,13 +222,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         for (Employee employee : employeeList) {
             EmployeeDto employeeDto = new EmployeeDto();
             BeanUtils.copyProperties(employee, employeeDto);
-            if (StringUtils.hasText(employee.getAadharCard())) {
-                String lastFourDigits;
-                if (employee.getAadharCard().length() == 12) {
-                    lastFourDigits = employee.getAadharCard().substring(employee.getAadharCard().length() - 4);
-                    employeeDto.setAadharCard(AADHAR_MASKED_DIGITS + lastFourDigits);
-                }
-            }
+            employeeDto.setAadharCard(employee.getAadharCard());
             employeeDto.setStatus(EmployeeStatus.findByName(employee.getStatus()));
             employeeDto.setGender(Gender.findByKey(employee.getGender()));
             employeeDto.setMaritalStatus(MaritalStatus.findByKey(employee.getMaritalStatus()));
@@ -303,13 +290,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
         } else {
             BeanUtils.copyProperties(employee, employeeDto);
-            if (StringUtils.hasText(employee.getAadharCard())) {
-                String lastFourDigits;
-                if (employee.getAadharCard().length() == 12) {
-                    lastFourDigits = employee.getAadharCard().substring(employee.getAadharCard().length() - 4);
-                    employeeDto.setAadharCard(AADHAR_MASKED_DIGITS + lastFourDigits);
-                }
-            }
+            employeeDto.setAadharCard(employee.getAadharCard());
             employeeDto.setDob(DateTimeUtil.dateToString(employee.getDob()));
             employeeDto.setJoiningDate(DateTimeUtil.dateToString(employee.getJoiningDate()));
             employeeDto.setConfirmationDate(DateTimeUtil.dateToString(employee.getConfirmationDate()));
