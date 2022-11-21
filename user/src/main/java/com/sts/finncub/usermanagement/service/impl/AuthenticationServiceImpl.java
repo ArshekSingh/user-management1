@@ -1,6 +1,7 @@
 package com.sts.finncub.usermanagement.service.impl;
 
 import com.google.gson.Gson;
+import com.sts.finncub.core.components.SmsProperties;
 import com.sts.finncub.core.constants.RestMappingConstants;
 import com.sts.finncub.core.entity.*;
 import com.sts.finncub.core.exception.BadRequestException;
@@ -9,14 +10,16 @@ import com.sts.finncub.core.exception.ObjectNotFoundException;
 import com.sts.finncub.core.repository.*;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.core.service.UserCredentialService;
+import com.sts.finncub.core.util.SmsUtil;
 import com.sts.finncub.usermanagement.assembler.SignUpConverter;
 import com.sts.finncub.usermanagement.config.MobileAppConfig;
-import com.sts.finncub.usermanagement.request.LoginRequest;
-import com.sts.finncub.usermanagement.request.SignupRequest;
+import com.sts.finncub.usermanagement.request.*;
 import com.sts.finncub.usermanagement.response.LoginResponse;
 import com.sts.finncub.usermanagement.response.SignupResponse;
 import com.sts.finncub.usermanagement.service.AuthenticationService;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -63,8 +66,16 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final MobileAppConfig mobileAppConfig;
     private final OrganizationRepository organizationRepository;
 
+    private final SmsUtil smsUtil;
+
+    private final VendorSmsLogRepository vendorSmsLogRepository;
+
+    private final SmsProperties smsProperties;
+
     @Autowired
-    public AuthenticationServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserRedisRepository userRedisRepository, UserRoleMappingRepository userRoleMappingRepository, UserCredentialService userCredentialService, UserOrganizationMappingRepository userOrganizationMappingRepository, BranchMasterRepository branchMasterRepository, UserLoginLogRepository userLoginLogRepository, EmployeeRepository employeeRepository, MiscellaneousServiceRepository miscellaneousServiceRepository, MobileAppConfig mobileAppConfig, RedisTemplate<String, Object> template, OrganizationRepository organizationRepository) {
+    public AuthenticationServiceImpl(Integer oldPasswordCount, Integer passwordFailedCount, UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserRedisRepository userRedisRepository, UserRoleMappingRepository userRoleMappingRepository, UserCredentialService userCredentialService, UserOrganizationMappingRepository userOrganizationMappingRepository, BranchMasterRepository branchMasterRepository, UserLoginLogRepository userLoginLogRepository, EmployeeRepository employeeRepository, MiscellaneousServiceRepository miscellaneousServiceRepository, MobileAppConfig mobileAppConfig, RedisTemplate<String, Object> template, OrganizationRepository organizationRepository, SmsUtil smsUtil, VendorSmsLogRepository vendorSmsLogRepository, SmsProperties smsProperties) {
+//        this.oldPasswordCount = oldPasswordCount;
+//        this.passwordFailedCount = passwordFailedCount;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userRedisRepository = userRedisRepository;
@@ -78,6 +89,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         this.mobileAppConfig = mobileAppConfig;
         this.template = template;
         this.organizationRepository = organizationRepository;
+        this.smsUtil = smsUtil;
+        this.vendorSmsLogRepository = vendorSmsLogRepository;
+        this.smsProperties = smsProperties;
     }
 
     @Override
@@ -109,7 +123,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             }
             if (!user.isPasswordCorrect(loginRequest.getPassword())) {
                 user.setLoginAttempt((user.getLoginAttempt() != null) ? user.getLoginAttempt() + 1 : 1);
-                if (user.getLoginAttempt() != null && user.getLoginAttempt() >= passwordFailedCount) {
+                if (user.getLoginAttempt() != null && user.getLoginAttempt() >= 1) {
                     user.setIsPasswordActive("N");
                 }
                 userRepository.updateLoginAttemptByUserId(user.getUserId(), user.getLoginAttempt(), user.getUserId(), LocalDateTime.now());
@@ -345,7 +359,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 }
             }
 //          Maintain old passwords
-            if (oldPasswordList.length < oldPasswordCount) {
+            if (oldPasswordList.length < 1) {
                 oldPassword = oldPassword + PASSWORD_SEPARATOR + user.getPassword();
             } else {
                 StringBuilder updatedOldPassword = new StringBuilder();
@@ -393,4 +407,109 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         response.setMessage(RestMappingConstants.CHANGED_PASSWORD);
         return ResponseEntity.ok(response);
     }
+
+    @Override
+    public ResponseEntity<Response> forgetPassword(String userId) throws ObjectNotFoundException, InternalServerErrorException {
+
+        Response response = new Response();
+       // UserSession userSession = userCredentialService.getUserSession();
+        //Employee employee = employeeRepository.findByUserId(userId).orElseThrow(() -> new ObjectNotFoundException("Invalid userId - " + userId, HttpStatus.NOT_FOUND));
+
+        User user = userRepository.findByUserIdIgnoreCase(userId).orElseThrow(() -> new ObjectNotFoundException("Invalid userId - " + userId, HttpStatus.NOT_FOUND));
+     //   List<UserOrganizationMapping> userOrganizationMapping = userOrganizationMappingRepository.findById_UserId(userId);
+        // generate random 6 digit OTP
+        String otp = RandomStringUtils.randomAlphanumeric(4);
+        String message = "OTP for Finncub forget password of userId " + userId + " is " + otp;
+        // fetch existing record on mobile number
+     //   VendorSmsLog vendorSmsLog = vendorSmsLogRepository.findTopBySmsMobileAndOrgIdAndStatusAndInsertedOnGreaterThanOrderByInsertedOnDesc(user.getMobileNumber(), userOrganizationMapping.get(0).getOrganization().getOrgId(), "D", LocalDateTime.now().minusMinutes(smsProperties.getOtpExpiryTime()));
+//        if (vendorSmsLog == null) {
+//            // insert otp details in database
+//            VendorSmsLog vendorSmsLogData = new VendorSmsLog();
+//         //   vendorSmsLogData.setOrgId(userOrganizationMapping.get(0).getOrganization().getOrgId());
+//            vendorSmsLogData.setSmsMobile(user.getMobileNumber());
+//            vendorSmsLogData.setSmsText(message);
+//            vendorSmsLogData.setSmsType("FORGET"); // FORGET is for FORGET PASSWORD type
+//            vendorSmsLogData.setStatus("S"); // S is for SENT status
+//            vendorSmsLogData.setSmsOtp(otp);
+//            vendorSmsLogData.setSmsVendor("SMSJUST");
+//            vendorSmsLogData.setInsertedBy(user.getUserId());
+//            vendorSmsLogData.setInsertedOn(LocalDateTime.now());
+//            vendorSmsLogData = vendorSmsLogRepository.save(vendorSmsLogData);
+//            // hit sms API
+//            String responseId = smsUtil.sendSms(user.getMobileNumber(), message);
+//            // update response id in VendorSmsLog returned from API
+//            if (StringUtils.hasText(responseId)) {
+//                vendorSmsLogData.setStatus("D"); // D is for Delivered.
+//                vendorSmsLogData.setSmsResponse(responseId);
+//                vendorSmsLogRepository.save(vendorSmsLogData);
+//            } else {
+//                throw new InternalServerErrorException("Empty response received from vendor.", HttpStatus.INTERNAL_SERVER_ERROR);
+//            }
+//            response.setMessage(message);
+//            response.setCode(HttpStatus.OK.value());
+//            response.setStatus(HttpStatus.OK);
+//
+//        }
+        return ResponseEntity.ok(response);
+    }
+
+//    @Override
+//    public ResponseEntity<Response> verifyForgetPasswordOtp(VerifyOtpRequest verifyOtpRequest) throws ObjectNotFoundException {
+//        Response response = new Response();
+//      //  UserSession userSession = userCredentialService.getUserSession();
+//        // first check data is available in database
+//        VendorSmsLog vendorSmsLog = vendorSmsLogRepository.findTopBySmsMobileAndOrgIdAndStatusAndSmsOtpAndSmsTypeAndInsertedOnGreaterThan(verifyOtpRequest.getMobileNumber(), userSession.getOrganizationId(), "D", verifyOtpRequest.getOtp(), "FORGET", LocalDateTime.now().minusMinutes(smsProperties.getOtpExpiryTime()));
+//        if (vendorSmsLog != null && verifyOtpRequest.getOtp().equals(vendorSmsLog.getSmsOtp())) {
+//            // otp check
+//            vendorSmsLog.setStatus("U");    // U is for USED status
+//        //    vendorSmsLog.setUpdatedBy(userSession.getUserId());
+//            vendorSmsLog.setUpdatedOn(LocalDateTime.now());
+//            vendorSmsLogRepository.save(vendorSmsLog);
+////            ApplicationDetails applicationDetails = applicationDetailsRepository.findByApplicationIdAndOrgId(loanId, userSession.getOrganizationId()).orElseThrow(() -> new ObjectNotFoundException("Invalid ApplicationId", HttpStatus.NOT_FOUND));
+////            applicationDetails.setIsMobileVerified("Y");
+////            applicationDetails.setUpdatedBy(userSession.getUserId());
+////            applicationDetails.setUpdatedOn(LocalDateTime.now());
+////            applicationDetailsRepository.save(applicationDetails);
+////            ClientMasterDraft clientMasterDraft = applicationDetails.getClientMasterDraft();
+////            clientMasterDraft.setMobileNumber(mobileNumber);
+////            clientMasterDraftRepository.save(clientMasterDraft);
+//            response.setMessage("OTP verified successfully.");
+//            response.setStatus(HttpStatus.OK);
+//            response.setCode(HttpStatus.OK.value());
+//            return ResponseEntity.ok(response);
+//        } else {
+//
+//            response.setMessage("Invalid OTP.");
+//            response.setStatus(HttpStatus.BAD_REQUEST);
+//            response.setCode(HttpStatus.BAD_REQUEST.value());
+//            return ResponseEntity.badRequest().body(response);
+//
+//        }
+//    }
+
+//    @Override
+//    public ResponseEntity<Response> createNewPassword(CreateNewPasswordRequest createNewPasswordRequest) {
+//        Response response = new Response();
+//      //  log.info("Fetching userSession for resetPassword request, userId : {} ", createNewPasswordRequest.getUserId());
+//      //  UserSession userSession = userCredentialService.getUserSession();
+//        if(createNewPasswordRequest.getNewPassword().equals(createNewPasswordRequest.getConfirmPassword())) {
+//            User user = userRepository.findByUserIdIgnoreCase(createNewPasswordRequest.getUserId()).orElseThrow(() -> new ObjectNotFoundException("Invalid userId - " + userSession.getUserId(), HttpStatus.NOT_FOUND));
+//            user.setPassword(passwordEncoder, createNewPasswordRequest.getNewPassword());
+//            user.setIsTemporaryPassword("Y");
+//            user.setIsPasswordActive("Y");
+//            user.setLoginAttempt(0);
+//            user.setUpdatedOn(LocalDateTime.now());
+//            //    user.setUpdatedBy(userSession.getUserId());
+//            userRepository.save(user);
+//        }
+//            log.info("Password reset was successful, userId : {}", createNewPasswordRequest.getUserId());
+//            response.setCode(HttpStatus.OK.value());
+//            response.setStatus(HttpStatus.OK);
+//            response.setMessage(RestMappingConstants.CHANGED_PASSWORD);
+//            return ResponseEntity.ok(response);
+//
+//
+//    }
+
+
 }

@@ -5,8 +5,7 @@ import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.exception.InternalServerErrorException;
 import com.sts.finncub.core.exception.ObjectNotFoundException;
 import com.sts.finncub.core.response.Response;
-import com.sts.finncub.usermanagement.request.LoginRequest;
-import com.sts.finncub.usermanagement.request.SignupRequest;
+import com.sts.finncub.usermanagement.request.*;
 import com.sts.finncub.usermanagement.service.AuthenticationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,4 +75,23 @@ public class AuthenticationController {
         ResponseEntity<Response> responseEntity = authenticationService.resetPassword(loginRequest);
         return responseEntity;
     }
+
+    @PostMapping("api/forgetPassword")
+    public ResponseEntity<Response> forgetPassword(@RequestBody String userId) throws ObjectNotFoundException, InternalServerErrorException {
+        log.info("forgetPassword request received, userId : {}" , userId);
+        ResponseEntity<Response> responseEntity = authenticationService.forgetPassword(userId);
+        return responseEntity;
+    }
+
+//    @PostMapping("api/verifyForgetPasswordOtp")
+//    public ResponseEntity<Response> verifyForgetPasswordOtp(@RequestBody VerifyOtpRequest verifyOtpRequest) throws ObjectNotFoundException{
+//         ResponseEntity<Response> responseEntity = authenticationService.verifyForgetPasswordOtp(verifyOtpRequest);
+//         return responseEntity;
+//    }
+
+//    @PostMapping("api/createNewPassword")
+//    public ResponseEntity<Response> createNewPassword(@RequestBody CreateNewPasswordRequest createNewPasswordRequest) throws ObjectNotFoundException {
+//        ResponseEntity<Response> responseEntity = authenticationService.createNewPassword(createNewPasswordRequest);
+//        return responseEntity;
+//    }
 }
