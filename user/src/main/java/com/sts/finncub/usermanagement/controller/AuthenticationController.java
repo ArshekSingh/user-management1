@@ -5,7 +5,9 @@ import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.exception.InternalServerErrorException;
 import com.sts.finncub.core.exception.ObjectNotFoundException;
 import com.sts.finncub.core.response.Response;
-import com.sts.finncub.usermanagement.request.*;
+import com.sts.finncub.usermanagement.request.CreateNewPasswordRequest;
+import com.sts.finncub.usermanagement.request.LoginRequest;
+import com.sts.finncub.usermanagement.request.SignupRequest;
 import com.sts.finncub.usermanagement.service.AuthenticationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,23 +80,21 @@ public class AuthenticationController {
     }
 
 
-    @PostMapping("api/forgetPassword")
+    @PostMapping("/forgetPassword")
     public ResponseEntity<Response> forgetPassword(@RequestParam String userId) throws ObjectNotFoundException, InternalServerErrorException {
-        log.info("forgetPassword request received, userId : {}" , userId);
-        ResponseEntity<Response> responseEntity = authenticationService.forgetPassword(userId);
-        return responseEntity;
+        log.info("forgetPassword request received, userId : {}", userId);
+        return authenticationService.forgetPassword(userId);
     }
 
-        @PostMapping("api/verifyForgetPasswordOtp")
-    public ResponseEntity<Response> verifyForgetPasswordOtp(@RequestParam String otp, @RequestParam String userId) throws ObjectNotFoundException{
+    @PostMapping("/verifyForgetPasswordOtp")
+    public ResponseEntity<Response> verifyForgetPasswordOtp(@RequestParam String otp, @RequestParam String userId) throws ObjectNotFoundException {
         log.info("Initiating verify otp process");
-        ResponseEntity<Response> responseEntity = authenticationService.verifyForgetPasswordOtp(otp ,userId);
-         return responseEntity;
+        return authenticationService.verifyForgetPasswordOtp(otp, userId);
     }
 
-        @PostMapping("api/createNewPassword")
+    @PostMapping("/createNewPassword")
     public ResponseEntity<Response> createNewPassword(@RequestBody CreateNewPasswordRequest createNewPasswordRequest) throws ObjectNotFoundException {
-        ResponseEntity<Response> responseEntity = authenticationService.createNewPassword(createNewPasswordRequest);
-        return responseEntity;
+        log.info("Initiating create new password process");
+        return authenticationService.createNewPassword(createNewPasswordRequest);
     }
 }
