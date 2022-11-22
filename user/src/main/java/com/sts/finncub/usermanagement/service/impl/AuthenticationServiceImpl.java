@@ -438,11 +438,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     } else {
                         throw new InternalServerErrorException("Empty response received from vendor.", HttpStatus.INTERNAL_SERVER_ERROR);
                     }
-                    response.setMessage(message);
-                    response.setCode(HttpStatus.OK.value());
-                    response.setStatus(HttpStatus.OK);
                 }
-                response.setMessage(message);
+                response.setMessage("Otp sent to the registered mobile number");
                 response.setCode(HttpStatus.OK.value());
                 response.setStatus(HttpStatus.OK);
                 return ResponseEntity.ok(response);
