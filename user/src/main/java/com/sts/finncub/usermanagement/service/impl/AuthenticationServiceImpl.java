@@ -418,37 +418,48 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             User user = getUser(userId);
             if (user != null) {
                 String mobileNumber = user.getMobileNumber();
-                Long activeOrgId = getActiveOrgId(userId, user);
-                // fetch existing record on mobile number
-                VendorSmsLog vendorSmsLog = vendorSmsLogRepository.findTopBySmsMobileAndOrgIdAndStatusAndInsertedOnGreaterThanOrderByInsertedOnDesc(mobileNumber, activeOrgId, "D", LocalDateTime.now().minusMinutes(smsProperties.getOtpExpiryTime()));
-                if (vendorSmsLog == null) {
-                    // insert otp details in database
-                    VendorSmsLog vendorSmsLogData = new VendorSmsLog();
-                    vendorSmsLogData.setOrgId(activeOrgId);
-                    vendorSmsLogData.setSmsMobile(mobileNumber);
-                    vendorSmsLogData.setSmsText(message);
-                    vendorSmsLogData.setSmsType("FORGET"); // FORGET is for FORGET type
-                    vendorSmsLogData.setStatus("S"); // S is for SENT status
-                    vendorSmsLogData.setSmsOtp(otp);
-                    vendorSmsLogData.setSmsVendor("SMSJUST");
-                    vendorSmsLogData.setInsertedBy(user.getUserId());
-                    vendorSmsLogData.setInsertedOn(LocalDateTime.now());
-                    vendorSmsLogData = vendorSmsLogRepository.save(vendorSmsLogData);
-                    // hit sms API
-                    String responseId = smsUtil.sendSms(user.getMobileNumber(), message);
-                    // update response id in VendorSmsLog returned from API
-                    if (StringUtils.hasText(responseId)) {
-                        vendorSmsLogData.setStatus("D");
-                        vendorSmsLogData.setSmsResponse(responseId);
-                        vendorSmsLogRepository.save(vendorSmsLogData);
-                    } else {
-                        throw new InternalServerErrorException("Empty response received from vendor.", HttpStatus.INTERNAL_SERVER_ERROR);
+                if(mobileNumber != null && mobileNumber.length() == 10){
+                    Long activeOrgId = getActiveOrgId(userId, user);
+                    // fetch existing record on mobile number
+                    VendorSmsLog vendorSmsLog = vendorSmsLogRepository.findTopBySmsMobileAndOrgIdAndStatusAndInsertedOnGreaterThanOrderByInsertedOnDesc(mobileNumber, activeOrgId, "D", LocalDateTime.now().minusMinutes(smsProperties.getOtpExpiryTime()));
+                    if (vendorSmsLog == null) {
+                        // insert otp details in database
+                        VendorSmsLog vendorSmsLogData = new VendorSmsLog();
+                        vendorSmsLogData.setOrgId(activeOrgId);
+                        vendorSmsLogData.setSmsMobile(mobileNumber);
+                        vendorSmsLogData.setSmsText(message);
+                        vendorSmsLogData.setSmsType("FORGET"); // FORGET is for FORGET type
+                        vendorSmsLogData.setStatus("S"); // S is for SENT status
+                        vendorSmsLogData.setSmsOtp(otp);
+                        vendorSmsLogData.setSmsVendor("SMSJUST");
+                        vendorSmsLogData.setInsertedBy(user.getUserId());
+                        vendorSmsLogData.setInsertedOn(LocalDateTime.now());
+                        vendorSmsLogData = vendorSmsLogRepository.save(vendorSmsLogData);
+                        // hit sms API
+                        String responseId = smsUtil.sendSms(user.getMobileNumber(), message);
+                        // update response id in VendorSmsLog returned from API
+                        if (StringUtils.hasText(responseId)) {
+                            vendorSmsLogData.setStatus("D");
+                            vendorSmsLogData.setSmsResponse(responseId);
+                            vendorSmsLogRepository.save(vendorSmsLogData);
+                        } else {
+                            throw new InternalServerErrorException("Empty response received from vendor.", HttpStatus.INTERNAL_SERVER_ERROR);
+                        }
                     }
+                    response.setMessage("Otp sent to the registered mobile number");
+                    response.setCode(HttpStatus.OK.value());
+                    response.setStatus(HttpStatus.OK);
+                    return ResponseEntity.ok(response);
+
                 }
-                response.setMessage("Otp sent to the registered mobile number");
-                response.setCode(HttpStatus.OK.value());
-                response.setStatus(HttpStatus.OK);
-                return ResponseEntity.ok(response);
+                else {
+                    log.info("Mobile number is not correct.");
+                    response.setMessage("Mobile number is not correct.");
+                    response.setStatus(HttpStatus.BAD_REQUEST);
+                    response.setCode(HttpStatus.BAD_REQUEST.value());
+                    return ResponseEntity.badRequest().body(response);
+                }
+
             } else {
                 log.info("user Id is null");
                 response.setMessage("user Id is null");
