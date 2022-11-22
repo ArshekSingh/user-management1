@@ -419,10 +419,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             if (user != null) {
                 String mobileNumber = user.getMobileNumber();
                 if(mobileNumber != null && mobileNumber.length() == 10){
-                    Long activeOrgId = getActiveOrgId(userId, user);
-                    // fetch existing record on mobile number
-                    VendorSmsLog vendorSmsLog = vendorSmsLogRepository.findTopBySmsMobileAndOrgIdAndStatusAndInsertedOnGreaterThanOrderByInsertedOnDesc(mobileNumber, activeOrgId, "D", LocalDateTime.now().minusMinutes(smsProperties.getOtpExpiryTime()));
-                    if (vendorSmsLog == null) {
+                    Long activeOrgId = getActiveOrgId(userId);
+                    if(activeOrgId != null){
                         // insert otp details in database
                         VendorSmsLog vendorSmsLogData = new VendorSmsLog();
                         vendorSmsLogData.setOrgId(activeOrgId);
@@ -439,17 +437,26 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                         String responseId = smsUtil.sendSms(user.getMobileNumber(), message);
                         // update response id in VendorSmsLog returned from API
                         if (StringUtils.hasText(responseId)) {
-                            vendorSmsLogData.setStatus("D");
+                            vendorSmsLogData.setStatus("D");  // Status D is for Delivered.
                             vendorSmsLogData.setSmsResponse(responseId);
                             vendorSmsLogRepository.save(vendorSmsLogData);
                         } else {
                             throw new InternalServerErrorException("Empty response received from vendor.", HttpStatus.INTERNAL_SERVER_ERROR);
                         }
+
+                        response.setMessage("Otp sent to the registered mobile number");
+                        response.setCode(HttpStatus.OK.value());
+                        response.setStatus(HttpStatus.OK);
+                        return ResponseEntity.ok(response);
+
                     }
-                    response.setMessage("Otp sent to the registered mobile number");
-                    response.setCode(HttpStatus.OK.value());
-                    response.setStatus(HttpStatus.OK);
-                    return ResponseEntity.ok(response);
+                    else {
+                        response.setMessage("organization Id is null");
+                        response.setStatus(HttpStatus.BAD_REQUEST);
+                        response.setCode(HttpStatus.BAD_REQUEST.value());
+                        return ResponseEntity.badRequest().body(response);
+                    }
+
 
                 }
                 else {
@@ -477,9 +484,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
     }
 
-    private Long getActiveOrgId(String userId, User user) {
+    private Long getActiveOrgId(String userId) {
         Long activeOrgId = null;
-        if (StringUtils.hasText(user.getUserId())) {
+        if (StringUtils.hasText(userId)) {
             List<UserOrganizationMapping> orgList = userOrganizationMappingRepository.findById_UserId(userId);
             for (UserOrganizationMapping orgMapping : orgList) {
                 if ("Y".equalsIgnoreCase(orgMapping.getActive())) {
@@ -503,15 +510,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             User user = getUser(userId);
             if (user != null) {
                 String mobileNumber = user.getMobileNumber();
-                Long activeOrgId = getActiveOrgId(userId, user);
-
-                VendorSmsLog vendorSmsLog = vendorSmsLogRepository.findTopBySmsMobileAndOrgIdAndStatusAndSmsOtpAndSmsTypeAndInsertedOnGreaterThan(mobileNumber, activeOrgId, "D", otp, "FORGET", LocalDateTime.now().minusMinutes(smsProperties.getOtpExpiryTime()));
+                Long activeOrgId = getActiveOrgId(userId);
+                Optional<VendorSmsLog>  vendorSmsLog = vendorSmsLogRepository.findTop1BySmsMobileAndOrgIdAndStatusAndSmsTypeAndInsertedOnGreaterThanOrderByInsertedOnDesc(mobileNumber, activeOrgId, "D", "FORGET", LocalDateTime.now().minusMinutes(smsProperties.getOtpExpiryTime()));
                 // otp check
-                if (vendorSmsLog != null && otp.equalsIgnoreCase(vendorSmsLog.getSmsOtp())) {
-                    vendorSmsLog.setStatus("U");    // U is for USED status
-                    vendorSmsLog.setUpdatedBy(userId);
-                    vendorSmsLog.setUpdatedOn(LocalDateTime.now());
-                    vendorSmsLogRepository.save(vendorSmsLog);
+                if (vendorSmsLog.isPresent() && otp.equalsIgnoreCase(vendorSmsLog.get().getSmsOtp())) {
+                    vendorSmsLog.get().setStatus("U");    // U is for USED status
+                    vendorSmsLog.get().setUpdatedBy(userId);
+                    vendorSmsLog.get().setUpdatedOn(LocalDateTime.now());
+                    vendorSmsLogRepository.save(vendorSmsLog.get());
 
                     response.setMessage("OTP verified successfully.");
                     response.setStatus(HttpStatus.OK);
