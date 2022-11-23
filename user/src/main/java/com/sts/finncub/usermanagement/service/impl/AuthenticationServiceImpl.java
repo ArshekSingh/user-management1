@@ -324,11 +324,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         template.delete(KEY + ":" + token);
         log.info("logout successful");
         UserLoginLog loginLog = userLoginLogRepository.findByTokenId(token);
-	    if(loginLog!=null) {
-	    	loginLog.setLogoutTime(LocalDateTime.now());
-	    	userLoginLogRepository.save(loginLog);
-			log.info("Token marked expired in db for TOKEN {}", token);
-	    }
+        if (loginLog != null) {
+            loginLog.setLogoutTime(LocalDateTime.now());
+            userLoginLogRepository.save(loginLog);
+            log.info("Token marked expired in db for TOKEN {}", token);
+        }
         return ResponseEntity.ok(response);
     }
 
@@ -418,9 +418,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             User user = getUser(userId);
             if (user != null) {
                 String mobileNumber = user.getMobileNumber();
-                if(mobileNumber != null && mobileNumber.length() == 10){
+                if (mobileNumber != null && mobileNumber.length() == 10) {
                     Long activeOrgId = getActiveOrgId(userId);
-                    if(activeOrgId != null){
+                    if (activeOrgId != null) {
                         // insert otp details in database
                         VendorSmsLog vendorSmsLogData = new VendorSmsLog();
                         vendorSmsLogData.setOrgId(activeOrgId);
@@ -449,8 +449,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                         response.setStatus(HttpStatus.OK);
                         return ResponseEntity.ok(response);
 
-                    }
-                    else {
+                    } else {
                         response.setMessage("organization Id is null");
                         response.setStatus(HttpStatus.BAD_REQUEST);
                         response.setCode(HttpStatus.BAD_REQUEST.value());
@@ -458,8 +457,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     }
 
 
-                }
-                else {
+                } else {
                     log.info("Mobile number is not correct.");
                     response.setMessage("Mobile number is not correct.");
                     response.setStatus(HttpStatus.BAD_REQUEST);
@@ -474,8 +472,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 response.setCode(HttpStatus.BAD_REQUEST.value());
                 return ResponseEntity.badRequest().body(response);
             }
-        }
-        else {
+        } else {
             log.info("Entered user Id is empty");
             response.setMessage("Entered user Id is empty");
             response.setStatus(HttpStatus.BAD_REQUEST);
@@ -505,31 +502,32 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public ResponseEntity<Response> verifyForgetPasswordOtp(String otp, String userId) throws ObjectNotFoundException {
         Response response = new Response();
-        if(StringUtils.hasText(otp) && StringUtils.hasText(userId)) {
+        if (StringUtils.hasText(otp) && StringUtils.hasText(userId)) {
             // first check data is available in database
             User user = getUser(userId);
             if (user != null) {
                 String mobileNumber = user.getMobileNumber();
                 Long activeOrgId = getActiveOrgId(userId);
-                Optional<VendorSmsLog>  vendorSmsLog = vendorSmsLogRepository.findTop1BySmsMobileAndOrgIdAndStatusAndSmsTypeAndInsertedOnGreaterThanOrderByInsertedOnDesc(mobileNumber, activeOrgId, "D", "FORGET", LocalDateTime.now().minusMinutes(smsProperties.getOtpExpiryTime()));
+                Optional<VendorSmsLog> vendorSmsLog = vendorSmsLogRepository.findTop1BySmsMobileAndOrgIdAndStatusAndSmsTypeAndInsertedOnGreaterThanOrderByInsertedOnDesc(mobileNumber, activeOrgId, "D", "FORGET", LocalDateTime.now().minusMinutes(smsProperties.getOtpExpiryTime()));
                 // otp check
                 if (vendorSmsLog.isPresent() && otp.equalsIgnoreCase(vendorSmsLog.get().getSmsOtp())) {
                     vendorSmsLog.get().setStatus("U");    // U is for USED status
                     vendorSmsLog.get().setUpdatedBy(userId);
                     vendorSmsLog.get().setUpdatedOn(LocalDateTime.now());
                     vendorSmsLogRepository.save(vendorSmsLog.get());
+                    user.setIsOtpValidated('Y');
+                    user.setIsUserValidated('Y');
+                    userRepository.save(user);
 
                     response.setMessage("OTP verified successfully.");
                     response.setStatus(HttpStatus.OK);
                     response.setCode(HttpStatus.OK.value());
                     return ResponseEntity.ok(response);
                 } else {
-
                     response.setMessage("Invalid OTP.");
                     response.setStatus(HttpStatus.BAD_REQUEST);
                     response.setCode(HttpStatus.BAD_REQUEST.value());
                     return ResponseEntity.badRequest().body(response);
-
                 }
             } else {
                 log.error("user Id is null");
@@ -538,8 +536,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 response.setCode(HttpStatus.BAD_REQUEST.value());
                 return ResponseEntity.badRequest().body(response);
             }
-        }
-        else {
+        } else {
             log.error("user Id or otp is null");
             response.setMessage("user Id or otp is null");
             response.setStatus(HttpStatus.BAD_REQUEST);
@@ -550,30 +547,41 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 
     @Override
-    public ResponseEntity<Response> createNewPassword(CreateNewPasswordRequest createNewPasswordRequest) throws ObjectNotFoundException {
+    public ResponseEntity<Response> createNewPassword(CreateNewPasswordRequest createNewPasswordRequest) throws NullPointerException, ObjectNotFoundException {
         Response response = new Response();
         log.info("Entering new password for resetPassword request, userId : {} ", createNewPasswordRequest.getUserId());
-        if (createNewPasswordRequest.getNewPassword().equals(createNewPasswordRequest.getConfirmPassword())) {
-            User user = getUser(createNewPasswordRequest.getUserId());
-            user.setPassword(passwordEncoder, createNewPasswordRequest.getNewPassword());
-            user.setIsTemporaryPassword("N");
-            user.setIsPasswordActive("Y");
-            user.setUpdatedOn(LocalDateTime.now());
-            user.setUpdatedBy(createNewPasswordRequest.getUserId());
-            userRepository.save(user);
 
-            log.info("Password reset was successful, userId : {}", createNewPasswordRequest.getUserId());
-            response.setCode(HttpStatus.OK.value());
-            response.setStatus(HttpStatus.OK);
-            response.setMessage(RestMappingConstants.CHANGED_PASSWORD);
-            return ResponseEntity.ok(response);
-        } else {
-            log.info("New password is not same as confirm password for, userId : {}", createNewPasswordRequest.getUserId());
-            response.setCode(HttpStatus.BAD_REQUEST.value());
-            response.setStatus(HttpStatus.BAD_REQUEST);
-            response.setMessage(RestMappingConstants.PASSWORD_NOT_CHANGED);
-            return ResponseEntity.badRequest().body(response);
+            if (createNewPasswordRequest.getNewPassword().equals(createNewPasswordRequest.getConfirmPassword())) {
+                User user = getUser(createNewPasswordRequest.getUserId());
 
+                    if ("Y".equalsIgnoreCase(String.valueOf(user.getIsOtpValidated()))) {
+                        user.setPassword(passwordEncoder, createNewPasswordRequest.getNewPassword());
+                        user.setIsTemporaryPassword("N");
+                        user.setIsPasswordActive("Y");
+                        user.setUpdatedOn(LocalDateTime.now());
+                        user.setUpdatedBy(createNewPasswordRequest.getUserId());
+                        userRepository.save(user);
+                        log.info("Password reset was successful, userId : {}", createNewPasswordRequest.getUserId());
+                        response.setCode(HttpStatus.OK.value());
+                        response.setStatus(HttpStatus.OK);
+                        response.setMessage(RestMappingConstants.CHANGED_PASSWORD);
+                        return ResponseEntity.ok(response);
+                    } else {
+                        log.info("Otp is not verified.");
+                        response.setCode(HttpStatus.BAD_REQUEST.value());
+                        response.setStatus(HttpStatus.BAD_REQUEST);
+                        response.setMessage("Otp is not verified.");
+                        return ResponseEntity.badRequest().body(response);
+                    }
+
+            } else {
+                log.info("New password is not same as confirm password for, userId : {}", createNewPasswordRequest.getUserId());
+                response.setCode(HttpStatus.BAD_REQUEST.value());
+                response.setStatus(HttpStatus.BAD_REQUEST);
+                response.setMessage("New password is not same as confirm password");
+                return ResponseEntity.badRequest().body(response);
+
+            }
         }
     }
-}
+
