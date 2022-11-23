@@ -556,9 +556,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (createNewPasswordRequest.getNewPassword().equals(createNewPasswordRequest.getConfirmPassword())) {
             User user = getUser(createNewPasswordRequest.getUserId());
             user.setPassword(passwordEncoder, createNewPasswordRequest.getNewPassword());
-            user.setIsTemporaryPassword("Y");
+            user.setIsTemporaryPassword("N");
             user.setIsPasswordActive("Y");
-            user.setLoginAttempt(0);
             user.setUpdatedOn(LocalDateTime.now());
             user.setUpdatedBy(createNewPasswordRequest.getUserId());
             userRepository.save(user);
