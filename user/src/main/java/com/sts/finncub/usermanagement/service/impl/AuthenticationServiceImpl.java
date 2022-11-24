@@ -518,7 +518,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     user.setIsOtpValidated('Y');
                     user.setIsUserValidated('Y');
                     userRepository.save(user);
-
                     response.setMessage("OTP verified successfully.");
                     response.setStatus(HttpStatus.OK);
                     response.setCode(HttpStatus.OK.value());
