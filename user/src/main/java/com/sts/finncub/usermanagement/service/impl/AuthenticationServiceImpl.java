@@ -508,7 +508,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             if (user != null) {
                 String mobileNumber = user.getMobileNumber();
                 Long activeOrgId = getActiveOrgId(userId);
-                Optional<VendorSmsLog> vendorSmsLog = vendorSmsLogRepository.findTop1BySmsMobileAndOrgIdAndStatusAndSmsTypeAndInsertedOnGreaterThanOrderByInsertedOnDesc(mobileNumber, activeOrgId, "D", "FORGET", LocalDateTime.now().minusMinutes(smsProperties.getOtpExpiryTime()));
+                Optional<VendorSmsLog> vendorSmsLog = vendorSmsLogRepository.findTop1BySmsMobileAndOrgIdAndStatusAndSmsTypeAndInsertedOnGreaterThanOrderBySmsIdDesc(mobileNumber, activeOrgId, "D", "FORGET", LocalDateTime.now().minusMinutes(smsProperties.getOtpExpiryTime()));
                 // otp check
                 if (vendorSmsLog.isPresent() && otp.equalsIgnoreCase(vendorSmsLog.get().getSmsOtp())) {
                     vendorSmsLog.get().setStatus("U");    // U is for USED status
@@ -555,8 +555,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     User user = getUser(createNewPasswordRequest.getUserId());
                     String mobileNumber = user.getMobileNumber();
                     Long activeOrgId = getActiveOrgId(user.getUserId());
-                    Optional<VendorSmsLog> vendorSmsLog = vendorSmsLogRepository.findTop1BySmsMobileAndOrgIdAndStatusAndSmsTypeAndInsertedOnGreaterThanOrderByInsertedOnDesc(mobileNumber, activeOrgId, "U", "FORGET", LocalDateTime.now().minusMinutes(smsProperties.getOtpExpiryTime()));
-
+                    Optional<VendorSmsLog> vendorSmsLog = vendorSmsLogRepository.findTop1BySmsMobileAndOrgIdAndStatusAndSmsTypeAndInsertedOnGreaterThanOrderBySmsIdDesc(mobileNumber, activeOrgId, "U", "FORGET", LocalDateTime.now().minusMinutes(smsProperties.getOtpExpiryTime()));
                     if (vendorSmsLog.isPresent() && createNewPasswordRequest.getOtp().equalsIgnoreCase(vendorSmsLog.get().getSmsOtp())) {
                         user.setPassword(passwordEncoder, createNewPasswordRequest.getNewPassword());
                         user.setIsTemporaryPassword("N");
