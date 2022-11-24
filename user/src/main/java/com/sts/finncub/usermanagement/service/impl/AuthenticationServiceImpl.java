@@ -552,13 +552,16 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         log.info("Entering new password for resetPassword request, userId : {} ", createNewPasswordRequest.getUserId());
 
             if (createNewPasswordRequest.getNewPassword().equals(createNewPasswordRequest.getConfirmPassword())) {
-                User user = getUser(createNewPasswordRequest.getUserId());
+                if (createNewPasswordRequest.getNewPassword().length() >= 5) {
+                    User user = getUser(createNewPasswordRequest.getUserId());
+                    String mobileNumber = user.getMobileNumber();
+                    Long activeOrgId = getActiveOrgId(user.getUserId());
+                    Optional<VendorSmsLog> vendorSmsLog = vendorSmsLogRepository.findTop1BySmsMobileAndOrgIdAndStatusAndSmsTypeAndInsertedOnGreaterThanOrderByInsertedOnDesc(mobileNumber, activeOrgId, "U", "FORGET", LocalDateTime.now().minusMinutes(smsProperties.getOtpExpiryTime()));
 
-                    if ("Y".equalsIgnoreCase(String.valueOf(user.getIsOtpValidated()))) {
+                    if (vendorSmsLog.isPresent() && createNewPasswordRequest.getOtp().equalsIgnoreCase(vendorSmsLog.get().getSmsOtp())) {
                         user.setPassword(passwordEncoder, createNewPasswordRequest.getNewPassword());
                         user.setIsTemporaryPassword("N");
                         user.setIsPasswordActive("Y");
-                        user.setIsOtpValidated('N');
                         user.setUpdatedOn(LocalDateTime.now());
                         user.setUpdatedBy(createNewPasswordRequest.getUserId());
                         userRepository.save(user);
@@ -575,7 +578,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                         return ResponseEntity.badRequest().body(response);
                     }
 
-            } else {
+                }
+                else {
+                    log.info("Minimum length of new password should be at least 5 characters");
+                    response.setCode(HttpStatus.BAD_REQUEST.value());
+                    response.setStatus(HttpStatus.BAD_REQUEST);
+                    response.setMessage("Minimum length of new password should be at least 5 characters");
+                    return ResponseEntity.badRequest().body(response);
+
+                }
+            }
+            else {
                 log.info("New password is not same as confirm password for, userId : {}", createNewPasswordRequest.getUserId());
                 response.setCode(HttpStatus.BAD_REQUEST.value());
                 response.setStatus(HttpStatus.BAD_REQUEST);
