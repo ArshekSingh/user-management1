@@ -24,9 +24,9 @@ public interface AuthenticationService {
 
     ResponseEntity<Response> resetPassword(LoginRequest loginRequest) throws ObjectNotFoundException;
 
-    ResponseEntity<Response> forgetPassword(String userId) throws ObjectNotFoundException, InternalServerErrorException;
-    ResponseEntity<Response> verifyForgetPasswordOtp(String otp, String userId) throws ObjectNotFoundException;
+    ResponseEntity<Response> forgetPassword(String userId) throws ObjectNotFoundException, InternalServerErrorException, BadRequestException;
+    ResponseEntity<Response> verifyForgetPasswordOtp(String otp, String userId) throws ObjectNotFoundException, BadRequestException;
 
-    ResponseEntity<Response> createNewPassword(CreateNewPasswordRequest createNewPasswordRequest) throws ObjectNotFoundException;
+    ResponseEntity<Response> createNewPassword(CreateNewPasswordRequest createNewPasswordRequest) throws ObjectNotFoundException, BadRequestException;
 
 }

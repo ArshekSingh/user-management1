@@ -409,37 +409,26 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 
     @Override
-    public ResponseEntity<Response> forgetPassword(String userId) throws ObjectNotFoundException, InternalServerErrorException {
-        // generate random 6 digit OTP
+    public ResponseEntity<Response> forgetPassword(String userId) throws ObjectNotFoundException, InternalServerErrorException, BadRequestException {
+        if (!StringUtils.hasText(userId)) {
+            throw new BadRequestException("userId can't be null",HttpStatus.BAD_REQUEST);
+        }
         String otp = RandomStringUtils.randomNumeric(6);
         String message = "OTP for SVCL Loan ID " + userId + " is " + otp;
-        if (StringUtils.hasText(userId)) {
-            User user = getUser(userId);
-            if (user != null) {
-                String mobileNumber = user.getMobileNumber();
-                if (StringUtils.hasText(mobileNumber) && mobileNumber.length() == 10) {
-                    Long orgId = getActiveOrgId(userId);
-                    if (orgId != null) {
-                        // insert otp details in database (VendorSmsLog table)
-                        getVendorSmsLog(otp, message, user, mobileNumber, orgId);
-                        log.info("Otp sent to the registered mobile number");
-                        return new ResponseEntity<>(new Response("Otp sent to the registered mobile number",HttpStatus.OK),HttpStatus.OK);
-                    } else {
-                        log.error("User {} is not mapped with organization ",userId);
-                        return new ResponseEntity<>(new Response("You are not mapped with organization",HttpStatus.BAD_REQUEST),HttpStatus.BAD_REQUEST);
-                    }
-                } else {
-                    log.error("Mobile number is not correct.");
-                    return new ResponseEntity<>(new Response("Your mobile is not mapped correctly",HttpStatus.BAD_REQUEST),HttpStatus.BAD_REQUEST);
-                }
-
-            } else {
-                log.error("user details not found for userId {}",userId);
-                return new ResponseEntity<>(new Response("Invalid userId",HttpStatus.BAD_REQUEST),HttpStatus.BAD_REQUEST);
+        User user = getUser(userId);
+        if (user != null && StringUtils.hasText(user.getMobileNumber())) {
+            String mobileNumber = user.getMobileNumber();
+            Long orgId = getActiveOrgId(userId);
+            if (orgId == null) {
+                log.error("User {} is not mapped with organization ",userId);
+                return new ResponseEntity<>(new Response("User is not mapped with organization",HttpStatus.BAD_REQUEST),HttpStatus.BAD_REQUEST);
             }
+            getVendorSmsLog(otp, message, user, mobileNumber, orgId);
+            log.info("Otp sent to the registered mobile number");
+            return new ResponseEntity<>(new Response("Otp sent to the registered mobile number",HttpStatus.OK),HttpStatus.OK);
         } else {
-            log.error("Entered user Id is empty");
-            return new ResponseEntity<>(new Response("userId can't be null",HttpStatus.BAD_REQUEST),HttpStatus.BAD_REQUEST);
+            log.error("User details not found for userId {}",userId);
+            return new ResponseEntity<>(new Response("Your mobile is not mapped correctly",HttpStatus.BAD_REQUEST),HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -486,11 +475,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public ResponseEntity<Response> verifyForgetPasswordOtp(String otp, String userId) throws ObjectNotFoundException {
-        if (StringUtils.hasText(otp) && StringUtils.hasText(userId)) {
+    public ResponseEntity<Response> verifyForgetPasswordOtp(String otp, String userId) throws ObjectNotFoundException, BadRequestException {
+        if (!StringUtils.hasText(otp) && !StringUtils.hasText(userId)) {
+            throw new BadRequestException("otp cannot be empty.",HttpStatus.BAD_REQUEST);
+        }
             // first check data is available in database
             User user = getUser(userId);
-            if (user != null) {
+            if (user == null) {
+            throw new BadRequestException("user details not found for userId {}", userId, HttpStatus.BAD_REQUEST);
+            }
                 String mobileNumber = user.getMobileNumber();
                     Long activeOrgId = getActiveOrgId(userId);
                     Optional<VendorSmsLog> vendorSmsLog = vendorSmsLogRepository.findTop1BySmsMobileAndOrgIdAndStatusAndSmsTypeAndInsertedOnGreaterThanOrderBySmsIdDesc(mobileNumber, activeOrgId, "D", "FORGET", LocalDateTime.now().minusMinutes(smsProperties.getOtpExpiryTime()));
@@ -509,23 +502,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                         log.error("Invalid OTP entered by user {}", userId);
                         return new ResponseEntity<>(new Response("Invalid OTP.", HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
                     }
-            } else {
-                log.error("user details not found for userId {}", userId);
-                return new ResponseEntity<>(new Response("Invalid userId",HttpStatus.BAD_REQUEST),HttpStatus.BAD_REQUEST);
             }
-        } else {
-            log.error("otp cannot be empty.");
-            return new ResponseEntity<>(new Response("otp cannot be empty.",HttpStatus.BAD_REQUEST),HttpStatus.BAD_REQUEST);
-        }
-    }
+
 
 
     @Override
-    public ResponseEntity<Response> createNewPassword(CreateNewPasswordRequest createNewPasswordRequest) throws NullPointerException, ObjectNotFoundException {
-
+    public ResponseEntity<Response> createNewPassword(CreateNewPasswordRequest createNewPasswordRequest) throws NullPointerException, ObjectNotFoundException, BadRequestException {
         log.info("Entering new password for resetPassword request, userId : {} ", createNewPasswordRequest.getUserId());
-            if (createNewPasswordRequest.getNewPassword().equals(createNewPasswordRequest.getConfirmPassword())) {
-                if (createNewPasswordRequest.getNewPassword().length() >= 5) {
+            if (!createNewPasswordRequest.getNewPassword().equals(createNewPasswordRequest.getConfirmPassword())) {
+            throw new BadRequestException("New password is not same as confirm password for, userId : {}", createNewPasswordRequest.getNewPassword(),HttpStatus.BAD_REQUEST);
+            }
+                if (createNewPasswordRequest.getNewPassword().length() < 5) {
+                throw new BadRequestException("Minimum length of new password should be at least 5 characters", HttpStatus.BAD_REQUEST);
+                }
                     User user = getUser(createNewPasswordRequest.getUserId());
                     String mobileNumber = user.getMobileNumber();
                     Long activeOrgId = getActiveOrgId(user.getUserId());
@@ -544,16 +533,5 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                         return new ResponseEntity<>(new Response("Otp is not verified.",HttpStatus.BAD_REQUEST),HttpStatus.BAD_REQUEST);
                     }
                 }
-                else {
-                    log.error("Minimum length of new password should be at least 5 characters");
-                    return new ResponseEntity<>(new Response("Minimum length of new password should be at least 5 characters",HttpStatus.BAD_REQUEST),HttpStatus.BAD_REQUEST);
-                }
-            }
-            else {
-                log.error("New password is not same as confirm password for, userId : {}", createNewPasswordRequest.getUserId());
-                return new ResponseEntity<>(new Response("New password is not same as confirm password",HttpStatus.BAD_REQUEST),HttpStatus.BAD_REQUEST);
 
             }
-        }
-    }
-
