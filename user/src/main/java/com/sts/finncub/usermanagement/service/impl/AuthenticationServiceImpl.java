@@ -27,7 +27,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
@@ -316,6 +315,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         String token = tokenString.split(" ")[1];
         template.delete(KEY + ":" + token);
         log.info("logout successful");
+        UserLoginLog loginLog = userLoginLogRepository.findByTokenId(token);
+	    if(loginLog!=null) {
+	    	loginLog.setLogoutTime(LocalDateTime.now());
+	    	userLoginLogRepository.save(loginLog);
+			log.info("Token marked expired in db for TOKEN {}", token);
+	    }
         return ResponseEntity.ok(response);
     }
 
