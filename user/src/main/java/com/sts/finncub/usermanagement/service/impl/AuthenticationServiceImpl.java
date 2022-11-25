@@ -509,8 +509,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 
     @Override
-    public ResponseEntity<Response> createNewPassword(CreateNewPasswordRequest createNewPasswordRequest) throws NullPointerException, ObjectNotFoundException, BadRequestException {
-        log.info("Entering new password for resetPassword request, userId : {} ", createNewPasswordRequest.getUserId());
+    public ResponseEntity<Response> updatePassword(CreateNewPasswordRequest createNewPasswordRequest) throws NullPointerException, ObjectNotFoundException, BadRequestException {
             if (!createNewPasswordRequest.getNewPassword().equals(createNewPasswordRequest.getConfirmPassword())) {
                 log.error("New password is not same as confirm password for userId : {} ", createNewPasswordRequest.getUserId());
             throw new BadRequestException("New password is not same as confirm password ", HttpStatus.BAD_REQUEST);

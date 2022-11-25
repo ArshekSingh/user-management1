@@ -82,19 +82,19 @@ public class AuthenticationController {
 
     @PostMapping("/forgetPassword")
     public ResponseEntity<Response> forgetPassword(@RequestParam String userId) throws ObjectNotFoundException, InternalServerErrorException, BadRequestException {
-        log.info("forgetPassword request received, userId : {}", userId);
+        log.info("Request initiated to forgetPassword for userId : {}", userId);
         return authenticationService.forgetPassword(userId);
     }
 
-    @PostMapping("/verifyForgetPasswordOtp")
+    @PostMapping("/verifyOtp")
     public ResponseEntity<Response> verifyForgetPasswordOtp(@RequestParam String otp, @RequestParam String userId) throws ObjectNotFoundException, BadRequestException {
-        log.info("Initiating verify otp process");
+        log.info("Request initiated to verifyOtp for userId : {}", userId);
         return authenticationService.verifyForgetPasswordOtp(otp, userId);
     }
 
-    @PostMapping("/createNewPassword")
+    @PostMapping("/updatePassword")
     public ResponseEntity<Response> createNewPassword(@RequestBody CreateNewPasswordRequest createNewPasswordRequest) throws ObjectNotFoundException, BadRequestException {
-        log.info("Initiating create new password process");
-        return authenticationService.createNewPassword(createNewPasswordRequest);
+        log.info("Request initiated to updatePassword for userId : {}", createNewPasswordRequest.getUserId());
+        return authenticationService.updatePassword(createNewPasswordRequest);
     }
 }
