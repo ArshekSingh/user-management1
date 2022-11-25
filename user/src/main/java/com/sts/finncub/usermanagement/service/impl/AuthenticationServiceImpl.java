@@ -477,12 +477,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public ResponseEntity<Response> verifyForgetPasswordOtp(String otp, String userId) throws ObjectNotFoundException, BadRequestException {
         if (!StringUtils.hasText(otp) && !StringUtils.hasText(userId)) {
+            log.error("otp cannot be empty.");
             throw new BadRequestException("otp cannot be empty.",HttpStatus.BAD_REQUEST);
         }
             // first check data is available in database
             User user = getUser(userId);
             if (user == null) {
-            throw new BadRequestException("user details not found for userId {}", userId, HttpStatus.BAD_REQUEST);
+                log.error("user details not found for userId : {} ", userId);
+            throw new BadRequestException("user details not found ", HttpStatus.BAD_REQUEST);
             }
                 String mobileNumber = user.getMobileNumber();
                     Long activeOrgId = getActiveOrgId(userId);
@@ -510,9 +512,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public ResponseEntity<Response> createNewPassword(CreateNewPasswordRequest createNewPasswordRequest) throws NullPointerException, ObjectNotFoundException, BadRequestException {
         log.info("Entering new password for resetPassword request, userId : {} ", createNewPasswordRequest.getUserId());
             if (!createNewPasswordRequest.getNewPassword().equals(createNewPasswordRequest.getConfirmPassword())) {
-            throw new BadRequestException("New password is not same as confirm password for, userId : {}", createNewPasswordRequest.getNewPassword(),HttpStatus.BAD_REQUEST);
+                log.error("New password is not same as confirm password for userId : {} ", createNewPasswordRequest.getUserId());
+            throw new BadRequestException("New password is not same as confirm password ", HttpStatus.BAD_REQUEST);
             }
                 if (createNewPasswordRequest.getNewPassword().length() < 5) {
+                    log.error("Minimum length of new password should be at least 5 characters");
                 throw new BadRequestException("Minimum length of new password should be at least 5 characters", HttpStatus.BAD_REQUEST);
                 }
                     User user = getUser(createNewPasswordRequest.getUserId());
