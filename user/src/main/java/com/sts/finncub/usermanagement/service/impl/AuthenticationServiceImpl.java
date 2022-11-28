@@ -414,7 +414,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             throw new BadRequestException("userId can't be null",HttpStatus.BAD_REQUEST);
         }
         String otp = RandomStringUtils.randomNumeric(6);
-        String message = "OTP for SVCL Loan ID " + userId + " is " + otp;
+        String message = "Use OTP " + otp + " to reset your SVCL-FINNCUB password. Do not share the OTP or your number with anyone-SV Creditline Ltd";
         User user = getUser(userId);
         if (user != null && StringUtils.hasText(user.getMobileNumber())) {
             String mobileNumber = user.getMobileNumber();
