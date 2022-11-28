@@ -4,8 +4,7 @@ import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.exception.InternalServerErrorException;
 import com.sts.finncub.core.exception.ObjectNotFoundException;
 import com.sts.finncub.core.response.Response;
-import com.sts.finncub.usermanagement.request.LoginRequest;
-import com.sts.finncub.usermanagement.request.SignupRequest;
+import com.sts.finncub.usermanagement.request.*;
 import com.sts.finncub.usermanagement.response.LoginResponse;
 import com.sts.finncub.usermanagement.response.SignupResponse;
 import org.springframework.http.ResponseEntity;
@@ -24,4 +23,11 @@ public interface AuthenticationService {
     ResponseEntity<Response> changePassword(LoginRequest password) throws ObjectNotFoundException, BadRequestException;
 
     ResponseEntity<Response> resetPassword(LoginRequest loginRequest) throws ObjectNotFoundException;
+
+    ResponseEntity<Response> forgetPassword(String userId) throws ObjectNotFoundException, InternalServerErrorException, BadRequestException;
+
+    ResponseEntity<Response> verifyForgetPasswordOtp(String otp, String userId) throws ObjectNotFoundException, BadRequestException;
+
+    ResponseEntity<Response> updatePassword(CreateNewPasswordRequest createNewPasswordRequest) throws ObjectNotFoundException, BadRequestException;
+
 }
