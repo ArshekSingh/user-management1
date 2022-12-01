@@ -5,6 +5,7 @@ import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.exception.InternalServerErrorException;
 import com.sts.finncub.core.exception.ObjectNotFoundException;
 import com.sts.finncub.core.response.Response;
+import com.sts.finncub.usermanagement.request.CreateNewPasswordRequest;
 import com.sts.finncub.usermanagement.request.LoginRequest;
 import com.sts.finncub.usermanagement.request.SignupRequest;
 import com.sts.finncub.usermanagement.service.AuthenticationService;
@@ -14,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
@@ -75,5 +77,24 @@ public class AuthenticationController {
         log.info("resetPassword request received , userId : {} ", loginRequest.getUserId());
         ResponseEntity<Response> responseEntity = authenticationService.resetPassword(loginRequest);
         return responseEntity;
+    }
+
+
+    @PostMapping("/forgetPassword")
+    public ResponseEntity<Response> forgetPassword(@RequestParam String userId) throws ObjectNotFoundException, InternalServerErrorException, BadRequestException {
+        log.info("Request initiated to forgetPassword for userId : {}", userId);
+        return authenticationService.forgetPassword(userId);
+    }
+
+    @PostMapping("/verifyOtp")
+    public ResponseEntity<Response> verifyForgetPasswordOtp(@RequestParam String otp, @RequestParam String userId) throws ObjectNotFoundException, BadRequestException {
+        log.info("Request initiated to verifyOtp for userId : {}", userId);
+        return authenticationService.verifyForgetPasswordOtp(otp, userId);
+    }
+
+    @PostMapping("/updatePassword")
+    public ResponseEntity<Response> createNewPassword(@RequestBody CreateNewPasswordRequest createNewPasswordRequest) throws ObjectNotFoundException, BadRequestException {
+        log.info("Request initiated to updatePassword for userId : {}", createNewPasswordRequest.getUserId());
+        return authenticationService.updatePassword(createNewPasswordRequest);
     }
 }
