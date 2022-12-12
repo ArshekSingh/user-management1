@@ -35,6 +35,7 @@ resource "aws_ecs_service" "usermanagement_ecs_service" {
     field = "attribute:ecs.availability-zone"
   }
  lifecycle {
+   create_before_destroy = true
    ignore_changes = [
       capacity_provider_strategy
     ]
