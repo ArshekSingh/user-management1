@@ -14,6 +14,7 @@ import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.core.util.DateTimeUtil;
+import com.sts.finncub.usermanagement.request.FirebaseTokenRequest;
 import com.sts.finncub.usermanagement.request.GeoLocationRequest;
 import com.sts.finncub.usermanagement.request.UserLocationTrackerRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
@@ -405,5 +406,26 @@ public class UserServiceImpl implements UserService, Constant {
             serverSideDropDownDtoList.add(serverSideDropDownDto);
         }
         return new Response(SUCCESS, serverSideDropDownDtoList, HttpStatus.OK);
+    }
+
+    @Override
+    public Response updateFirebaseToken(FirebaseTokenRequest firebaseTokenRequest) {
+        Response response = new Response();
+        try {
+            if (firebaseTokenRequest.getUserId() == null || firebaseTokenRequest.getToken() == null)
+                throw new BadRequestException("UserId/token cannot be empty!", HttpStatus.BAD_REQUEST);
+            Optional<User> optional = userRepository.findByUserId(firebaseTokenRequest.getUserId());
+            if (optional.isEmpty()) throw new BadRequestException("Invalid User Id provided!", HttpStatus.BAD_REQUEST);
+            userRepository.updateFirebaseTokenByUserId(firebaseTokenRequest.getToken(), firebaseTokenRequest.getUserId());
+            response.setMessage("Firebase token saved successfully!");
+            response.setCode(HttpStatus.OK.value());
+            response.setStatus(HttpStatus.OK);
+        } catch (Exception exception) {
+            log.error("Something went wrong while updating firebase token {}", exception.getMessage());
+            response.setMessage(SOMETHING_WRONG);
+            response.setCode(HttpStatus.BAD_REQUEST.value());
+            response.setStatus(HttpStatus.BAD_REQUEST);
+        }
+        return response;
     }
 }
