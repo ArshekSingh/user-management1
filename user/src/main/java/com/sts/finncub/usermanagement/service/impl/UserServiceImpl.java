@@ -410,22 +410,16 @@ public class UserServiceImpl implements UserService, Constant {
 
     @Override
     public Response updateFirebaseToken(FirebaseTokenRequest firebaseTokenRequest) {
-        Response response = new Response();
         try {
             if (firebaseTokenRequest.getUserId() == null || firebaseTokenRequest.getToken() == null)
                 throw new BadRequestException("UserId/token cannot be empty!", HttpStatus.BAD_REQUEST);
             Optional<User> optional = userRepository.findByUserId(firebaseTokenRequest.getUserId());
             if (optional.isEmpty()) throw new BadRequestException("Invalid User Id provided!", HttpStatus.BAD_REQUEST);
             userRepository.updateFirebaseTokenByUserId(firebaseTokenRequest.getToken(), firebaseTokenRequest.getUserId());
-            response.setMessage("Firebase token saved successfully!");
-            response.setCode(HttpStatus.OK.value());
-            response.setStatus(HttpStatus.OK);
+            return new Response("Firebase token saved successfully!", HttpStatus.OK);
         } catch (Exception exception) {
             log.error("Something went wrong while updating firebase token {}", exception.getMessage());
-            response.setMessage(SOMETHING_WRONG);
-            response.setCode(HttpStatus.BAD_REQUEST.value());
-            response.setStatus(HttpStatus.BAD_REQUEST);
+            return new Response(SOMETHING_WRONG, HttpStatus.BAD_REQUEST);
         }
-        return response;
     }
 }
