@@ -5,6 +5,7 @@ import com.sts.finncub.core.dto.UserRoleMappingDto;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.core.response.Response;
+import com.sts.finncub.usermanagement.request.FirebaseTokenRequest;
 import com.sts.finncub.usermanagement.request.GeoLocationRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.service.UserService;
@@ -85,4 +86,11 @@ public class UserController {
         log.info("getAllUserSearchable() invoked , searchUserKey : {} , userType : {}", searchUserKey, userType);
         return userService.getAllUserSearchable(searchUserKey, userType);
     }
+
+    @PostMapping(value = "/postFirebaseToken")
+    public Response updateFirebaseToken(@RequestBody FirebaseTokenRequest firebaseTokenRequest) throws BadRequestException {
+        log.info("Updating firebase token for userId: {}", firebaseTokenRequest.getToken());
+        return userService.updateFirebaseToken(firebaseTokenRequest);
+    }
+
 }
