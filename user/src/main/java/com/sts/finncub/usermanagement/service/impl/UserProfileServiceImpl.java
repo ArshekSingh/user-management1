@@ -25,7 +25,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         String userId = userCredentialService.getUserSession().getUserId();
         log.info("Fetching user profile for Id -" + userId);
         User user = userRepository.findByUserIdIgnoreCase(userId).orElseThrow(() -> new ObjectNotFoundException("No user found for Id -" + userId, HttpStatus.NOT_FOUND));
-        log.info("User details found");
+        log.info("User details found for userId {}", user.getUserId());
         return UserProfileConverter.convertToProfile(user);
     }
 }
