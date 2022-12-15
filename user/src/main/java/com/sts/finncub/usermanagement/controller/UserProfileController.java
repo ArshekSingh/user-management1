@@ -15,6 +15,7 @@ import com.sts.finncub.usermanagement.service.UserProfileService;
 
 import lombok.extern.slf4j.Slf4j;
 
+
 @RestController
 @RequestMapping(value = "api")
 @Slf4j
