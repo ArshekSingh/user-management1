@@ -95,4 +95,5 @@ public class EmployeeRequest {
     private String vehicleNumber;
     private List<String> bcId;
     private String aadharCardNumberOrig;
+    private Integer baseLocation;
 }

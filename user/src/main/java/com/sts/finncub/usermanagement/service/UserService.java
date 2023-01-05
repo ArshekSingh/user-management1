@@ -6,6 +6,7 @@ import com.sts.finncub.core.entity.User;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.core.response.Response;
+import com.sts.finncub.usermanagement.request.CallbackMailRequest;
 import com.sts.finncub.usermanagement.request.FirebaseTokenRequest;
 import com.sts.finncub.usermanagement.request.GeoLocationRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
