@@ -192,6 +192,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employee.setUserId(request.getUserId());
         }
         employee.setSubDepartmentId(request.getSubDepartmentId());
+        employee.setBaseLocation(request.getBaseLocation());
         employeeRepository.save(employee);
     }
 
@@ -236,6 +237,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employeeDto.setDob(DateTimeUtil.dateToString(employee.getDob()));
             employeeDto.setDepartmentName(employee.getEmployeeDepartmentMaster() == null ? "" : employee.getEmployeeDepartmentMaster().getEmpDepartmentName());
             employeeDto.setDesignationName(employee.getEmployeeDesignationMaster() == null ? "" : employee.getEmployeeDesignationMaster().getEmpDesignationName());
+            employeeDto.setBaseLocation(employee.getBaseLocation());
             if (employee.getSubDepartmentId() != null) {
                 EmployeeDepartmentMaster employeeDepartmentMaster = employeeDepartmentRepository.findByOrgIdAndEmpDepartmentId(userSession.getOrganizationId(), employee.getSubDepartmentId());
                 employeeDto.setSubDepartmentName(employeeDepartmentMaster.getEmpDepartmentName());
@@ -299,6 +301,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employeeDto.setBranchJoinDate(DateTimeUtil.dateToString(employee.getBranchJoinDate()));
             employeeDto.setDepartmentName(employee.getEmployeeDepartmentMaster() == null ? "" : employee.getEmployeeDepartmentMaster().getEmpDepartmentName());
             employeeDto.setDesignationName(employee.getEmployeeDesignationMaster() == null ? "" : employee.getEmployeeDesignationMaster().getEmpDesignationName());
+            employeeDto.setBaseLocation(employee.getBaseLocation());
             if (employee.getSubDepartmentId() != null) {
                 EmployeeDepartmentMaster employeeDepartmentMaster = employeeDepartmentRepository.findByOrgIdAndEmpDepartmentId(userSession.getOrganizationId(), employee.getSubDepartmentId());
                 employeeDto.setSubDepartmentName(employeeDepartmentMaster.getEmpDepartmentName());

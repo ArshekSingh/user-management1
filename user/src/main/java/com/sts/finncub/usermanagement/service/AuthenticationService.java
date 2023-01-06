@@ -30,4 +30,5 @@ public interface AuthenticationService {
 
     ResponseEntity<Response> updatePassword(CreateNewPasswordRequest createNewPasswordRequest) throws ObjectNotFoundException, BadRequestException;
 
+    Response sendCallbackMail(CallbackMailRequest callbackMailRequest);
 }
