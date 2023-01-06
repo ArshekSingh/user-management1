@@ -5,6 +5,7 @@ import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.exception.InternalServerErrorException;
 import com.sts.finncub.core.exception.ObjectNotFoundException;
 import com.sts.finncub.core.response.Response;
+import com.sts.finncub.usermanagement.request.CallbackMailRequest;
 import com.sts.finncub.usermanagement.request.CreateNewPasswordRequest;
 import com.sts.finncub.usermanagement.request.LoginRequest;
 import com.sts.finncub.usermanagement.request.SignupRequest;
@@ -96,5 +97,10 @@ public class AuthenticationController {
     public ResponseEntity<Response> createNewPassword(@RequestBody CreateNewPasswordRequest createNewPasswordRequest) throws ObjectNotFoundException, BadRequestException {
         log.info("Request initiated to updatePassword for userId : {}", createNewPasswordRequest.getUserId());
         return authenticationService.updatePassword(createNewPasswordRequest);
+    }
+
+    @PostMapping(value = "/callback-mail")
+    public Response sendCallbackMail(@RequestBody CallbackMailRequest callbackMailRequest) throws BadRequestException {
+        return authenticationService.sendCallbackMail(callbackMailRequest);
     }
 }
