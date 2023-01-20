@@ -193,6 +193,15 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         }
         employee.setSubDepartmentId(request.getSubDepartmentId());
         employee.setBaseLocation(request.getBaseLocation());
+        //Set branch manager id as null when employee has been changed to inactive
+        if (request.getStatus().equals("X") || request.getStatus().equals("Inactive")) {
+            Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchId(employee.getBranchId());
+            if (branchMaster.isPresent()) {
+                BranchMaster updatedBranchMaster = branchMaster.get();
+                updatedBranchMaster.setBranchManagerId(null);
+                branchMasterRepository.save(updatedBranchMaster);
+            }
+        }
         employeeRepository.save(employee);
     }
 
