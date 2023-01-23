@@ -288,7 +288,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 employeeDto.setSubDepartmentName(employeeDepartmentMaster == null ? "" : employeeDepartmentMaster.getEmpDepartmentName());
             }
             employeeDto.setEmergencyCon(employee.getEmergencyCon());
-            employeeDto.setInsertedOn(DateTimeUtil.dateToString(LocalDate.from(employee.getInsertedOn())));
+            employeeDto.setInsertedOn(DateTimeUtil.dateTimeToString(employee.getInsertedOn(),DD_MM_YYYY));
             employeeDtoList.add(employeeDto);
         }
         return new Response(SUCCESS, employeeDtoList, count, HttpStatus.OK);
