@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -287,6 +288,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 employeeDto.setSubDepartmentName(employeeDepartmentMaster == null ? "" : employeeDepartmentMaster.getEmpDepartmentName());
             }
             employeeDto.setEmergencyCon(employee.getEmergencyCon());
+            employeeDto.setInsertedOn(DateTimeUtil.dateTimeToString(employee.getInsertedOn(),DD_MM_YYYY));
             employeeDtoList.add(employeeDto);
         }
         return new Response(SUCCESS, employeeDtoList, count, HttpStatus.OK);
