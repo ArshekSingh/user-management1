@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -193,6 +194,17 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         }
         employee.setSubDepartmentId(request.getSubDepartmentId());
         employee.setBaseLocation(request.getBaseLocation());
+        //Set branch manager id as null when employee has been changed to inactive
+        if (StringUtils.hasText(request.getStatus())) {
+            if ("X".equals(request.getStatus()) || "Inactive".equals(request.getStatus())) {
+                Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchId(employee.getBranchId());
+                if (branchMaster.isPresent()) {
+                    BranchMaster updatedBranchMaster = branchMaster.get();
+                    updatedBranchMaster.setBranchManagerId(null);
+                    branchMasterRepository.save(updatedBranchMaster);
+                }
+            }
+        }
         employeeRepository.save(employee);
     }
 
@@ -276,6 +288,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 employeeDto.setSubDepartmentName(employeeDepartmentMaster == null ? "" : employeeDepartmentMaster.getEmpDepartmentName());
             }
             employeeDto.setEmergencyCon(employee.getEmergencyCon());
+            employeeDto.setInsertedOn(DateTimeUtil.dateTimeToString(employee.getInsertedOn(),DD_MM_YYYY));
             employeeDtoList.add(employeeDto);
         }
         return new Response(SUCCESS, employeeDtoList, count, HttpStatus.OK);
