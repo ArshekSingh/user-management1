@@ -4,8 +4,8 @@ import com.sts.finncub.core.response.Response;
 
 public interface AppVersionService {
 
-    Response getCurrentVersion();
+    Response getCurrentVersion(String key);
 
-    Response updateAppVersion(String value);
+    Response updateAppVersion(String key, String value);
 
 }

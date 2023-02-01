@@ -13,12 +13,12 @@ public class AppVersionController {
     private AppVersionService appVersionService;
 
     @GetMapping("/getCurrentVersion")
-    public Response getCurrentVersion() {
-        return appVersionService.getCurrentVersion();
+    public Response getCurrentVersion(@RequestParam String key) {
+        return appVersionService.getCurrentVersion(key);
     }
 
     @PostMapping("/updateAppVersion")
-    public Response updateAppVersion(@RequestParam String value) {
-        return appVersionService.updateAppVersion(value);
+    public Response updateAppVersion(@RequestParam String key, @RequestParam String value) {
+        return appVersionService.updateAppVersion(key, value);
     }
 }
