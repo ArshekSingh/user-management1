@@ -1,8 +1,10 @@
 package com.sts.finncub.usermanagement.service.impl;
 
 import com.sts.finncub.core.entity.MiscellaneousService;
+import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.MiscellaneousServiceRepository;
 import com.sts.finncub.core.response.Response;
+import com.sts.finncub.core.util.ValidationUtils;
 import com.sts.finncub.usermanagement.service.AppVersionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -25,7 +27,8 @@ public class AppVersionServiceImpl implements AppVersionService {
     }
 
     @Override
-    public Response updateAppVersion(String key, String value) {
+    public Response updateAppVersion(String key, String value) throws BadRequestException {
+        ValidationUtils.validateValue(value);
         MiscellaneousService versionDetails = miscellaneousServiceRepository.findByKey(key);
         if (versionDetails != null) {
             versionDetails.setValue(value);
