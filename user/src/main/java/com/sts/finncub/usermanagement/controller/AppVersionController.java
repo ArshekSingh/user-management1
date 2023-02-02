@@ -1,5 +1,6 @@
 package com.sts.finncub.usermanagement.controller;
 
+import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.service.AppVersionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,12 +14,12 @@ public class AppVersionController {
     private AppVersionService appVersionService;
 
     @GetMapping("/getCurrentVersion")
-    public Response getCurrentVersion() {
-        return appVersionService.getCurrentVersion();
+    public Response getCurrentVersion(@RequestParam String key) {
+        return appVersionService.getCurrentVersion(key);
     }
 
     @PostMapping("/updateAppVersion")
-    public Response updateAppVersion(@RequestParam String value) {
-        return appVersionService.updateAppVersion(value);
+    public Response updateAppVersion(@RequestParam String key, @RequestParam String value) throws BadRequestException {
+        return appVersionService.updateAppVersion(key, value);
     }
 }
