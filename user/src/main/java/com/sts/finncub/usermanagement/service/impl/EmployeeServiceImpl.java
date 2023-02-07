@@ -27,7 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -534,5 +533,34 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         request.setIsMeetingTransfer(StringUtils.hasText(transferRequest.getIsMeetingTransfer()) ? transferRequest.getIsMeetingTransfer() : "");
         request.setBasedLocationId(transferRequest.getBaseLocationId() != null ? transferRequest.getBaseLocationId() : 0L);
         return employeeDao.employeeTransferPackageCall(request, userSession.getOrganizationId(), userSession.getUserId());
+    }
+
+    @Override
+    public Response validateActiveAadhaarOrPanOrMobForSaveEmployee(EmployeeRequest request) {
+        //check dedupe by Aadhaar card/Pan card/mobile number
+        List<String> messages = new ArrayList<>();
+        if (request.getAadharCard() != null) {
+            List<Employee> employeesWithAadhaar = employeeRepository.findByAadharCardNumber(request.getAadharCard());
+            if (!CollectionUtils.isEmpty(employeesWithAadhaar)) {
+                messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + employeesWithAadhaar.stream().filter(o -> "A".equalsIgnoreCase(o.getStatus())).map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Aadhaar-" + request.getAadharCard() + " you cannot add existing employee");
+            }
+        }
+        if (StringUtils.hasText(request.getPancardNo())) {
+            List<Employee> employeesWithPan = employeeRepository.findByPancardNumber(request.getPancardNo());
+            if (!CollectionUtils.isEmpty(employeesWithPan)) {
+                messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + employeesWithPan.stream().filter(o -> "A".equalsIgnoreCase(o.getStatus())).map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and PAN-" + request.getPancardNo() + " you cannot add existing employee");
+            }
+        }
+        if (request.getPersonalMob() != null) {
+            List<Employee> employeesWithMobile = employeeRepository.findByPersonalMobileNumber(request.getPersonalMob());
+            if (!CollectionUtils.isEmpty(employeesWithMobile)) {
+                messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + employeesWithMobile.stream().filter(o -> "A".equalsIgnoreCase(o.getStatus())).map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Mobile-" + request.getPersonalMob() + " you cannot add existing employee");
+            }
+        }
+
+        if (!messages.isEmpty()) {
+            return new Response(SUCCESS, messages, (long) messages.size(), HttpStatus.OK);
+        }
+        return new Response(SUCCESS, messages, (long) messages.size(), HttpStatus.BAD_REQUEST);
     }
 }

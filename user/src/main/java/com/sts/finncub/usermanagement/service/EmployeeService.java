@@ -25,4 +25,6 @@ public interface EmployeeService {
     Response validateAadhaarPanMobForSaveEmployee(EmployeeRequest request);
 
     Response validateAadhaarPanMobForUpdateEmployee(EmployeeRequest request);
+
+    Response validateActiveAadhaarOrPanOrMobForSaveEmployee(EmployeeRequest request);
 }
