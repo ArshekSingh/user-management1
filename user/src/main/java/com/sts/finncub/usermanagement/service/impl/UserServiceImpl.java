@@ -424,12 +424,12 @@ public class UserServiceImpl implements UserService, Constant {
     }
 
     @Override
-    public Response getFoForRamson() {
+    public List<RamsonUserRequest> getFoForRamson() {
         List<VwFoUserExport> vwFoUserExportList = vwFoUserExportRepository.findAll();
         List<RamsonUserRequest> ramsonUserRequestList = new ArrayList<>();
         for (VwFoUserExport vwFoUserExport : vwFoUserExportList) {
             ramsonUserRequestList.add(ramsonUserSchedulerAssembler.prepareRequest(vwFoUserExport));
         }
-        return new Response(SUCCESS, ramsonUserRequestList, HttpStatus.OK);
+        return ramsonUserRequestList;
     }
 }

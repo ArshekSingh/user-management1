@@ -8,7 +8,10 @@ import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.request.FirebaseTokenRequest;
 import com.sts.finncub.usermanagement.request.GeoLocationRequest;
+import com.sts.finncub.usermanagement.request.RamsonUserRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
+
+import java.util.List;
 
 public interface UserService {
 
@@ -38,5 +41,5 @@ public interface UserService {
 
     void deleteTokenByUserId(User userDetail);
 
-    Response getFoForRamson();
+    List<RamsonUserRequest> getFoForRamson();
 }
