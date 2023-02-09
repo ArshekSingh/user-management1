@@ -5,14 +5,16 @@ import com.sts.finncub.core.dto.UserRoleMappingDto;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.core.response.Response;
-import com.sts.finncub.usermanagement.request.CallbackMailRequest;
 import com.sts.finncub.usermanagement.request.FirebaseTokenRequest;
 import com.sts.finncub.usermanagement.request.GeoLocationRequest;
+import com.sts.finncub.usermanagement.request.RamsonUserRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -94,4 +96,8 @@ public class UserController {
         return userService.updateFirebaseToken(firebaseTokenRequest);
     }
 
+    @GetMapping("/getFoForRamson")
+    private List<RamsonUserRequest> getFoForRamson() {
+        return userService.getFoForRamson();
+    }
 }
