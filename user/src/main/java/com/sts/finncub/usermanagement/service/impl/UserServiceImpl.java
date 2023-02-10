@@ -14,15 +14,13 @@ import com.sts.finncub.core.request.FilterRequest;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.core.util.DateTimeUtil;
+import com.sts.finncub.usermanagement.assembler.RamsonUserSchedulerAssembler;
 import com.sts.finncub.usermanagement.request.*;
 import com.sts.finncub.usermanagement.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -52,6 +50,8 @@ public class UserServiceImpl implements UserService, Constant {
     private final UserLoginLogRepository userLoginLogRepository;
     private final UserRedisRepository userRedisRepository;
     private final Gson gson;
+    private final VwFoUserExportRepository vwFoUserExportRepository;
+    private final RamsonUserSchedulerAssembler ramsonUserSchedulerAssembler;
 
     @Override
     public Response getAllUserDetailsByFilterRequest(FilterRequest request) throws BadRequestException {
@@ -421,5 +421,17 @@ public class UserServiceImpl implements UserService, Constant {
             log.error("Something went wrong while updating firebase token {}", exception.getMessage());
             return new Response(SOMETHING_WRONG, HttpStatus.BAD_REQUEST);
         }
+    }
+
+    @Override
+    public List<RamsonUserRequest> getFoForRamson() {
+        List<VwFoUserExport> vwFoUserExportList = vwFoUserExportRepository.findAll();
+        List<RamsonUserRequest> ramsonUserRequestList = new ArrayList<>();
+        if (!CollectionUtils.isEmpty(vwFoUserExportList)) {
+            for (VwFoUserExport vwFoUserExport : vwFoUserExportList) {
+                ramsonUserRequestList.add(ramsonUserSchedulerAssembler.prepareRequest(vwFoUserExport));
+            }
+        }
+        return ramsonUserRequestList;
     }
 }
