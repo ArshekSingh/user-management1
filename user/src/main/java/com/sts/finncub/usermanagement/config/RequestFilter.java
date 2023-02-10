@@ -31,7 +31,7 @@ public class RequestFilter implements Filter {
     TokenValidator tokenValidator;
 
     @Autowired
-    private RamsonProperties ramsonProperties;
+    RamsonProperties ramsonProperties;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -43,7 +43,7 @@ public class RequestFilter implements Filter {
         if (servletRequest instanceof HttpServletRequest && ((HttpServletRequest) servletRequest).getRequestURI().contains("/api")) {
             HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
             String token = httpServletRequest.getHeader("Authorization");
-            String acessKey = httpServletRequest.getHeader("accessKey");
+            String accessKey = httpServletRequest.getHeader("accessKey");
             String secretKey = httpServletRequest.getHeader("secretKey");
             log.info("Headers - {}", httpServletRequest.getHeaderNames());
             if (StringUtils.hasText(token)) {
@@ -57,8 +57,8 @@ public class RequestFilter implements Filter {
                     log.warn("Request is not valid - exception {}" + exception.getMessage());
                     isValidRequest = false;
                 }
-            } else if (StringUtils.hasText(acessKey) && StringUtils.hasText(secretKey)) {
-                if (!validateAccessKey(acessKey) || !validateSecretKey(secretKey)) {
+            } else if (StringUtils.hasText(accessKey) && StringUtils.hasText(secretKey)) {
+                if (!validateAccessKey(accessKey) || !validateSecretKey(secretKey)) {
                     isValidRequest = false;
                 }
             } else {
@@ -78,8 +78,8 @@ public class RequestFilter implements Filter {
         }
     }
 
-    private boolean validateAccessKey(String acessKey) {
-        if (ramsonProperties.getAccessKey().equalsIgnoreCase(acessKey)) return true;
+    private boolean validateAccessKey(String accessKey) {
+        if (ramsonProperties.getAccessKey().equalsIgnoreCase(accessKey)) return true;
         return false;
     }
 
