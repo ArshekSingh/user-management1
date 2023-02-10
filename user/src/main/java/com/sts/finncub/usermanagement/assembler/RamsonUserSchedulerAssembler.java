@@ -1,18 +1,13 @@
 package com.sts.finncub.usermanagement.assembler;
 
-import com.sts.finncub.core.entity.BranchMaster;
 import com.sts.finncub.core.entity.VwFoUserExport;
-import com.sts.finncub.core.repository.BranchMasterRepository;
 import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.request.RamsonUserRequest;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 @Component
 public class RamsonUserSchedulerAssembler {
-    @Autowired
-    private BranchMasterRepository branchMasterRepository;
 
     public RamsonUserRequest prepareRequest(VwFoUserExport vwFoUserExport) {
         RamsonUserRequest request = new RamsonUserRequest();
@@ -42,9 +37,8 @@ public class RamsonUserSchedulerAssembler {
         if (StringUtils.hasText(vwFoUserExport.getBranchCode())) {
             request.setBranchCode(vwFoUserExport.getBranchCode());
         }
-        BranchMaster branchMaster = branchMasterRepository.findByBranchCodeAndOrgId(vwFoUserExport.getBranchCode(), request.getOrgId());
-        if (branchMaster != null) {
-            request.setBranchId(branchMaster.getBranchId());
+        if (vwFoUserExport.getDistrictId() != null) {
+            request.setBranchId(vwFoUserExport.getDistrictId());
         }
         if (vwFoUserExport.getInsertedOn() != null) {
             request.setInsertedOn(DateTimeUtil.dateTimeToString(vwFoUserExport.getInsertedOn()));
