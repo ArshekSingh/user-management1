@@ -576,29 +576,4 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         }
         return new Response(SUCCESS, messages, (long) messages.size(), HttpStatus.BAD_REQUEST);
     }
-
-    private void validateActiveEmployeeOrNot(EmployeeRequest request) throws BadRequestException {
-        List<Employee> employees = employeeRepository.findByPersonalMobOrAadharCardOrPancardNoAndStatus(request.getPersonalMob(), request.getAadharCard(), request.getPancardNo(), "A");
-        if(!CollectionUtils.isEmpty(employees)) {
-            if(request.getPersonalMob() != null) {
-                Optional<Employee> employeeByMob = employees.stream().filter(o -> request.getPersonalMob().equals(o.getPersonalMob())).findFirst();
-                if(employeeByMob.isPresent()) {
-                    throw new BadRequestException("Employee already in active status with given mob no " + request.getPersonalMob(), HttpStatus.BAD_REQUEST);
-                }
-            }
-            if(request.getAadharCard() != null) {
-                Optional<Employee> employeeByAadhar = employees.stream().filter(o -> request.getAadharCard().equalsIgnoreCase(o.getAadharCard())).findFirst();
-                if(employeeByAadhar.isPresent()) {
-                    throw new BadRequestException("Employee already in active status with given Aadhar no. " + request.getAadharCard(), HttpStatus.BAD_REQUEST);
-                }
-            }
-            if(request.getPancardNo() != null) {
-                Optional<Employee> employeeByPanCard = employees.stream().filter(o -> request.getPancardNo().equalsIgnoreCase(o.getPancardNo())).findFirst();
-                if(employeeByPanCard.isPresent()) {
-                    throw new BadRequestException("Employee already in active status with given Pan no. " + request.getPancardNo(), HttpStatus.BAD_REQUEST);
-                }
-            }
-        }
-
-    }
 }

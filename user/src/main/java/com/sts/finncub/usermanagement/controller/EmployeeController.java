@@ -73,9 +73,4 @@ public class EmployeeController {
     public Response validateAadhaarPanMobForUpdateEmployee(@RequestBody EmployeeRequest request) {
         return employeeService.validateAadhaarPanMobForUpdateEmployee(request);
     }
-
-    @PostMapping("/validateActiveAadhaarOrPanOrMobForSaveEmployee")
-    public Response validateActiveAadhaarOrPanOrMobForSaveEmployee(@RequestBody EmployeeRequest request) {
-        return employeeService.validateActiveAadhaarOrPanOrMobForSaveEmployee(request);
-    }
 }
