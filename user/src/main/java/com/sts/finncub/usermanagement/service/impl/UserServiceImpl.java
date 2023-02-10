@@ -427,7 +427,7 @@ public class UserServiceImpl implements UserService, Constant {
     public List<RamsonUserRequest> getFoForRamson() {
         List<VwFoUserExport> vwFoUserExportList = vwFoUserExportRepository.findAll();
         List<RamsonUserRequest> ramsonUserRequestList = new ArrayList<>();
-        if (!CollectionUtils.isEmpty(ramsonUserRequestList)) {
+        if (!CollectionUtils.isEmpty(vwFoUserExportList)) {
             for (VwFoUserExport vwFoUserExport : vwFoUserExportList) {
                 ramsonUserRequestList.add(ramsonUserSchedulerAssembler.prepareRequest(vwFoUserExport));
             }
