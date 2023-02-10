@@ -57,7 +57,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         validateRequest(request);
         Response response = validateActiveAadhaarOrPanOrMobForSaveEmployee(request);
         if(200 == response.getCode()) {
-            return new Response(response.getMessage(), response.getData(), response.getTotalCount(), response.getStatus());
+            return new Response(response.getMessage(), response.getData(), response.getStatus());
         }
         Employee employee = new Employee();
         String userEmployeeId = userRepository.getGeneratedUserEmployeeId(userSession.getOrganizationId(), "EMP");
@@ -572,8 +572,8 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             }
         }
         if (!messages.isEmpty()) {
-            return new Response(SUCCESS, messages, (long) messages.size(), HttpStatus.OK);
+            return new Response(SUCCESS, messages, HttpStatus.OK);
         }
-        return new Response(SUCCESS, messages, (long) messages.size(), HttpStatus.BAD_REQUEST);
+        return new Response(SUCCESS, messages, HttpStatus.BAD_REQUEST);
     }
 }
