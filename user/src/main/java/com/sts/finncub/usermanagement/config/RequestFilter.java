@@ -1,6 +1,7 @@
 package com.sts.finncub.usermanagement.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sts.finncub.core.components.RamsonProperties;
 import com.sts.finncub.core.constants.RestMappingConstants;
 import com.sts.finncub.core.entity.UserSession;
 import com.sts.finncub.core.exception.UnauthorizedException;
@@ -14,6 +15,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -28,20 +30,23 @@ public class RequestFilter implements Filter {
     @Autowired
     TokenValidator tokenValidator;
 
+    @Autowired
+    RamsonProperties ramsonProperties;
+
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
     }
 
     @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
-            throws IOException, ServletException {
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         boolean isValidRequest = true;
-        if (servletRequest instanceof HttpServletRequest
-                && ((HttpServletRequest) servletRequest).getRequestURI().contains("/api") && !((HttpServletRequest) servletRequest).getRequestURI().contains("/api-docs")) {
+        if (servletRequest instanceof HttpServletRequest && ((HttpServletRequest) servletRequest).getRequestURI().contains("/api")) {
             HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
             String token = httpServletRequest.getHeader("Authorization");
+            String accessKey = httpServletRequest.getHeader("accessKey");
+            String secretKey = httpServletRequest.getHeader("secretKey");
             log.info("Headers - {}", httpServletRequest.getHeaderNames());
-            if (token != null && !token.isEmpty()) {
+            if (StringUtils.hasText(token)) {
                 try {
                     String tokenValue = token.split(" ")[1];
                     UserSession userSession = tokenValidator.validateTokenAndReturnUserSession(tokenValue, httpServletRequest.getHeader("user-agent"));
@@ -50,6 +55,10 @@ public class RequestFilter implements Filter {
                     } else throw new UnauthorizedException(RestMappingConstants.AUTHENTICATION_FAILED);
                 } catch (Exception exception) {
                     log.warn("Request is not valid - exception {}" + exception.getMessage());
+                    isValidRequest = false;
+                }
+            } else if (StringUtils.hasText(accessKey) && StringUtils.hasText(secretKey)) {
+                if (!validateAccessKey(accessKey) || !validateSecretKey(secretKey)) {
                     isValidRequest = false;
                 }
             } else {
@@ -62,12 +71,21 @@ public class RequestFilter implements Filter {
             log.info("Request is valid");
             filterChain.doFilter(servletRequest, servletResponse);
         } else {
-            byte[] response = restResponseBytes(
-                    new Response(RestMappingConstants.AUTHENTICATION_FAILED, HttpStatus.UNAUTHORIZED));
+            byte[] response = restResponseBytes(new Response(RestMappingConstants.AUTHENTICATION_FAILED, HttpStatus.UNAUTHORIZED));
             servletResponse.getOutputStream().write(response);
             ((HttpServletResponse) servletResponse).setHeader("Content-Type", "application/json");
             ((HttpServletResponse) servletResponse).setStatus(401);
         }
+    }
+
+    private boolean validateAccessKey(String accessKey) {
+        if (ramsonProperties.getAccessKey().equalsIgnoreCase(accessKey)) return true;
+        return false;
+    }
+
+    private boolean validateSecretKey(String secretKey) {
+        if (ramsonProperties.getSecretKey().equalsIgnoreCase(secretKey)) return true;
+        return false;
     }
 
     private void setSecurityContext(UserSession userSession) {
@@ -77,12 +95,10 @@ public class RequestFilter implements Filter {
 
     @Override
     public void destroy() {
-
     }
 
     private byte[] restResponseBytes(Response response) throws IOException {
         String serialized = new ObjectMapper().writeValueAsString(response);
         return serialized.getBytes();
     }
-
 }
