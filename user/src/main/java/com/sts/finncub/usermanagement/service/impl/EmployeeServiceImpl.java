@@ -571,7 +571,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 }
             }
         }
-        if (!messages.isEmpty()) {
+        if (!CollectionUtils.isEmpty(messages)) {
             return new Response(SUCCESS, messages, HttpStatus.OK);
         }
         return new Response(SUCCESS, messages, HttpStatus.BAD_REQUEST);
