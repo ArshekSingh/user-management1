@@ -45,5 +45,16 @@ pipeline {
                 }
             }
         }
+        stage('Triggering CD Job') {
+            steps{
+                script {
+                    build job: "non-prod-svcl-finncub-services-deploy-pipeline",
+                    parameters: [
+                        [ $class: 'StringParameterValue', name: 'ImageNumber', value: "${BUILD_NUMBER}"],
+                        [ $class: 'StringParameterValue', name: 'APP', value: "${APP}"]                      
+                    ]
+                }
+            }
+        }
     }
 }
