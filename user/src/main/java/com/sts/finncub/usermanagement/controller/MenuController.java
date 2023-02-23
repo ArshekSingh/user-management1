@@ -24,7 +24,7 @@ public class MenuController {
         this.menuService = menuService;
     }
 
-    @GetMapping("menu")
+    @GetMapping("/menu")
     public ResponseEntity<Response> menu() {
         log.info("Request received to fetch menus");
         MenuResponse response = null;
@@ -42,25 +42,25 @@ public class MenuController {
         return menuService.getMenuSearchable(menuSearchableKey);
     }
 
-    @GetMapping(value = "getMenuRoleList/{id}")
+    @GetMapping(value = "/getMenuRoleList/{id}")
     public Response getMenuRoleListAssignedOrAvailable(@PathVariable Long id) {
         log.info("getMenuRoleListAssignedOrAvailable invoked , menuId : {}", id);
         return menuService.getMenuRoleListAssignedOrAvailable(id);
     }
 
-    @PostMapping(value = "assignMenuToRoles")
+    @PostMapping(value = "/assignMenuToRoles")
     public Response assignMenuToRoles(@RequestBody MenuRoleMappingDto menuRoleMappingDto) {
         log.info("assignMenuToRoles invoked , menuId : {}", menuRoleMappingDto.getId());
         return menuService.assignMenuToRoles(menuRoleMappingDto);
     }
 
-    @GetMapping(value = "getMenuAssignedOrAvailableForRole/{roleId}")
+    @GetMapping(value = "/getMenuAssignedOrAvailableForRole/{roleId}")
     public Response getMenuAssignedOrAvailableForRole(@PathVariable Long roleId) {
         log.info("getMenuAssignedOrAvailableForRole() invoked for roleId : {}", roleId);
         return menuService.getMenuAssignedOrAvailableForRole(roleId);
     }
 
-    @PostMapping(value = "assignRoleToMenus")
+    @PostMapping(value = "/assignRoleToMenus")
     public Response assignRoleToMenus(@RequestBody MenuRoleMappingDto menuRoleMappingDto) throws BadRequestException {
 
         if (menuRoleMappingDto.isValid(menuRoleMappingDto)) {
