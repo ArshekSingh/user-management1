@@ -1,30 +1,29 @@
 pipeline {
     agent any
     environment {
-    AWS_ACCOUNT_ID='305949049023'
+    AWS_ACCOUNT_ID='973152351290'
     AWS_DEFAULT_REGION='ap-south-1'
-    app='usermanagement'
-    IMAGE_REPO_NAME='sastech-devops-repository'
-    IMAGE_TAG='account-${BUILD_NUMBER}'
-    REPOSITORY_URI = '${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}'
-    AWS_ACCESS_KEY_ID     = credentials('access_key')
-    AWS_SECRET_ACCESS_KEY = credentials('secret_key')
+    ENVIRONMENT='non-prod'
+    CUSTOMER_NAME='svcl'
+    PRODUCT='finncub'
+    APP='usermanagement'
     }
     stages {
 
         stage('Clone Repo') {
             steps {
-				checkout([$class: 'GitSCM', branches: [[name: '*/develop']],
+                cleanWs()
+				checkout([$class: 'GitSCM', branches: [[name: '*/uat']],
 				doGenerateSubmoduleConfigurations: true, extensions: [],
-				submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'BItBucket_devops_admin',
-				url: 'https://devops_admin_sas@bitbucket.org/finstudio/user-management.git']]])
+				submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'BitbucketCreds',
+				url: 'https://SasDevOpsAdmin@bitbucket.org/finstudio/user-management.git']]])
                 
             }
         }
         stage('Logging into AWS ECR') {
             steps {
                 script {
-                    sh 'aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 305949049023.dkr.ecr.ap-south-1.amazonaws.com'
+                    sh 'aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com'
                 }
             }
 
@@ -33,54 +32,30 @@ pipeline {
             steps{
                 script {
                 sh 'git submodule update --init --recursive'
-                sh 'mvn clean install'
-                sh 'cp /var/lib/jenkins/disbursement-1.0.0.jar .'
-				sh 'docker build -t sastech-devops-repository-${app} .'
+                withDockerContainer(image:'maven:latest',args:'--entrypoint=""') {
+                     sh 'mvn clean install'
+                }
+				sh 'docker build -t ${ENVIRONMENT}-${CUSTOMER_NAME}-${PRODUCT}-${APP}-service .'
                 }
             }
         }
 		stage('Pushing to ECR') {
             steps{
                 script {
-                    sh 'docker tag sastech-devops-repository-${app}:latest 305949049023.dkr.ecr.ap-south-1.amazonaws.com/sastech-devops-repository:${app}-${BUILD_NUMBER}'
-                    sh 'docker push 305949049023.dkr.ecr.ap-south-1.amazonaws.com/sastech-devops-repository:${app}-${BUILD_NUMBER}'
+                    sh 'docker tag ${ENVIRONMENT}-${CUSTOMER_NAME}-${PRODUCT}-${APP}-service:latest ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${ENVIRONMENT}-${CUSTOMER_NAME}-${PRODUCT}-${APP}-service:${BUILD_NUMBER}'
+                    sh 'docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${ENVIRONMENT}-${CUSTOMER_NAME}-${PRODUCT}-${APP}-service:${BUILD_NUMBER}'
+                    sh 'docker rmi ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${ENVIRONMENT}-${CUSTOMER_NAME}-${PRODUCT}-${APP}-service:${BUILD_NUMBER} --force'
                 }
             }
         }
         stage('Triggering CD Job') {
             steps{
                 script {
-                    build job: "../CD-Micro-Services/User-Management",
+                    build job: "non-prod-svcl-finncub-services-deploy-pipeline",
                     parameters: [
                         [ $class: 'StringParameterValue', name: 'ImageNumber', value: "${BUILD_NUMBER}"],
-                        [ $class: 'StringParameterValue', name: 'Branch', value: "develop"],
-                        [ $class: 'StringParameterValue', name: 'env', value: "uat"],
-                        [ $class: 'StringParameterValue', name: 'cluster_name', value: "SASTech-Devops-Preprod"]                      
+                        [ $class: 'StringParameterValue', name: 'APP', value: "${APP}"]                      
                     ]
-                }
-            }
-        }
-    }
-    post {
-        always {
-            script {
-                if (currentBuild.currentResult == 'SUCCESS') {
-                    emailext subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - SUCCESS!!!',
-                    body: '$DEFAULT_CONTENT',
-                    recipientProviders: [
-                    [$class: 'RequesterRecipientProvider']
-                    ],
-                    replyTo: '$DEFAULT_REPLYTO',
-                    to: 'finncub.dev@sastechstudio.com'
-                }
-                if (currentBuild.currentResult == 'FAILURE') {
-                    emailext subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - FAILED!!!',
-                    body: '$DEFAULT_CONTENT',
-                    recipientProviders: [
-                    [$class: 'RequesterRecipientProvider']
-                    ],
-                    replyTo: '$DEFAULT_REPLYTO',
-                    to: 'finncub.dev@sastechstudio.com'
                 }
             }
         }
