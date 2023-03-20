@@ -56,7 +56,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         UserSession userSession = userCredentialService.getUserSession();
         validateRequest(request);
         Response response = validateActiveAadhaarOrPanOrMobForSaveEmployee(request);
-        if (200 == response.getCode()) {
+        if(200 == response.getCode()) {
             return new Response(response.getMessage(), response.getData(), response.getStatus());
         }
         Employee employee = new Employee();
@@ -208,17 +208,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 }
             }
         }
-        employee = employeeRepository.save(employee);
-        if (StringUtils.hasText(request.getIsManager()) && request.getBranchId() != null) {
-            if ("Y".equalsIgnoreCase(request.getIsManager())) {
-                Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchId(request.getBranchId());
-                if (branchMaster.isPresent()) {
-                    BranchMaster updatedBranchMaster = branchMaster.get();
-                    updatedBranchMaster.setBranchManagerId(String.valueOf(employee.getEmployeeId()));
-                    branchMasterRepository.save(updatedBranchMaster);
-                }
-            }
-        }
+        employeeRepository.save(employee);
     }
 
     private void validateRequest(EmployeeRequest request) throws BadRequestException {
@@ -301,7 +291,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 employeeDto.setSubDepartmentName(employeeDepartmentMaster == null ? "" : employeeDepartmentMaster.getEmpDepartmentName());
             }
             employeeDto.setEmergencyCon(employee.getEmergencyCon());
-            employeeDto.setInsertedOn(DateTimeUtil.dateTimeToString(employee.getInsertedOn(), DD_MM_YYYY));
+            employeeDto.setInsertedOn(DateTimeUtil.dateTimeToString(employee.getInsertedOn(),DD_MM_YYYY));
             employeeDtoList.add(employeeDto);
         }
         return new Response(SUCCESS, employeeDtoList, count, HttpStatus.OK);
@@ -557,7 +547,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             List<Employee> employeesWithAadhaar = employeeRepository.findByAadharCardNumber(request.getAadharCard());
             if (!CollectionUtils.isEmpty(employeesWithAadhaar)) {
                 List<String> employeeWithAadhar = employeesWithAadhaar.stream().filter(o -> "A".equalsIgnoreCase(o.getStatus())).map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList());
-                if (!CollectionUtils.isEmpty(employeeWithAadhar)) {
+                if(!CollectionUtils.isEmpty(employeeWithAadhar)) {
                     messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + employeeWithAadhar + " and Aadhaar-" + request.getAadharCard() + " you cannot add existing employee");
                 }
 
@@ -567,7 +557,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             List<Employee> employeesWithPan = employeeRepository.findByPancardNumber(request.getPancardNo());
             if (!CollectionUtils.isEmpty(employeesWithPan)) {
                 List<String> employeeWithPan = employeesWithPan.stream().filter(o -> "A".equalsIgnoreCase(o.getStatus())).map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList());
-                if (!CollectionUtils.isEmpty(employeeWithPan)) {
+                if(!CollectionUtils.isEmpty(employeeWithPan)) {
                     messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + employeeWithPan + " and PAN-" + request.getPancardNo() + " you cannot add existing employee");
                 }
             }
@@ -576,7 +566,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             List<Employee> employeesWithMobile = employeeRepository.findByPersonalMobileNumber(request.getPersonalMob());
             if (!CollectionUtils.isEmpty(employeesWithMobile)) {
                 List<String> employeeWithPersonalMob = employeesWithMobile.stream().filter(o -> "A".equalsIgnoreCase(o.getStatus())).map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList());
-                if (!CollectionUtils.isEmpty(employeeWithPersonalMob)) {
+                if(!CollectionUtils.isEmpty(employeeWithPersonalMob)) {
                     messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + employeeWithPersonalMob + " and Mobile-" + request.getPersonalMob() + " you cannot add existing employee");
                 }
             }
