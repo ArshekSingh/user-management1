@@ -36,6 +36,7 @@ pipeline {
                     sh 'export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}'
                     sh 'export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}' 
                     sh 'aws ecs delete-service --cluster prod-sas-ecs --service prod-usermanagement --force'
+                    sleep 3m
                     sh 'terraform init'
                     sh 'terraform validate'
                     sh 'terraform plan -var="tag=${app}-${ImageNumber}"'
