@@ -3,6 +3,7 @@ package com.sts.finncub.usermanagement.service.impl;
 import com.sts.finncub.core.constants.Constant;
 import com.sts.finncub.core.dto.EmployeeDepartmentDto;
 import com.sts.finncub.core.dto.EmployeeDto;
+import com.sts.finncub.core.dto.EmployeeMovementLogsRequest;
 import com.sts.finncub.core.entity.*;
 import com.sts.finncub.core.enums.*;
 import com.sts.finncub.core.exception.BadRequestException;
@@ -14,6 +15,7 @@ import com.sts.finncub.core.response.Response;
 import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.core.util.ValidationUtils;
+import com.sts.finncub.usermanagement.assembler.EmployeeAssembler;
 import com.sts.finncub.usermanagement.request.EmployeeRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.service.EmployeeService;
@@ -49,6 +51,8 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     private final EmployeeDepartmentRepository employeeDepartmentRepository;
     private final EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository;
     private final CenterMasterRepository centerMasterRepository;
+    private final EmployeeMovementLogsRepo employeeMovementLogsRepo;
+    private final EmployeeAssembler employeeAssembler;
 
     @Override
     @Transactional
@@ -435,6 +439,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     }
 
     @Override
+    @Transactional
     public Response updateEmployeeDetails(EmployeeRequest request) throws BadRequestException {
         Response response = new Response();
         validateRequest(request);
@@ -461,7 +466,9 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             if (employee != null) {
                 //Check for relieving date of employee
                 checkRelievingDate(request, employee);
-
+                if(isFieldsUpdated(request, employee)) {
+                    employeeAssembler.dtoToEntity(request, userSession);
+                }
                 // save value in employee master table
                 saveValueEmployeeMaster(request, employee, request.getEmployeeId(), userSession);
 
@@ -483,6 +490,10 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             throw new BadRequestException("Invalid Request Parameters", HttpStatus.BAD_REQUEST);
         }
         return response;
+    }
+
+    private static boolean isFieldsUpdated(EmployeeRequest request, Employee employee) {
+        return !request.getEmploymentType().equalsIgnoreCase(employee.getEmploymentType()) || !request.getPromotionDate().equalsIgnoreCase(DateTimeUtil.dateToString(employee.getPromotionDate())) || !Objects.equals(request.getBranchId(), employee.getBranchId()) || !request.getBranchJoinDate().equalsIgnoreCase(DateTimeUtil.dateToString(employee.getBranchJoinDate())) || !request.getConfirmationDate().equalsIgnoreCase(DateTimeUtil.dateToString(employee.getConfirmationDate())) || !request.getRelievingDate().equalsIgnoreCase(DateTimeUtil.dateToString(employee.getRelievingDate())) || !Objects.equals(request.getDepartmentId(), employee.getDepartmentId()) || !Objects.equals(request.getSubDepartmentId(), employee.getSubDepartmentId()) || !request.getDesignationType().equalsIgnoreCase(employee.getDesignationType()) || !Objects.equals(request.getDesignationId(), employee.getDesignationId()) || !Objects.equals(request.getFunctionalTitleId(), employee.getFunctionalTitleId());
     }
 
     private void checkRelievingDate(EmployeeRequest request, Employee employee) throws BadRequestException {
@@ -585,5 +596,34 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             return new Response(SUCCESS, messages, HttpStatus.OK);
         }
         return new Response(SUCCESS, messages, HttpStatus.BAD_REQUEST);
+    }
+
+    @Override
+    public Response fetchEmployeeMovementLogs(EmployeeMovementLogsRequest request) throws BadRequestException {
+        if (request.getEmployeeId() == null) {
+            log.error("Employee id cannot be null");
+            throw new BadRequestException("Employee id cannot be null", HttpStatus.BAD_REQUEST);
+        }
+        UserSession userSession = userCredentialService.getUserSession();
+        Long count = null;
+        try {
+            if(request.getStart() == 0) {
+                count = employeeDao.getEmployeeDetailsByEmployeeIdCount(userSession, request);
+            }
+            if("Y".equalsIgnoreCase(request.getIsCsv()) && count != null) {
+                request.setLimit(count.intValue());
+            }
+            List<EmployeeMovementLogs> employeeMovementLogsList = employeeDao.getEmployeeDetailsByEmployeeId(userSession, request);
+            if(CollectionUtils.isEmpty(employeeMovementLogsList)) {
+                log.error("No employee logs found against employee id {}",request.getEmployeeId());
+                return new Response("No employee movement logs found against employee id " + request.getEmployeeId(), HttpStatus.NOT_FOUND);
+            }
+            List<EmployeeDto> employeeDtos = employeeAssembler.entityToDtoList(employeeMovementLogsList);
+            log.info("Transaction successful for employee id {}", request.getEmployeeId());
+            return new Response(SUCCESS, employeeDtos, count, HttpStatus.OK);
+        } catch (Exception exception) {
+            log.error("Exception occurred due to {}", exception.getMessage());
+            return new Response("Exception occurred due to " + exception.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 }
