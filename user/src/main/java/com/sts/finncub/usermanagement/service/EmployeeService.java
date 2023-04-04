@@ -1,5 +1,6 @@
 package com.sts.finncub.usermanagement.service;
 
+import com.sts.finncub.core.dto.EmployeeMovementLogsRequest;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.request.EmployeeTransferRequest;
 import com.sts.finncub.core.request.FilterRequest;
@@ -27,4 +28,6 @@ public interface EmployeeService {
     Response validateAadhaarPanMobForUpdateEmployee(EmployeeRequest request);
 
     Response validateActiveAadhaarOrPanOrMobForSaveEmployee(EmployeeRequest request);
+
+    Response fetchEmployeeMovementLogs(EmployeeMovementLogsRequest request) throws BadRequestException;
 }
