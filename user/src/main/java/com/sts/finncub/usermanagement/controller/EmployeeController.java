@@ -75,7 +75,7 @@ public class EmployeeController {
         return employeeService.validateAadhaarPanMobForUpdateEmployee(request);
     }
 
-    @GetMapping("/fetchEmployeeMovementLogs")
+    @PostMapping("/fetchEmployeeMovementLogs")
     public Response fetchEmployeeMovementLogs(@Valid @RequestBody EmployeeMovementLogsRequest request) throws BadRequestException {
         log.info("Request initiated to invoke method fetchEmployeeMovementLogs for employee id {}", request.getEmployeeId());
         return employeeService.fetchEmployeeMovementLogs(request);
