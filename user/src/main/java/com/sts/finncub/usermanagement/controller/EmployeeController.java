@@ -1,5 +1,6 @@
 package com.sts.finncub.usermanagement.controller;
 
+import com.sts.finncub.core.dto.EmployeeMovementLogsRequest;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.request.EmployeeTransferRequest;
 import com.sts.finncub.core.request.FilterRequest;
@@ -72,5 +73,11 @@ public class EmployeeController {
     @PostMapping(value = "validateAadhaarPanMobForUpdateEmployee")
     public Response validateAadhaarPanMobForUpdateEmployee(@RequestBody EmployeeRequest request) {
         return employeeService.validateAadhaarPanMobForUpdateEmployee(request);
+    }
+
+    @PostMapping("/fetchEmployeeMovementLogs")
+    public Response fetchEmployeeMovementLogs(@Valid @RequestBody EmployeeMovementLogsRequest request) throws BadRequestException {
+        log.info("Request initiated to invoke method fetchEmployeeMovementLogs for employee id {}", request.getEmployeeId());
+        return employeeService.fetchEmployeeMovementLogs(request);
     }
 }
