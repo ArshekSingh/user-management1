@@ -492,9 +492,42 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         return response;
     }
 
-    private static boolean isFieldsUpdated(EmployeeRequest request, Employee employee) {
-        return !request.getEmploymentType().equalsIgnoreCase(employee.getEmploymentType()) || !request.getPromotionDate().equalsIgnoreCase(DateTimeUtil.dateToString(employee.getPromotionDate())) || !Objects.equals(request.getBranchId(), employee.getBranchId()) || !request.getBranchJoinDate().equalsIgnoreCase(DateTimeUtil.dateToString(employee.getBranchJoinDate())) || !request.getConfirmationDate().equalsIgnoreCase(DateTimeUtil.dateToString(employee.getConfirmationDate())) || !request.getRelievingDate().equalsIgnoreCase(DateTimeUtil.dateToString(employee.getRelievingDate())) || !Objects.equals(request.getDepartmentId(), employee.getDepartmentId()) || !Objects.equals(request.getSubDepartmentId(), employee.getSubDepartmentId()) || !request.getDesignationType().equalsIgnoreCase(employee.getDesignationType()) || !Objects.equals(request.getDesignationId(), employee.getDesignationId()) || !Objects.equals(request.getFunctionalTitleId(), employee.getFunctionalTitleId());
+private static boolean isFieldsUpdated(EmployeeRequest request, Employee employee) {
+    if (request.getPromotionDate() != null) {
+        return !request.getPromotionDate().equalsIgnoreCase(DateTimeUtil.dateToString(employee.getPromotionDate()));
     }
+    if (StringUtils.hasText(request.getEmploymentType())) {
+        return !request.getEmploymentType().equalsIgnoreCase(employee.getEmploymentType());
+    }
+    if (request.getBranchId() != null) {
+        return !Objects.equals(request.getBranchId(), employee.getBranchId());
+    }
+    if (request.getBranchJoinDate() != null) {
+        return !request.getBranchJoinDate().equalsIgnoreCase(DateTimeUtil.dateToString(employee.getBranchJoinDate()));
+    }
+    if (request.getConfirmationDate() != null) {
+        return !request.getConfirmationDate().equalsIgnoreCase(DateTimeUtil.dateToString(employee.getConfirmationDate()));
+    }
+    if (request.getRelievingDate() != null) {
+        return !request.getRelievingDate().equalsIgnoreCase(DateTimeUtil.dateToString(employee.getRelievingDate()));
+    }
+    if (request.getDepartmentId() != null) {
+        return !Objects.equals(request.getDepartmentId(), employee.getDepartmentId());
+    }
+    if (request.getSubDepartmentId() != null) {
+        return !Objects.equals(request.getSubDepartmentId(), employee.getSubDepartmentId());
+    }
+    if (StringUtils.hasText(request.getDesignationType())) {
+        return !request.getDesignationType().equalsIgnoreCase(employee.getDesignationType());
+    }
+    if (request.getDesignationId() != null) {
+        return !Objects.equals(request.getDesignationId(), employee.getDesignationId());
+    }
+    if (request.getFunctionalTitleId() != null) {
+        return !Objects.equals(request.getFunctionalTitleId(), employee.getFunctionalTitleId());
+    }
+    return false;
+}
 
     private void checkRelievingDate(EmployeeRequest request, Employee employee) throws BadRequestException {
         if (request.getRelievingDate() != null) {
@@ -618,7 +651,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 log.error("No employee logs found against employee id {}",request.getEmployeeId());
                 return new Response("No employee movement logs found against employee id " + request.getEmployeeId(), HttpStatus.NOT_FOUND);
             }
-            List<EmployeeDto> employeeDtos = employeeAssembler.entityToDtoList(employeeMovementLogsList);
+            List<EmployeeDto> employeeDtos = employeeAssembler.entityToDtoList(employeeMovementLogsList, userSession);
             log.info("Transaction successful for employee id {}", request.getEmployeeId());
             return new Response(SUCCESS, employeeDtos, count, HttpStatus.OK);
         } catch (Exception exception) {
