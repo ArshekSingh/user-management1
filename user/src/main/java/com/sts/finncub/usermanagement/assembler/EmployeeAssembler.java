@@ -1,12 +1,15 @@
 package com.sts.finncub.usermanagement.assembler;
 
 import com.sts.finncub.core.dto.EmployeeDto;
+import com.sts.finncub.core.entity.EmployeeFunctionalTitle;
 import com.sts.finncub.core.entity.EmployeeMovementLogs;
 import com.sts.finncub.core.entity.EmployeeMovementLogsPK;
 import com.sts.finncub.core.entity.UserSession;
+import com.sts.finncub.core.repository.EmployeeFunctionalTitleRepository;
 import com.sts.finncub.core.repository.EmployeeMovementLogsRepo;
 import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.request.EmployeeRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -15,10 +18,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
+@Slf4j
 public class EmployeeAssembler {
 
     @Autowired
     private EmployeeMovementLogsRepo employeeMovementLogsRepo;
+
+    @Autowired
+    private EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository;
 
     public void dtoToEntity(EmployeeRequest request, UserSession userSession) {
         EmployeeMovementLogs employeeMovementLogs = new EmployeeMovementLogs();
@@ -45,11 +52,11 @@ public class EmployeeAssembler {
         employeeMovementLogsRepo.save(employeeMovementLogs);
     }
 
-    public List<EmployeeDto> entityToDtoList(List<EmployeeMovementLogs> employeeMovementLogsList) {
-        return employeeMovementLogsList.stream().map(this::entityToDto).collect(Collectors.toList());
+    public List<EmployeeDto> entityToDtoList(List<EmployeeMovementLogs> employeeMovementLogsList, UserSession userSession) {
+        return employeeMovementLogsList.stream().map(o -> entityToDto(o, userSession)).collect(Collectors.toList());
     }
 
-    public EmployeeDto entityToDto(EmployeeMovementLogs employeeMovementLogs) {
+    public EmployeeDto entityToDto(EmployeeMovementLogs employeeMovementLogs, UserSession userSession) {
         EmployeeDto employeeDto = new EmployeeDto();
         employeeDto.setRev(employeeMovementLogs.getEmployeeMovementLogsPK().getRev());
         employeeDto.setEmployeeId(employeeMovementLogs.getEmployeeId());
@@ -62,7 +69,15 @@ public class EmployeeAssembler {
         employeeDto.setSubDepartmentId(employeeMovementLogs.getSubDepartmentId());
         employeeDto.setDesignationType(employeeMovementLogs.getDesignationType());
         employeeDto.setDesignationId(employeeMovementLogs.getDesignationId());
-        employeeDto.setFunctionalTitleId(employeeMovementLogs.getFunctionalTitleId());
+        if(employeeMovementLogs.getFunctionalTitleId() != null) {
+            try {
+                EmployeeFunctionalTitle functionalTitle = employeeFunctionalTitleRepository.findByOrgIdAndEmpFuncTitleId(userSession.getOrganizationId(), employeeMovementLogs.getFunctionalTitleId());
+                employeeDto.setFunctionalTitleName(functionalTitle.getEmpFuncTitleName());
+                employeeDto.setFunctionalTitleId(employeeMovementLogs.getFunctionalTitleId());
+            } catch (Exception e) {
+                log.error("Exception occurred due to {}", e.getMessage());
+            }
+        }
         employeeDto.setUpdatedBy(employeeMovementLogs.getUpdatedBy());
         employeeDto.setInsertedBy(employeeMovementLogs.getInsertedBy());
         employeeDto.setInsertedOn(DateTimeUtil.dateTimeToString(employeeMovementLogs.getInsertedOn()));
