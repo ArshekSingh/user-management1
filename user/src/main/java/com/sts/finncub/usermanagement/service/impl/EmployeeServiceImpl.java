@@ -493,40 +493,17 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     }
 
 private static boolean isFieldsUpdated(EmployeeRequest request, Employee employee) {
-    if (request.getPromotionDate() != null) {
-        return !request.getPromotionDate().equalsIgnoreCase(DateTimeUtil.dateToString(employee.getPromotionDate()));
-    }
-    if (StringUtils.hasText(request.getEmploymentType())) {
-        return !request.getEmploymentType().equalsIgnoreCase(employee.getEmploymentType());
-    }
-    if (request.getBranchId() != null) {
-        return !Objects.equals(request.getBranchId(), employee.getBranchId());
-    }
-    if (request.getBranchJoinDate() != null) {
-        return !request.getBranchJoinDate().equalsIgnoreCase(DateTimeUtil.dateToString(employee.getBranchJoinDate()));
-    }
-    if (request.getConfirmationDate() != null) {
-        return !request.getConfirmationDate().equalsIgnoreCase(DateTimeUtil.dateToString(employee.getConfirmationDate()));
-    }
-    if (request.getRelievingDate() != null) {
-        return !request.getRelievingDate().equalsIgnoreCase(DateTimeUtil.dateToString(employee.getRelievingDate()));
-    }
-    if (request.getDepartmentId() != null) {
-        return !Objects.equals(request.getDepartmentId(), employee.getDepartmentId());
-    }
-    if (request.getSubDepartmentId() != null) {
-        return !Objects.equals(request.getSubDepartmentId(), employee.getSubDepartmentId());
-    }
-    if (StringUtils.hasText(request.getDesignationType())) {
-        return !request.getDesignationType().equalsIgnoreCase(employee.getDesignationType());
-    }
-    if (request.getDesignationId() != null) {
-        return !Objects.equals(request.getDesignationId(), employee.getDesignationId());
-    }
-    if (request.getFunctionalTitleId() != null) {
-        return !Objects.equals(request.getFunctionalTitleId(), employee.getFunctionalTitleId());
-    }
-    return false;
+        return !Objects.equals(request.getEmploymentType(), employee.getEmploymentType())
+                || !Objects.equals(request.getPromotionDate(), DateTimeUtil.dateToString(employee.getPromotionDate()))
+        || !Objects.equals(request.getBranchId(), employee.getBranchId())
+        || !Objects.equals(request.getBranchJoinDate(), DateTimeUtil.dateToString(employee.getBranchJoinDate()))
+        || !Objects.equals(request.getConfirmationDate(), DateTimeUtil.dateToString(employee.getConfirmationDate()))
+        || !Objects.equals(request.getRelievingDate(), DateTimeUtil.dateToString(employee.getRelievingDate()))
+        || !Objects.equals(request.getDepartmentId(), employee.getDepartmentId())
+        || !Objects.equals(request.getSubDepartmentId(), employee.getSubDepartmentId())
+        || !Objects.equals(request.getDesignationType(), employee.getDesignationType())
+        || !Objects.equals(request.getDesignationId(), employee.getDesignationId())
+        || !Objects.equals(request.getFunctionalTitleId(), employee.getFunctionalTitleId());
 }
 
     private void checkRelievingDate(EmployeeRequest request, Employee employee) throws BadRequestException {
