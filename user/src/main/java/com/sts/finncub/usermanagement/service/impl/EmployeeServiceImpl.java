@@ -29,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -466,6 +467,13 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             if (employee != null) {
                 //Check for relieving date of employee
                 checkRelievingDate(request, employee);
+                if(StringUtils.hasText(request.getRelievingDate()) || StringUtils.hasText(request.getStatus())) {
+                    LocalDate relievingDate = DateTimeUtil.stringToDate(request.getRelievingDate());
+                    LocalDate currentDate = LocalDate.now();
+                    if(currentDate.isAfter(relievingDate != null ? relievingDate: currentDate) || "X".equalsIgnoreCase(request.getStatus())) {
+                        return new Response("Employee details cannot be updated because either status is inactive or employee is already relieved", HttpStatus.BAD_REQUEST);
+                    }
+                }
                 if(isFieldsUpdated(request, employee)) {
                     employeeAssembler.dtoToEntity(request, userSession);
                 }
@@ -492,9 +500,19 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         return response;
     }
 
-    private static boolean isFieldsUpdated(EmployeeRequest request, Employee employee) {
-        return !request.getEmploymentType().equalsIgnoreCase(employee.getEmploymentType()) || !request.getPromotionDate().equalsIgnoreCase(DateTimeUtil.dateToString(employee.getPromotionDate())) || !Objects.equals(request.getBranchId(), employee.getBranchId()) || !request.getBranchJoinDate().equalsIgnoreCase(DateTimeUtil.dateToString(employee.getBranchJoinDate())) || !request.getConfirmationDate().equalsIgnoreCase(DateTimeUtil.dateToString(employee.getConfirmationDate())) || !request.getRelievingDate().equalsIgnoreCase(DateTimeUtil.dateToString(employee.getRelievingDate())) || !Objects.equals(request.getDepartmentId(), employee.getDepartmentId()) || !Objects.equals(request.getSubDepartmentId(), employee.getSubDepartmentId()) || !request.getDesignationType().equalsIgnoreCase(employee.getDesignationType()) || !Objects.equals(request.getDesignationId(), employee.getDesignationId()) || !Objects.equals(request.getFunctionalTitleId(), employee.getFunctionalTitleId());
-    }
+private static boolean isFieldsUpdated(EmployeeRequest request, Employee employee) {
+        return !Objects.equals(request.getEmploymentType(), employee.getEmploymentType())
+                || !Objects.equals(request.getPromotionDate(), DateTimeUtil.dateToString(employee.getPromotionDate()))
+        || !Objects.equals(request.getBranchId(), employee.getBranchId())
+        || !Objects.equals(request.getBranchJoinDate(), DateTimeUtil.dateToString(employee.getBranchJoinDate()))
+        || !Objects.equals(request.getConfirmationDate(), DateTimeUtil.dateToString(employee.getConfirmationDate()))
+        || !Objects.equals(request.getRelievingDate(), DateTimeUtil.dateToString(employee.getRelievingDate()))
+        || !Objects.equals(request.getDepartmentId(), employee.getDepartmentId())
+        || !Objects.equals(request.getSubDepartmentId(), employee.getSubDepartmentId())
+        || !Objects.equals(request.getDesignationType(), employee.getDesignationType())
+        || !Objects.equals(request.getDesignationId(), employee.getDesignationId())
+        || !Objects.equals(request.getFunctionalTitleId(), employee.getFunctionalTitleId());
+}
 
     private void checkRelievingDate(EmployeeRequest request, Employee employee) throws BadRequestException {
         if (request.getRelievingDate() != null) {
@@ -618,7 +636,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 log.error("No employee logs found against employee id {}",request.getEmployeeId());
                 return new Response("No employee movement logs found against employee id " + request.getEmployeeId(), HttpStatus.NOT_FOUND);
             }
-            List<EmployeeDto> employeeDtos = employeeAssembler.entityToDtoList(employeeMovementLogsList);
+            List<EmployeeDto> employeeDtos = employeeAssembler.entityToDtoList(employeeMovementLogsList, userSession);
             log.info("Transaction successful for employee id {}", request.getEmployeeId());
             return new Response(SUCCESS, employeeDtos, count, HttpStatus.OK);
         } catch (Exception exception) {
