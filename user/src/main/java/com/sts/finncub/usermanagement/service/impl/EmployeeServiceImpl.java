@@ -471,9 +471,11 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                     LocalDate relievingDate = DateTimeUtil.stringToDate(request.getRelievingDate());
                     LocalDate currentDate = LocalDate.now();
                     if(currentDate.isAfter(relievingDate != null ? relievingDate: currentDate) || "X".equalsIgnoreCase(request.getStatus())) {
+                        log.info("Employee details cannot be updated because either status is inactive or employee is already relieved for employee id {}", request.getEmployeeId());
                         return new Response("Employee details cannot be updated because either status is inactive or employee is already relieved", HttpStatus.BAD_REQUEST);
                     }
                 }
+                //updating employee details in employee_movement_logs entity
                 if(isFieldsUpdated(request, employee)) {
                     employeeAssembler.dtoToEntity(request, userSession);
                 }
