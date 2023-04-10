@@ -64,7 +64,7 @@ public class EmployeeAssembler {
         employeeDto.setPromotionDate(DateTimeUtil.dateToString(employeeMovementLogs.getPromotionDate()));
         employeeDto.setRelievingDate(DateTimeUtil.dateToString(employeeMovementLogs.getRelievingDate()));
         if(employeeMovementLogs.getBranchId() != null) {
-            Optional<BranchMaster> branchMasterOptional = branchMasterRepository.findByBranchIdAndOrgId(employeeMovementLogs.getBranchId().intValue(), userSession.getOrganizationId());
+            Optional<BranchMaster> branchMasterOptional = branchMasterRepository.findByBranchMasterPK_OrgIdAndBranchMasterPK_BranchId(userSession.getOrganizationId(), employeeMovementLogs.getBranchId().intValue());
             if(branchMasterOptional.isPresent()) {
                 BranchMaster branchMaster = branchMasterOptional.get();
                 employeeDto.setBranchName(branchMaster.getBranchCode() + "_" + branchMaster.getBranchName());
