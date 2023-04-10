@@ -309,7 +309,7 @@ public class UserServiceImpl implements UserService, Constant {
     @Override
     public Response getUserAssignedAndAvailableBranchList(String userId) {
         UserSession userSession = userCredentialService.getUserSession();
-        List<UserBranchMapping> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_UserIdContainingIgnoreCase(userId);
+        List<UserBranchMapping> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_OrgIdAndUserBranchMappingPK_UserIdContainingIgnoreCase(userSession.getOrganizationId(), userId);
         UserBranchMappingDto userBranchMappingDto = new UserBranchMappingDto();
         List<ServerSideDropDownDto> userAssignedBranchesList = new ArrayList<>();
         List<ServerSideDropDownDto> userAvailableBranchesList = new ArrayList<>();
@@ -317,20 +317,20 @@ public class UserServiceImpl implements UserService, Constant {
         for (UserBranchMapping userBranchMapping : userBranchMappingList) {
             userBranchMappingDto.setUserId(userId);
             ServerSideDropDownDto userAssignedBranches = new ServerSideDropDownDto();
-            userAssignedBranches.setId(userBranchMapping.getBranchMaster().getBranchId().toString());
+            userAssignedBranches.setId(userBranchMapping.getBranchMaster().getBranchMasterPK().getBranchId().toString());
             userAssignedBranches.setLabel(userBranchMapping.getBranchMaster().getBranchCode() + "-" + userBranchMapping.getBranchMaster().getBranchName());
             userAssignedBranchesList.add(userAssignedBranches);
-            branchList.add(userBranchMapping.getBranchMaster().getBranchId());
+            branchList.add(userBranchMapping.getBranchMaster().getBranchMasterPK().getBranchId());
         }
         List<BranchMaster> branchMasterList;
         if (branchList.isEmpty()) {
-            branchMasterList = branchMasterRepository.findAllByOrgIdAndBranchType(userSession.getOrganizationId(), "BR");
+            branchMasterList = branchMasterRepository.findAllByBranchMasterPK_OrgIdAndBranchType(userSession.getOrganizationId(), "BR");
         } else {
-            branchMasterList = branchMasterRepository.findByBranchIdNotInAndOrgIdAndBranchType(branchList, userSession.getOrganizationId(), "BR");
+            branchMasterList = branchMasterRepository.findByBranchMasterPK_OrgIdAndBranchMasterPK_BranchIdNotInAndBranchType(userSession.getOrganizationId(), branchList, "BR");
         }
         for (BranchMaster branchMaster : branchMasterList) {
             ServerSideDropDownDto userAvailableBranches = new ServerSideDropDownDto();
-            userAvailableBranches.setId(branchMaster.getBranchId().toString());
+            userAvailableBranches.setId(branchMaster.getBranchMasterPK().getBranchId().toString());
             userAvailableBranches.setLabel(branchMaster.getBranchName());
             userAvailableBranches.setLabel(branchMaster.getBranchCode() + "-" + branchMaster.getBranchName());
             userAvailableBranchesList.add(userAvailableBranches);
@@ -343,7 +343,7 @@ public class UserServiceImpl implements UserService, Constant {
     @Override
     public Response assignBranchesToUser(UserBranchMappingDto userBranchMappingDto) {
         UserSession userSession = userCredentialService.getUserSession();
-        List<UserBranchMapping> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_UserIdContainingIgnoreCase(userBranchMappingDto.getUserId());
+        List<UserBranchMapping> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_OrgIdAndUserBranchMappingPK_UserIdContainingIgnoreCase(userSession.getOrganizationId(), userBranchMappingDto.getUserId());
         if (!CollectionUtils.isEmpty(userBranchMappingList)) {
             userBranchMappingRepository.deleteAll(userBranchMappingList);
         }
