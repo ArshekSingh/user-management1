@@ -11,14 +11,12 @@ pipeline {
     AWS_SECRET_ACCESS_KEY = credentials('secret_key')
     }
     stages {
-
         stage('Clone Repo') {
             steps {
 				checkout([$class: 'GitSCM', branches: [[name: '*/develop']],
 				doGenerateSubmoduleConfigurations: true, extensions: [],
 				submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'BItBucket_devops_admin',
 				url: 'https://devops_admin_sas@bitbucket.org/finstudio/user-management.git']]])
-                
             }
         }
         stage('Logging into AWS ECR') {
@@ -27,7 +25,6 @@ pipeline {
                     sh 'aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 305949049023.dkr.ecr.ap-south-1.amazonaws.com'
                 }
             }
-
         }
         stage('Building image') {
             steps{
@@ -55,7 +52,7 @@ pipeline {
                         [ $class: 'StringParameterValue', name: 'ImageNumber', value: "${BUILD_NUMBER}"],
                         [ $class: 'StringParameterValue', name: 'Branch', value: "develop"],
                         [ $class: 'StringParameterValue', name: 'env', value: "uat"],
-                        [ $class: 'StringParameterValue', name: 'cluster_name', value: "SASTech-Devops-Preprod"]                      
+                        [ $class: 'StringParameterValue', name: 'cluster_name', value: "SASTech-Devops-Preprod"]
                     ]
                 }
             }
