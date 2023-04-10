@@ -1,31 +1,31 @@
 package com.sts.finncub.usermanagement.assembler;
 
 import com.sts.finncub.core.dto.EmployeeDto;
-import com.sts.finncub.core.entity.EmployeeFunctionalTitle;
-import com.sts.finncub.core.entity.EmployeeMovementLogs;
-import com.sts.finncub.core.entity.EmployeeMovementLogsPK;
-import com.sts.finncub.core.entity.UserSession;
+import com.sts.finncub.core.entity.*;
+import com.sts.finncub.core.repository.BranchMasterRepository;
+import com.sts.finncub.core.repository.EmployeeDepartmentRepository;
 import com.sts.finncub.core.repository.EmployeeFunctionalTitleRepository;
 import com.sts.finncub.core.repository.EmployeeMovementLogsRepo;
 import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.request.EmployeeRequest;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
 @Slf4j
+@AllArgsConstructor
 public class EmployeeAssembler {
 
-    @Autowired
-    private EmployeeMovementLogsRepo employeeMovementLogsRepo;
-
-    @Autowired
-    private EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository;
+    private final EmployeeMovementLogsRepo employeeMovementLogsRepo;
+    private final EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository;
+    private final BranchMasterRepository branchMasterRepository;
+    private final EmployeeDepartmentRepository employeeDepartmentRepository;
 
     public void dtoToEntity(EmployeeRequest request, UserSession userSession) {
         EmployeeMovementLogs employeeMovementLogs = new EmployeeMovementLogs();
@@ -63,11 +63,24 @@ public class EmployeeAssembler {
         employeeDto.setConfirmationDate(DateTimeUtil.dateToString(employeeMovementLogs.getConfirmationDate()));
         employeeDto.setPromotionDate(DateTimeUtil.dateToString(employeeMovementLogs.getPromotionDate()));
         employeeDto.setRelievingDate(DateTimeUtil.dateToString(employeeMovementLogs.getRelievingDate()));
+        if(employeeMovementLogs.getBranchId() != null) {
+            Optional<BranchMaster> branchMasterOptional = branchMasterRepository.findByBranchMasterPK_OrgIdAndBranchMasterPK_BranchId(userSession.getOrganizationId(), employeeMovementLogs.getBranchId().intValue());
+            if(branchMasterOptional.isPresent()) {
+                BranchMaster branchMaster = branchMasterOptional.get();
+                employeeDto.setBranchName(branchMaster.getBranchCode() + "_" + branchMaster.getBranchName());
+            }
+        }
         employeeDto.setBranchId(employeeMovementLogs.getBranchId());
         employeeDto.setBranchJoinDate(DateTimeUtil.dateToString(employeeMovementLogs.getBranchJoiningDate()));
+        employeeDto.setDepartmentName(employeeMovementLogs.getEmployeeDepartmentMaster() != null ? employeeMovementLogs.getEmployeeDepartmentMaster().getEmpDepartmentName() : "");
         employeeDto.setDepartmentId(employeeMovementLogs.getDepartmentId());
+        if (employeeMovementLogs.getSubDepartmentId() != null) {
+            EmployeeDepartmentMaster employeeDepartmentMaster = employeeDepartmentRepository.findByOrgIdAndEmpDepartmentId(userSession.getOrganizationId(), employeeMovementLogs.getSubDepartmentId());
+            employeeDto.setSubDepartmentName(employeeDepartmentMaster.getEmpDepartmentName());
+        }
         employeeDto.setSubDepartmentId(employeeMovementLogs.getSubDepartmentId());
         employeeDto.setDesignationType(employeeMovementLogs.getDesignationType());
+        employeeDto.setDesignationName(employeeMovementLogs.getEmployeeDesignationMaster() != null ? employeeMovementLogs.getEmployeeDesignationMaster().getEmpDesignationName() : "");
         employeeDto.setDesignationId(employeeMovementLogs.getDesignationId());
         if(employeeMovementLogs.getFunctionalTitleId() != null) {
             try {
