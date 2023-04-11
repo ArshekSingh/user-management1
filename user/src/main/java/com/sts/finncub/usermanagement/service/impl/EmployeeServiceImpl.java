@@ -201,35 +201,26 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         }
         employee.setSubDepartmentId(request.getSubDepartmentId());
         employee.setBaseLocation(request.getBaseLocation());
-        if (StringUtils.hasText(request.getIsBranchManager())) {
-            employee.setIsBranchManager(request.getIsBranchManager());
-            Optional<BranchMaster> branchMasterOptional = branchMasterRepository.findByBranchIdAndOrgId(request.getBranchId(), userSession.getOrganizationId());
-            if (branchMasterOptional.isPresent()) {
-                BranchMaster branchMaster = branchMasterOptional.get();
-                branchMaster.setBranchManagerId(String.valueOf(request.getEmployeeId()));
-            }
-        }
-        //Set branch manager id as null when employee has been changed to inactive
-        if (StringUtils.hasText(request.getStatus())) {
-            if ("X".equals(request.getStatus()) || "Inactive".equals(request.getStatus())) {
-                Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchIdAndOrgId(employee.getBranchId(), userSession.getOrganizationId());
-                if (branchMaster.isPresent()) {
-                    BranchMaster updatedBranchMaster = branchMaster.get();
+        //Set branch manager id as null when employee has been changed to inactive and branch manager id in branch
+        Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchIdAndOrgId(employee.getBranchId(), userSession.getOrganizationId());
+        if (branchMaster.isPresent()) {
+            BranchMaster updatedBranchMaster = branchMaster.get();
+            if (StringUtils.hasText(request.getStatus())) {
+                if ("X".equals(request.getStatus()) || "Inactive".equals(request.getStatus())) {
                     updatedBranchMaster.setBranchManagerId(null);
-                    branchMasterRepository.save(updatedBranchMaster);
                 }
             }
-        }
-        employee = employeeRepository.save(employee);
-        if (StringUtils.hasText(request.getIsManager()) && request.getBranchId() != null) {
-            if ("Y".equalsIgnoreCase(request.getIsManager())) {
-                Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchIdAndOrgId(request.getBranchId(), userSession.getOrganizationId());
-                if (branchMaster.isPresent()) {
-                    BranchMaster updatedBranchMaster = branchMaster.get();
+            if (StringUtils.hasText(request.getIsBranchManager())) {
+                employee.setIsBranchManager(request.getIsBranchManager());
+                updatedBranchMaster.setBranchManagerId(String.valueOf(request.getEmployeeId()));
+            }
+            employee = employeeRepository.save(employee);
+            if (StringUtils.hasText(request.getIsManager()) && request.getBranchId() != null) {
+                if ("Y".equalsIgnoreCase(request.getIsManager())) {
                     updatedBranchMaster.setBranchManagerId(String.valueOf(employee.getEmployeeId()));
-                    branchMasterRepository.save(updatedBranchMaster);
                 }
             }
+            branchMasterRepository.save(updatedBranchMaster);
         }
     }
 
