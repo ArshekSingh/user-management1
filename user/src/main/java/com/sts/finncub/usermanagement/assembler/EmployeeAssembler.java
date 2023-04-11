@@ -36,15 +36,10 @@ public class EmployeeAssembler {
         employeeMovementLogs.setEmployeeId(request.getEmployeeId());
         employeeMovementLogs.setEmployementType(request.getEmploymentType());
         employeeMovementLogs.setPromotionDate(DateTimeUtil.stringToDate(request.getPromotionDate()));
-        employeeMovementLogs.setBranchId(request.getBranchId().longValue());
-        employeeMovementLogs.setBranchJoiningDate(DateTimeUtil.stringToDate(request.getBranchJoinDate()));
-        employeeMovementLogs.setConfirmationDate(DateTimeUtil.stringToDate(request.getConfirmationDate()));
-        employeeMovementLogs.setRelievingDate(DateTimeUtil.stringToDate(request.getRelievingDate()));
         employeeMovementLogs.setDepartmentId(request.getDepartmentId());
         employeeMovementLogs.setSubDepartmentId(request.getSubDepartmentId());
         employeeMovementLogs.setDesignationType(request.getDesignationType());
         employeeMovementLogs.setDesignationId(request.getDesignationId());
-        employeeMovementLogs.setFunctionalTitleId(request.getFunctionalTitleId());
         employeeMovementLogs.setInsertedBy(userSession.getUserId());
         employeeMovementLogs.setInsertedOn(LocalDateTime.now());
         employeeMovementLogs.setUpdatedBy(userSession.getUserId());
@@ -63,11 +58,11 @@ public class EmployeeAssembler {
         employeeDto.setConfirmationDate(DateTimeUtil.dateToString(employeeMovementLogs.getConfirmationDate()));
         employeeDto.setPromotionDate(DateTimeUtil.dateToString(employeeMovementLogs.getPromotionDate()));
         employeeDto.setRelievingDate(DateTimeUtil.dateToString(employeeMovementLogs.getRelievingDate()));
-        if(employeeMovementLogs.getBranchId() != null) {
+        if (employeeMovementLogs.getBranchId() != null) {
             Optional<BranchMaster> branchMasterOptional = branchMasterRepository.findByBranchMasterPK_OrgIdAndBranchMasterPK_BranchId(userSession.getOrganizationId(), employeeMovementLogs.getBranchId().intValue());
-            if(branchMasterOptional.isPresent()) {
+            if (branchMasterOptional.isPresent()) {
                 BranchMaster branchMaster = branchMasterOptional.get();
-                employeeDto.setBranchName(branchMaster.getBranchCode() + "_" + branchMaster.getBranchName());
+                employeeDto.setBranchName(branchMaster.getBranchCode() + "-" + branchMaster.getBranchName());
             }
         }
         employeeDto.setBranchId(employeeMovementLogs.getBranchId());
@@ -82,7 +77,7 @@ public class EmployeeAssembler {
         employeeDto.setDesignationType(employeeMovementLogs.getDesignationType());
         employeeDto.setDesignationName(employeeMovementLogs.getEmployeeDesignationMaster() != null ? employeeMovementLogs.getEmployeeDesignationMaster().getEmpDesignationName() : "");
         employeeDto.setDesignationId(employeeMovementLogs.getDesignationId());
-        if(employeeMovementLogs.getFunctionalTitleId() != null) {
+        if (employeeMovementLogs.getFunctionalTitleId() != null) {
             try {
                 EmployeeFunctionalTitle functionalTitle = employeeFunctionalTitleRepository.findByOrgIdAndEmpFuncTitleId(userSession.getOrganizationId(), employeeMovementLogs.getFunctionalTitleId());
                 employeeDto.setFunctionalTitleName(functionalTitle.getEmpFuncTitleName());
