@@ -1,47 +1,40 @@
 pipeline {
     agent any
     environment {
-    AWS_ACCOUNT_ID='305949049023'
+    AWS_ACCOUNT_ID='973152351290'
     AWS_DEFAULT_REGION='ap-south-1'
-    app='usermanagement'
-    IMAGE_REPO_NAME='sastech-devops-repository'
-    IMAGE_TAG='account-${ImageNumber}'
+    app='${App}'
+    IMAGE_REPO_NAME='non-prod-svcl-finncub-${app}-service'
+    IMAGE_TAG='${ImageNumber}'
+    ECR_ACCOUNT='${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com'
     REPOSITORY_URI = '${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}'
-    AWS_ACCESS_KEY_ID     = credentials('access_key')
-    AWS_SECRET_ACCESS_KEY = credentials('secret_key')
     }
     
     stages{
         stage('Clone Repo') {
             steps {
-				checkout([$class: 'GitSCM', branches: [[name: '*/${Branch}']],
+				checkout([$class: 'GitSCM', branches: [[name: '*/master']],
 				doGenerateSubmoduleConfigurations: true, extensions: [],
 				submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'BItBucket_devops_admin',
-				url: 'https://devops_admin_sas@bitbucket.org/finstudio/user-management.git']]])
+				url: 'https://SasDevOpsAdmin@bitbucket.org/finstudio/infrastructure-as-code.git']]])
                 }
             }
-        stage('copy terraformfiles') {
-            steps{
-                script {
-                    sh 'cp -rp ${WORKSPACE}/${env}-variable.tf   ${WORKSPACE}/terraform/variable.tf'
-                    sh 'rm -rf *-variable.tf'                    
-                    sh 'cp ${WORKSPACE}/terraform/* .'
-                }
-            }
-        }
         stage('deploy') {
             steps{
                 script {
-                    sh 'export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}'
-                    sh 'export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}'
-                    sh 'export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}' 
-                    sh 'aws ecs delete-service --cluster prod-sas-ecs --service prod-usermanagement --force'
-                    sleep 240
-                    sh 'aws ecs list-services --cluster prod-sas-ecs'
-                    sh 'terraform init'
-                    sh 'terraform validate'
-                    sh 'terraform plan -var="tag=${app}-${ImageNumber}"'
-                    sh 'terraform apply --auto-approve -var="tag=${app}-${ImageNumber}"'
+                    sh '''
+                    #!/bin/bash
+                    cd "./resources/ECS/"
+                    git config --local user.name "Jenkins.server"
+                    git config --local user.email "Jenkins.server@finncub.com"
+                    IMAGE_WITH_OLD_TAG=$(grep "${IMAGE_REPO_NAME}" terraform.tfvars | awk -F"/" '{print $2}' | awk -F'"' '{print $1}')
+                    IMAGE_WITH_NEW_TAG="${IMAGE_REPO_NAME}:${IMAGE_TAG}"
+                    sed -i "s/${ECR_ACCOUNT}\/${IMAGE_WITH_OLD_TAG}/${ECR_ACCOUNT}\/${IMAGE_WITH_NEW_TAG}/"
+                    git add -A
+                    git commit -m "Updated the image tag of ${IMAGE_REPO_NAME} to ${IMAGE_TAG}"
+                    git push -u origin master
+                    terraform apply --auto-approve
+                    '''.stripIndent()
                 }
             }
         }
@@ -55,7 +48,6 @@ pipeline {
                     sh 'sudo chmod +x statushealth.sh'
                     sleep 60
                     sh './statushealth.sh ${env}-${app} ${cluster_name}'
-                    
                 }
             }
         }
