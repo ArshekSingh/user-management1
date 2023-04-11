@@ -44,6 +44,9 @@ public class EmployeeAssembler {
         employeeMovementLogs.setInsertedOn(LocalDateTime.now());
         employeeMovementLogs.setUpdatedBy(userSession.getUserId());
         employeeMovementLogs.setUpdatedOn(LocalDateTime.now());
+        employeeMovementLogs.setBranchId(request.getBranchId().longValue());
+        employeeMovementLogs.setBranchJoiningDate(DateTimeUtil.stringToDate(request.getBranchJoinDate()));
+        employeeMovementLogs.setFunctionalTitleId(request.getFunctionalTitleId());
         employeeMovementLogsRepository.save(employeeMovementLogs);
     }
 
