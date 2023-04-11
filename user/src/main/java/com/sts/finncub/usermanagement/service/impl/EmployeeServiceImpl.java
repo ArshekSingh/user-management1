@@ -29,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -51,7 +52,6 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     private final EmployeeDepartmentRepository employeeDepartmentRepository;
     private final EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository;
     private final CenterMasterRepository centerMasterRepository;
-    private final EmployeeMovementLogsRepo employeeMovementLogsRepo;
     private final EmployeeAssembler employeeAssembler;
 
     @Override
@@ -201,6 +201,14 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         }
         employee.setSubDepartmentId(request.getSubDepartmentId());
         employee.setBaseLocation(request.getBaseLocation());
+        if (StringUtils.hasText(request.getIsBranchManager())) {
+            employee.setIsBranchManager(request.getIsBranchManager());
+            Optional<BranchMaster> branchMasterOptional = branchMasterRepository.findByBranchMasterPK_OrgIdAndBranchMasterPK_BranchId(userSession.getOrganizationId(), request.getBranchId());
+            if (branchMasterOptional.isPresent()) {
+                BranchMaster branchMaster = branchMasterOptional.get();
+                branchMaster.setBranchManagerId(String.valueOf(request.getEmployeeId()));
+            }
+        }
         //Set branch manager id as null when employee has been changed to inactive
         if (StringUtils.hasText(request.getStatus())) {
             if ("X".equals(request.getStatus()) || "Inactive".equals(request.getStatus())) {
@@ -466,7 +474,16 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             if (employee != null) {
                 //Check for relieving date of employee
                 checkRelievingDate(request, employee);
-                if(isFieldsUpdated(request, employee)) {
+                if (StringUtils.hasText(request.getRelievingDate()) || StringUtils.hasText(request.getStatus())) {
+                    LocalDate relievingDate = DateTimeUtil.stringToDate(request.getRelievingDate());
+                    LocalDate currentDate = LocalDate.now();
+                    if (currentDate.isAfter(relievingDate != null ? relievingDate : currentDate) || "X".equalsIgnoreCase(request.getStatus())) {
+                        log.info("Employee details cannot be updated because either status is inactive or employee is already relieved for employee id {}", request.getEmployeeId());
+                        return new Response("Employee details cannot be updated because either status is inactive or employee is already relieved", HttpStatus.BAD_REQUEST);
+                    }
+                }
+                //updating employee details in employee_movement_logs entity
+                if (isFieldsUpdated(request, employee)) {
                     employeeAssembler.dtoToEntity(request, userSession);
                 }
                 // save value in employee master table
@@ -492,19 +509,13 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         return response;
     }
 
-private static boolean isFieldsUpdated(EmployeeRequest request, Employee employee) {
-        return !Objects.equals(request.getEmploymentType(), employee.getEmploymentType())
-                || !Objects.equals(request.getPromotionDate(), DateTimeUtil.dateToString(employee.getPromotionDate()))
-        || !Objects.equals(request.getBranchId(), employee.getBranchId())
-        || !Objects.equals(request.getBranchJoinDate(), DateTimeUtil.dateToString(employee.getBranchJoinDate()))
-        || !Objects.equals(request.getConfirmationDate(), DateTimeUtil.dateToString(employee.getConfirmationDate()))
-        || !Objects.equals(request.getRelievingDate(), DateTimeUtil.dateToString(employee.getRelievingDate()))
-        || !Objects.equals(request.getDepartmentId(), employee.getDepartmentId())
-        || !Objects.equals(request.getSubDepartmentId(), employee.getSubDepartmentId())
-        || !Objects.equals(request.getDesignationType(), employee.getDesignationType())
-        || !Objects.equals(request.getDesignationId(), employee.getDesignationId())
-        || !Objects.equals(request.getFunctionalTitleId(), employee.getFunctionalTitleId());
-}
+    private static boolean isFieldsUpdated(EmployeeRequest request, Employee employee) {
+        return !Objects.equals(request.getPromotionDate(), DateTimeUtil.dateToString(employee.getPromotionDate()))
+                || !Objects.equals(request.getDepartmentId(), employee.getDepartmentId())
+                || !Objects.equals(request.getSubDepartmentId(), employee.getSubDepartmentId())
+                || !Objects.equals(request.getDesignationType(), employee.getDesignationType())
+                || !Objects.equals(request.getDesignationId(), employee.getDesignationId());
+    }
 
     private void checkRelievingDate(EmployeeRequest request, Employee employee) throws BadRequestException {
         if (request.getRelievingDate() != null) {
@@ -617,15 +628,15 @@ private static boolean isFieldsUpdated(EmployeeRequest request, Employee employe
         UserSession userSession = userCredentialService.getUserSession();
         Long count = null;
         try {
-            if(request.getStart() == 0) {
+            if (request.getStart() == 0) {
                 count = employeeDao.getEmployeeDetailsByEmployeeIdCount(userSession, request);
             }
-            if("Y".equalsIgnoreCase(request.getIsCsv()) && count != null) {
+            if ("Y".equalsIgnoreCase(request.getIsCsv()) && count != null) {
                 request.setLimit(count.intValue());
             }
             List<EmployeeMovementLogs> employeeMovementLogsList = employeeDao.getEmployeeDetailsByEmployeeId(userSession, request);
-            if(CollectionUtils.isEmpty(employeeMovementLogsList)) {
-                log.error("No employee logs found against employee id {}",request.getEmployeeId());
+            if (CollectionUtils.isEmpty(employeeMovementLogsList)) {
+                log.error("No employee logs found against employee id {}", request.getEmployeeId());
                 return new Response("No employee movement logs found against employee id " + request.getEmployeeId(), HttpStatus.NOT_FOUND);
             }
             List<EmployeeDto> employeeDtos = employeeAssembler.entityToDtoList(employeeMovementLogsList, userSession);
