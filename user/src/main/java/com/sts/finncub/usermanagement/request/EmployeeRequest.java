@@ -97,4 +97,5 @@ public class EmployeeRequest {
     private String aadharCardNumberOrig;
     private Integer baseLocation;
     private String isManager;
+    private String isBranchManager;
 }
