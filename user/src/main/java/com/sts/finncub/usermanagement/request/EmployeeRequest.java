@@ -96,4 +96,6 @@ public class EmployeeRequest {
     private List<String> bcId;
     private String aadharCardNumberOrig;
     private Integer baseLocation;
+    private String isManager;
+    private String isBranchManager;
 }

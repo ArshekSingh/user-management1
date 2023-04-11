@@ -3,6 +3,7 @@ package com.sts.finncub.usermanagement.service.impl;
 import com.sts.finncub.core.constants.Constant;
 import com.sts.finncub.core.dto.EmployeeDepartmentDto;
 import com.sts.finncub.core.dto.EmployeeDto;
+import com.sts.finncub.core.dto.EmployeeMovementLogsRequest;
 import com.sts.finncub.core.entity.*;
 import com.sts.finncub.core.enums.*;
 import com.sts.finncub.core.exception.BadRequestException;
@@ -14,6 +15,7 @@ import com.sts.finncub.core.response.Response;
 import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.core.util.ValidationUtils;
+import com.sts.finncub.usermanagement.assembler.EmployeeAssembler;
 import com.sts.finncub.usermanagement.request.EmployeeRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.service.EmployeeService;
@@ -27,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -49,6 +52,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     private final EmployeeDepartmentRepository employeeDepartmentRepository;
     private final EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository;
     private final CenterMasterRepository centerMasterRepository;
+    private final EmployeeAssembler employeeAssembler;
 
     @Override
     @Transactional
@@ -56,7 +60,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         UserSession userSession = userCredentialService.getUserSession();
         validateRequest(request);
         Response response = validateActiveAadhaarOrPanOrMobForSaveEmployee(request);
-        if(200 == response.getCode()) {
+        if (200 == response.getCode()) {
             return new Response(response.getMessage(), response.getData(), response.getStatus());
         }
         Employee employee = new Employee();
@@ -197,18 +201,27 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         }
         employee.setSubDepartmentId(request.getSubDepartmentId());
         employee.setBaseLocation(request.getBaseLocation());
-        //Set branch manager id as null when employee has been changed to inactive
-        if (StringUtils.hasText(request.getStatus())) {
-            if ("X".equals(request.getStatus()) || "Inactive".equals(request.getStatus())) {
-                Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchId(employee.getBranchId());
-                if (branchMaster.isPresent()) {
-                    BranchMaster updatedBranchMaster = branchMaster.get();
+        //Set branch manager id as null when employee has been changed to inactive and branch manager id in branch
+        Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchIdAndOrgId(employee.getBranchId(), userSession.getOrganizationId());
+        if (branchMaster.isPresent()) {
+            BranchMaster updatedBranchMaster = branchMaster.get();
+            if (StringUtils.hasText(request.getStatus())) {
+                if ("X".equals(request.getStatus()) || "Inactive".equals(request.getStatus())) {
                     updatedBranchMaster.setBranchManagerId(null);
-                    branchMasterRepository.save(updatedBranchMaster);
                 }
             }
+            if (StringUtils.hasText(request.getIsBranchManager())) {
+                employee.setIsBranchManager(request.getIsBranchManager());
+                updatedBranchMaster.setBranchManagerId(String.valueOf(request.getEmployeeId()));
+            }
+            employee = employeeRepository.save(employee);
+            if (StringUtils.hasText(request.getIsManager()) && request.getBranchId() != null) {
+                if ("Y".equalsIgnoreCase(request.getIsManager())) {
+                    updatedBranchMaster.setBranchManagerId(String.valueOf(employee.getEmployeeId()));
+                }
+            }
+            branchMasterRepository.save(updatedBranchMaster);
         }
-        employeeRepository.save(employee);
     }
 
     private void validateRequest(EmployeeRequest request) throws BadRequestException {
@@ -276,7 +289,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 employeeDto.setExitDate(DateTimeUtil.dateToString(employee.getExitDate()));
             }
             if (employee.getBranchId() != null) {
-                BranchMaster branchMaster = branchMasterRepository.findByBranchId(employee.getBranchId()).orElse(null);
+                BranchMaster branchMaster = branchMasterRepository.findByBranchIdAndOrgId(employee.getBranchId(), userSession.getOrganizationId()).orElse(null);
                 if (branchMaster != null) {
                     employeeDto.setBranchBcName(StringUtils.hasText(branchMaster.getBusinessPartner()) ? branchMaster.getBusinessPartner() : "");
                     employeeDto.setBaseLocationName(StringUtils.hasText(branchMaster.getBranchName()) ? branchMaster.getBranchName() : "");
@@ -291,7 +304,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 employeeDto.setSubDepartmentName(employeeDepartmentMaster == null ? "" : employeeDepartmentMaster.getEmpDepartmentName());
             }
             employeeDto.setEmergencyCon(employee.getEmergencyCon());
-            employeeDto.setInsertedOn(DateTimeUtil.dateTimeToString(employee.getInsertedOn(),DD_MM_YYYY));
+            employeeDto.setInsertedOn(DateTimeUtil.dateTimeToString(employee.getInsertedOn(), DD_MM_YYYY));
             employeeDtoList.add(employeeDto);
         }
         return new Response(SUCCESS, employeeDtoList, count, HttpStatus.OK);
@@ -425,6 +438,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     }
 
     @Override
+    @Transactional
     public Response updateEmployeeDetails(EmployeeRequest request) throws BadRequestException {
         Response response = new Response();
         validateRequest(request);
@@ -441,7 +455,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 if (StringUtils.hasText(request.getStatus()) && !employee.getStatus().equalsIgnoreCase(request.getStatus())) {
                     String id = Long.toString(request.getEmployeeId());
                     List<String> statusList = Stream.of("A", "C", "R", "C2", "G").collect(Collectors.toList());
-                    List<CenterMaster> centerMasterList = centerMasterRepository.findByAssignedToAndStatusIn(id, statusList);
+                    List<CenterMaster> centerMasterList = centerMasterRepository.findByOrgIdAndAssignedToAndStatusIn(userSession.getOrganizationId(), id, statusList);
                     if (!CollectionUtils.isEmpty(centerMasterList)) {
                         log.info("You can't mark this employee as Inactive because center is active for this employee {} ", employee.getEmployeeId());
                         throw new BadRequestException("You can't mark this employee as Inactive ", HttpStatus.BAD_REQUEST);
@@ -451,7 +465,18 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             if (employee != null) {
                 //Check for relieving date of employee
                 checkRelievingDate(request, employee);
-
+                if (StringUtils.hasText(request.getRelievingDate()) || StringUtils.hasText(request.getStatus())) {
+                    LocalDate relievingDate = DateTimeUtil.stringToDate(request.getRelievingDate());
+                    LocalDate currentDate = LocalDate.now();
+                    if (currentDate.isAfter(relievingDate != null ? relievingDate : currentDate) || "X".equalsIgnoreCase(request.getStatus())) {
+                        log.info("Employee details cannot be updated because either status is inactive or employee is already relieved for employee id {}", request.getEmployeeId());
+                        return new Response("Employee details cannot be updated because either status is inactive or employee is already relieved", HttpStatus.BAD_REQUEST);
+                    }
+                }
+                //updating employee details in employee_movement_logs entity
+                if (isFieldsUpdated(request, employee)) {
+                    employeeAssembler.dtoToEntity(request, userSession);
+                }
                 // save value in employee master table
                 saveValueEmployeeMaster(request, employee, request.getEmployeeId(), userSession);
 
@@ -473,6 +498,14 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             throw new BadRequestException("Invalid Request Parameters", HttpStatus.BAD_REQUEST);
         }
         return response;
+    }
+
+    private static boolean isFieldsUpdated(EmployeeRequest request, Employee employee) {
+        return !Objects.equals(request.getPromotionDate(), DateTimeUtil.dateToString(employee.getPromotionDate()))
+                || !Objects.equals(request.getDepartmentId(), employee.getDepartmentId())
+                || !Objects.equals(request.getSubDepartmentId(), employee.getSubDepartmentId())
+                || !Objects.equals(request.getDesignationType(), employee.getDesignationType())
+                || !Objects.equals(request.getDesignationId(), employee.getDesignationId());
     }
 
     private void checkRelievingDate(EmployeeRequest request, Employee employee) throws BadRequestException {
@@ -547,7 +580,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             List<Employee> employeesWithAadhaar = employeeRepository.findByAadharCardNumber(request.getAadharCard());
             if (!CollectionUtils.isEmpty(employeesWithAadhaar)) {
                 List<String> employeeWithAadhar = employeesWithAadhaar.stream().filter(o -> "A".equalsIgnoreCase(o.getStatus())).map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList());
-                if(!CollectionUtils.isEmpty(employeeWithAadhar)) {
+                if (!CollectionUtils.isEmpty(employeeWithAadhar)) {
                     messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + employeeWithAadhar + " and Aadhaar-" + request.getAadharCard() + " you cannot add existing employee");
                 }
 
@@ -557,7 +590,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             List<Employee> employeesWithPan = employeeRepository.findByPancardNumber(request.getPancardNo());
             if (!CollectionUtils.isEmpty(employeesWithPan)) {
                 List<String> employeeWithPan = employeesWithPan.stream().filter(o -> "A".equalsIgnoreCase(o.getStatus())).map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList());
-                if(!CollectionUtils.isEmpty(employeeWithPan)) {
+                if (!CollectionUtils.isEmpty(employeeWithPan)) {
                     messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + employeeWithPan + " and PAN-" + request.getPancardNo() + " you cannot add existing employee");
                 }
             }
@@ -566,7 +599,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             List<Employee> employeesWithMobile = employeeRepository.findByPersonalMobileNumber(request.getPersonalMob());
             if (!CollectionUtils.isEmpty(employeesWithMobile)) {
                 List<String> employeeWithPersonalMob = employeesWithMobile.stream().filter(o -> "A".equalsIgnoreCase(o.getStatus())).map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList());
-                if(!CollectionUtils.isEmpty(employeeWithPersonalMob)) {
+                if (!CollectionUtils.isEmpty(employeeWithPersonalMob)) {
                     messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + employeeWithPersonalMob + " and Mobile-" + request.getPersonalMob() + " you cannot add existing employee");
                 }
             }
@@ -575,5 +608,34 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             return new Response(SUCCESS, messages, HttpStatus.OK);
         }
         return new Response(SUCCESS, messages, HttpStatus.BAD_REQUEST);
+    }
+
+    @Override
+    public Response fetchEmployeeMovementLogs(EmployeeMovementLogsRequest request) throws BadRequestException {
+        if (request.getEmployeeId() == null) {
+            log.error("Employee id cannot be null");
+            throw new BadRequestException("Employee id cannot be null", HttpStatus.BAD_REQUEST);
+        }
+        UserSession userSession = userCredentialService.getUserSession();
+        Long count = null;
+        try {
+            if (request.getStart() == 0) {
+                count = employeeDao.getEmployeeDetailsByEmployeeIdCount(userSession, request);
+            }
+            if ("Y".equalsIgnoreCase(request.getIsCsv()) && count != null) {
+                request.setLimit(count.intValue());
+            }
+            List<EmployeeMovementLogs> employeeMovementLogsList = employeeDao.getEmployeeDetailsByEmployeeId(userSession, request);
+            if (CollectionUtils.isEmpty(employeeMovementLogsList)) {
+                log.error("No employee logs found against employee id {}", request.getEmployeeId());
+                return new Response("No employee movement logs found against employee id " + request.getEmployeeId(), HttpStatus.NOT_FOUND);
+            }
+            List<EmployeeDto> employeeDtos = employeeAssembler.entityToDtoList(employeeMovementLogsList, userSession);
+            log.info("Transaction successful for employee id {}", request.getEmployeeId());
+            return new Response(SUCCESS, employeeDtos, count, HttpStatus.OK);
+        } catch (Exception exception) {
+            log.error("Exception occurred due to {}", exception.getMessage());
+            return new Response("Exception occurred due to " + exception.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 }

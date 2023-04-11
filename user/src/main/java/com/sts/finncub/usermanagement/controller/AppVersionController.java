@@ -17,7 +17,7 @@ public class AppVersionController {
 
     @GetMapping("/getCurrentVersion")
     public Response getCurrentVersion(@RequestParam String key) {
-        log.info("Request initiated to get {}",key);
+        log.info("Request initiated to get {}", key);
         return appVersionService.getCurrentVersion(key);
     }
 
