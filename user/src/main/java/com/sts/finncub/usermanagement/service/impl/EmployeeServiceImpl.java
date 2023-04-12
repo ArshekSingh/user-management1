@@ -583,7 +583,6 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 if (!CollectionUtils.isEmpty(employeeWithAadhar)) {
                     messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + employeeWithAadhar + " and Aadhaar-" + request.getAadharCard() + " you cannot add existing employee");
                 }
-
             }
         }
         if (StringUtils.hasText(request.getPancardNo())) {
