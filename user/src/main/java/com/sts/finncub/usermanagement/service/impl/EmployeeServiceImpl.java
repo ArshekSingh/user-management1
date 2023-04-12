@@ -473,7 +473,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                         return new Response("Employee details cannot be updated because either status is inactive or employee is already relieved", HttpStatus.BAD_REQUEST);
                     }
                 }
-                //updating employee details in employee_movement_logs entity
+                //save employee promotion details in employee_movement_logs
                 if (isFieldsUpdated(request, employee)) {
                     employeeAssembler.dtoToEntity(request, userSession);
                 }
