@@ -11,6 +11,7 @@ import com.sts.finncub.usermanagement.request.EmployeeRequest;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,7 +36,7 @@ public class EmployeeAssembler {
         employeeMovementLogs.setEmployeeMovementLogsPK(employeeMovementLogsPK);
         employeeMovementLogs.setEmployeeId(request.getEmployeeId());
         employeeMovementLogs.setEmployementType(request.getEmploymentType());
-        employeeMovementLogs.setPromotionDate(DateTimeUtil.stringToDate(request.getPromotionDate()));
+        employeeMovementLogs.setPromotionDate(StringUtils.hasText(request.getBranchJoinDate()) ? DateTimeUtil.stringToDate(request.getPromotionDate()) : null);
         employeeMovementLogs.setDepartmentId(request.getDepartmentId());
         employeeMovementLogs.setSubDepartmentId(request.getSubDepartmentId());
         employeeMovementLogs.setDesignationType(request.getDesignationType());
@@ -45,7 +46,7 @@ public class EmployeeAssembler {
         employeeMovementLogs.setUpdatedBy(userSession.getUserId());
         employeeMovementLogs.setUpdatedOn(LocalDateTime.now());
         employeeMovementLogs.setBranchId(request.getBranchId().longValue());
-        employeeMovementLogs.setBranchJoiningDate(DateTimeUtil.stringToDate(request.getBranchJoinDate()));
+        employeeMovementLogs.setBranchJoiningDate(StringUtils.hasText(request.getBranchJoinDate()) ? DateTimeUtil.stringToDate(request.getBranchJoinDate()) : null);
         employeeMovementLogs.setFunctionalTitleId(request.getFunctionalTitleId());
         employeeMovementLogsRepository.save(employeeMovementLogs);
     }
