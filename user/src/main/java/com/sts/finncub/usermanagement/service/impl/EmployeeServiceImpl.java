@@ -225,7 +225,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     }
 
     private void validateRequest(EmployeeRequest request) throws BadRequestException {
-        // validate employee add / update request
+        // validate employee add or update request
         if (request == null || !StringUtils.hasText(request.getStatus()) || !StringUtils.hasText(request.getFirstName()) || !StringUtils.hasText(request.getGender())) {
             assert request != null;
             log.warn("Request failed validation, these field are mandatory : Status {} , FirstName {} , Gender {} ", StringUtils.hasText(request.getStatus()), request.getFirstName(), request.getGender());
