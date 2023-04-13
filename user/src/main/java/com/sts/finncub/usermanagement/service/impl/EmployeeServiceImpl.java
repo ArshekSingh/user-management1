@@ -72,7 +72,16 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         request.setUserId(userId);
         employee.setEmployeeId(Long.valueOf(employeeId));
         // save value in employee master
-        saveValueEmployeeMaster(request, employee, request.getEmployeeId(), userSession);
+        employee = saveValueEmployeeMaster(request, employee, request.getEmployeeId(), userSession);
+        if (StringUtils.hasText(request.getIsBranchManager()) && "Y".equalsIgnoreCase(request.getIsBranchManager())) {
+            Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchIdAndOrgId(employee.getBranchId(), userSession.getOrganizationId());
+            if (branchMaster.isPresent()) {
+                BranchMaster updatedBranchMaster = branchMaster.get();
+                employee.setIsBranchManager(request.getIsBranchManager());
+                updatedBranchMaster.setBranchManagerId(String.valueOf(employee.getEmployeeId()));
+                branchMasterRepository.save(updatedBranchMaster);
+            }
+        }
         log.info("Employee save success fully");
         // create  employee user details in user master
         saveValueInUserMaster(userId, request, true);
@@ -108,7 +117,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         userService.addUser(request);
     }
 
-    private void saveValueEmployeeMaster(EmployeeRequest request, Employee employee, Long employeeId, UserSession userSession) {
+    private Employee saveValueEmployeeMaster(EmployeeRequest request, Employee employee, Long employeeId, UserSession userSession) {
         employee.setFirstName(request.getFirstName());
         employee.setMiddleName(request.getMiddleName());
         employee.setLastName(request.getLastName());
@@ -210,10 +219,10 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                     updatedBranchMaster.setBranchManagerId(null);
                 }
             }
-            if (StringUtils.hasText(request.getIsBranchManager())) {
-                employee.setIsBranchManager(request.getIsBranchManager());
-                updatedBranchMaster.setBranchManagerId(String.valueOf(request.getEmployeeId()));
-            }
+//            if (StringUtils.hasText(request.getIsBranchManager()) && "Y".equalsIgnoreCase(request.getIsBranchManager())) {
+//                employee.setIsBranchManager(request.getIsBranchManager());
+//                updatedBranchMaster.setBranchManagerId(String.valueOf(request.getEmployeeId()));
+//            }
             employee = employeeRepository.save(employee);
             if (StringUtils.hasText(request.getIsManager()) && request.getBranchId() != null) {
                 if ("Y".equalsIgnoreCase(request.getIsManager())) {
@@ -222,6 +231,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             }
             branchMasterRepository.save(updatedBranchMaster);
         }
+        return employee;
     }
 
     private void validateRequest(EmployeeRequest request) throws BadRequestException {
