@@ -489,7 +489,6 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 }
                 // save value in employee master table
                 saveValueEmployeeMaster(request, employee, request.getEmployeeId(), userSession);
-
                 //save value in user master table
                 if (request.getStatus().equals("A") || request.getStatus().equals("Active")) {
                     saveValueInUserMaster(request.getUserId(), request, true);
