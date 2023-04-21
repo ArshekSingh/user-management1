@@ -475,14 +475,14 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             if (employee != null) {
                 //Check for relieving date of employee
                 checkRelievingDate(request, employee);
-                if (StringUtils.hasText(request.getRelievingDate()) || StringUtils.hasText(request.getStatus())) {
-                    LocalDate relievingDate = DateTimeUtil.stringToDate(request.getRelievingDate());
-                    LocalDate currentDate = LocalDate.now();
-                    if (currentDate.isAfter(relievingDate != null ? relievingDate : currentDate) || "X".equalsIgnoreCase(request.getStatus())) {
-                        log.info("Employee details cannot be updated because either status is inactive or employee is already relieved for employee id {}", request.getEmployeeId());
-                        return new Response("Employee details cannot be updated because either status is inactive or employee is already relieved", HttpStatus.BAD_REQUEST);
-                    }
-                }
+//                if (StringUtils.hasText(request.getRelievingDate()) || StringUtils.hasText(request.getStatus())) {
+//                    LocalDate relievingDate = DateTimeUtil.stringToDate(request.getRelievingDate());
+//                    LocalDate currentDate = LocalDate.now();
+//                    if (currentDate.isAfter(relievingDate != null ? relievingDate : currentDate) || "X".equalsIgnoreCase(request.getStatus())) {
+//                        log.info("Employee details cannot be updated because either status is inactive or employee is already relieved for employee id {}", request.getEmployeeId());
+//                        return new Response("Employee details cannot be updated because either status is inactive or employee is already relieved", HttpStatus.BAD_REQUEST);
+//                    }
+//                }
                 //save employee promotion details in employee_movement_logs
                 if (isFieldsUpdated(request, employee)) {
                     employeeAssembler.dtoToEntity(request, userSession);
