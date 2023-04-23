@@ -10,6 +10,7 @@ import java.util.List;
 @Setter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class EmployeeRequest {
+    // to add, update or get employee details
     private String employeeCode;
     private Long employeeId;
     private Long organizationId;
@@ -97,4 +98,5 @@ public class EmployeeRequest {
     private String aadharCardNumberOrig;
     private Integer baseLocation;
     private String isManager;
+    private String isBranchManager;
 }
