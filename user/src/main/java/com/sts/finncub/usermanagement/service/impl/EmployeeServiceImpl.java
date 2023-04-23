@@ -72,16 +72,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         request.setUserId(userId);
         employee.setEmployeeId(Long.valueOf(employeeId));
         // save value in employee master
-        employee = saveValueEmployeeMaster(request, employee, request.getEmployeeId(), userSession);
-        if (StringUtils.hasText(request.getIsBranchManager()) && "Y".equalsIgnoreCase(request.getIsBranchManager())) {
-            Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchIdAndOrgId(employee.getBranchId(), userSession.getOrganizationId());
-            if (branchMaster.isPresent()) {
-                BranchMaster updatedBranchMaster = branchMaster.get();
-                employee.setIsBranchManager(request.getIsBranchManager());
-                updatedBranchMaster.setBranchManagerId(String.valueOf(employee.getEmployeeId()));
-                branchMasterRepository.save(updatedBranchMaster);
-            }
-        }
+        saveValueEmployeeMaster(request, employee, request.getEmployeeId(), userSession);
         log.info("Employee save success fully");
         // create  employee user details in user master
         saveValueInUserMaster(userId, request, true);
@@ -117,7 +108,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         userService.addUser(request);
     }
 
-    private Employee saveValueEmployeeMaster(EmployeeRequest request, Employee employee, Long employeeId, UserSession userSession) {
+    private void saveValueEmployeeMaster(EmployeeRequest request, Employee employee, Long employeeId, UserSession userSession) {
         employee.setFirstName(request.getFirstName());
         employee.setMiddleName(request.getMiddleName());
         employee.setLastName(request.getLastName());
@@ -210,32 +201,40 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         }
         employee.setSubDepartmentId(request.getSubDepartmentId());
         employee.setBaseLocation(request.getBaseLocation());
-        //Set branch manager id as null when employee has been changed to inactive and branch manager id in branch
-        Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchIdAndOrgId(employee.getBranchId(), userSession.getOrganizationId());
-        if (branchMaster.isPresent()) {
-            BranchMaster updatedBranchMaster = branchMaster.get();
-            if (StringUtils.hasText(request.getStatus())) {
-                if ("X".equals(request.getStatus()) || "Inactive".equals(request.getStatus())) {
-                    updatedBranchMaster.setBranchManagerId(null);
-                }
+        if (StringUtils.hasText(request.getIsBranchManager())) {
+            employee.setIsBranchManager(request.getIsBranchManager());
+            Optional<BranchMaster> branchMasterOptional = branchMasterRepository.findByBranchMasterPK_OrgIdAndBranchMasterPK_BranchId(userSession.getOrganizationId(), request.getBranchId());
+            if (branchMasterOptional.isPresent()) {
+                BranchMaster branchMaster = branchMasterOptional.get();
+                branchMaster.setBranchManagerId(String.valueOf(request.getEmployeeId()));
             }
-//            if (StringUtils.hasText(request.getIsBranchManager()) && "Y".equalsIgnoreCase(request.getIsBranchManager())) {
-//                employee.setIsBranchManager(request.getIsBranchManager());
-//                updatedBranchMaster.setBranchManagerId(String.valueOf(request.getEmployeeId()));
-//            }
-            employee = employeeRepository.save(employee);
-            if (StringUtils.hasText(request.getIsManager()) && request.getBranchId() != null) {
-                if ("Y".equalsIgnoreCase(request.getIsManager())) {
-                    updatedBranchMaster.setBranchManagerId(String.valueOf(employee.getEmployeeId()));
-                }
-            }
-            branchMasterRepository.save(updatedBranchMaster);
         }
-        return employee;
+        //Set branch manager id as null when employee has been changed to inactive
+        if (StringUtils.hasText(request.getStatus())) {
+            if ("X".equals(request.getStatus()) || "Inactive".equals(request.getStatus())) {
+                Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchMasterPK_OrgIdAndBranchMasterPK_BranchId(userSession.getOrganizationId(), employee.getBranchId());
+                if (branchMaster.isPresent()) {
+                    BranchMaster updatedBranchMaster = branchMaster.get();
+                    updatedBranchMaster.setBranchManagerId(null);
+                    branchMasterRepository.save(updatedBranchMaster);
+                }
+            }
+        }
+        employee = employeeRepository.save(employee);
+        if (StringUtils.hasText(request.getIsManager()) && request.getBranchId() != null) {
+            if ("Y".equalsIgnoreCase(request.getIsManager())) {
+                Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchMasterPK_OrgIdAndBranchMasterPK_BranchId(userSession.getOrganizationId(), request.getBranchId());
+                if (branchMaster.isPresent()) {
+                    BranchMaster updatedBranchMaster = branchMaster.get();
+                    updatedBranchMaster.setBranchManagerId(String.valueOf(employee.getEmployeeId()));
+                    branchMasterRepository.save(updatedBranchMaster);
+                }
+            }
+        }
     }
 
     private void validateRequest(EmployeeRequest request) throws BadRequestException {
-        // validate employee add or update request
+        // validate employee add / update request
         if (request == null || !StringUtils.hasText(request.getStatus()) || !StringUtils.hasText(request.getFirstName()) || !StringUtils.hasText(request.getGender())) {
             assert request != null;
             log.warn("Request failed validation, these field are mandatory : Status {} , FirstName {} , Gender {} ", StringUtils.hasText(request.getStatus()), request.getFirstName(), request.getGender());
@@ -299,7 +298,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 employeeDto.setExitDate(DateTimeUtil.dateToString(employee.getExitDate()));
             }
             if (employee.getBranchId() != null) {
-                BranchMaster branchMaster = branchMasterRepository.findByBranchIdAndOrgId(employee.getBranchId(), userSession.getOrganizationId()).orElse(null);
+                BranchMaster branchMaster = branchMasterRepository.findByBranchMasterPK_OrgIdAndBranchMasterPK_BranchId(userSession.getOrganizationId(), employee.getBranchId()).orElse(null);
                 if (branchMaster != null) {
                     employeeDto.setBranchBcName(StringUtils.hasText(branchMaster.getBusinessPartner()) ? branchMaster.getBusinessPartner() : "");
                     employeeDto.setBaseLocationName(StringUtils.hasText(branchMaster.getBranchName()) ? branchMaster.getBranchName() : "");
@@ -465,7 +464,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 if (StringUtils.hasText(request.getStatus()) && !employee.getStatus().equalsIgnoreCase(request.getStatus())) {
                     String id = Long.toString(request.getEmployeeId());
                     List<String> statusList = Stream.of("A", "C", "R", "C2", "G").collect(Collectors.toList());
-                    List<CenterMaster> centerMasterList = centerMasterRepository.findByOrgIdAndAssignedToAndStatusIn(userSession.getOrganizationId(), id, statusList);
+                    List<CenterMaster> centerMasterList = centerMasterRepository.findByCenterMasterPK_OrgIdAndAssignedToAndStatusIn(userSession.getOrganizationId(), id, statusList);
                     if (!CollectionUtils.isEmpty(centerMasterList)) {
                         log.info("You can't mark this employee as Inactive because center is active for this employee {} ", employee.getEmployeeId());
                         throw new BadRequestException("You can't mark this employee as Inactive ", HttpStatus.BAD_REQUEST);
@@ -475,20 +474,21 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             if (employee != null) {
                 //Check for relieving date of employee
                 checkRelievingDate(request, employee);
-//                if (StringUtils.hasText(request.getRelievingDate()) || StringUtils.hasText(request.getStatus())) {
-//                    LocalDate relievingDate = DateTimeUtil.stringToDate(request.getRelievingDate());
-//                    LocalDate currentDate = LocalDate.now();
-//                    if (currentDate.isAfter(relievingDate != null ? relievingDate : currentDate) || "X".equalsIgnoreCase(request.getStatus())) {
-//                        log.info("Employee details cannot be updated because either status is inactive or employee is already relieved for employee id {}", request.getEmployeeId());
-//                        return new Response("Employee details cannot be updated because either status is inactive or employee is already relieved", HttpStatus.BAD_REQUEST);
-//                    }
-//                }
-                //save employee promotion details in employee_movement_logs
+                if (StringUtils.hasText(request.getRelievingDate()) || StringUtils.hasText(request.getStatus())) {
+                    LocalDate relievingDate = DateTimeUtil.stringToDate(request.getRelievingDate());
+                    LocalDate currentDate = LocalDate.now();
+                    if (currentDate.isAfter(relievingDate != null ? relievingDate : currentDate) || "X".equalsIgnoreCase(request.getStatus())) {
+                        log.info("Employee details cannot be updated because either status is inactive or employee is already relieved for employee id {}", request.getEmployeeId());
+                        return new Response("Employee details cannot be updated because either status is inactive or employee is already relieved", HttpStatus.BAD_REQUEST);
+                    }
+                }
+                //updating employee details in employee_movement_logs entity
                 if (isFieldsUpdated(request, employee)) {
                     employeeAssembler.dtoToEntity(request, userSession);
                 }
                 // save value in employee master table
                 saveValueEmployeeMaster(request, employee, request.getEmployeeId(), userSession);
+
                 //save value in user master table
                 if (request.getStatus().equals("A") || request.getStatus().equals("Active")) {
                     saveValueInUserMaster(request.getUserId(), request, true);
@@ -521,7 +521,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         if (request.getRelievingDate() != null) {
             List<String> status = new ArrayList<>();
             status.add("A");
-            List<CenterMaster> centerMasters = centerMasterRepository.findByBranchIdAndOrgIdAndStatusInAndAssignedTo(employee.getBranchId(), employee.getOrganizationId(), status, employee.getEmployeeCode());
+            List<CenterMaster> centerMasters = centerMasterRepository.findByCenterMasterPK_OrgIdAndBranchIdAndStatusInAndAssignedTo(employee.getOrganizationId(), employee.getBranchId(), status, employee.getEmployeeCode());
             if (centerMasters != null && !centerMasters.isEmpty()) {
                 throw new BadRequestException("Cannot edit relieving date of an employee when active center is assigned!", HttpStatus.BAD_REQUEST);
             }
@@ -592,6 +592,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 if (!CollectionUtils.isEmpty(employeeWithAadhar)) {
                     messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + employeeWithAadhar + " and Aadhaar-" + request.getAadharCard() + " you cannot add existing employee");
                 }
+
             }
         }
         if (StringUtils.hasText(request.getPancardNo())) {
