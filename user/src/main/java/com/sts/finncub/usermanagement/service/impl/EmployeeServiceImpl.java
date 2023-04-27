@@ -78,7 +78,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchIdAndOrgId(employee.getBranchId(), userSession.getOrganizationId());
             if (branchMaster.isPresent()) {
                 BranchMaster updatedBranchMaster = branchMaster.get();
-                employee.setIsBranchManager(request.getIsBranchManager());
+//                employee.setIsBranchManager(request.getIsBranchManager());
                 updatedBranchMaster.setBranchManagerId(String.valueOf(employee.getEmployeeId()));
                 branchMasterRepository.save(updatedBranchMaster);
             }
@@ -212,6 +212,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         }
         employee.setSubDepartmentId(request.getSubDepartmentId());
         employee.setBaseLocation(request.getBaseLocation());
+        employee.setIsBranchManager(request.getIsBranchManager());
         //Set branch manager id as null when employee has been changed to inactive and branch manager id in branch
         Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchIdAndOrgId(employee.getBranchId(), userSession.getOrganizationId());
         if (branchMaster.isPresent()) {
