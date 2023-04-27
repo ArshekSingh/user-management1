@@ -477,7 +477,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 }
             }
             if (employee != null) {
-                //Check for relieving date of employee
+                //Check for relieving date of the employee
                 checkRelievingDate(request, employee);
 //                if (StringUtils.hasText(request.getRelievingDate()) || StringUtils.hasText(request.getStatus())) {
 //                    LocalDate relievingDate = DateTimeUtil.stringToDate(request.getRelievingDate());
