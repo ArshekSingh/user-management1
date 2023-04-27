@@ -309,7 +309,7 @@ public class UserServiceImpl implements UserService, Constant {
     @Override
     public Response getUserAssignedAndAvailableBranchList(String userId) {
         UserSession userSession = userCredentialService.getUserSession();
-        List<UserBranchMapping> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_UserIdContainingIgnoreCase(userId);
+        List<UserBranchMapping> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_OrgIdAndUserBranchMappingPK_UserIdContainingIgnoreCase(userSession.getOrganizationId(), userId);
         UserBranchMappingDto userBranchMappingDto = new UserBranchMappingDto();
         List<ServerSideDropDownDto> userAssignedBranchesList = new ArrayList<>();
         List<ServerSideDropDownDto> userAvailableBranchesList = new ArrayList<>();
@@ -343,7 +343,7 @@ public class UserServiceImpl implements UserService, Constant {
     @Override
     public Response assignBranchesToUser(UserBranchMappingDto userBranchMappingDto) {
         UserSession userSession = userCredentialService.getUserSession();
-        List<UserBranchMapping> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_UserIdContainingIgnoreCase(userBranchMappingDto.getUserId());
+        List<UserBranchMapping> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_OrgIdAndUserBranchMappingPK_UserIdContainingIgnoreCase(userSession.getOrganizationId(), userBranchMappingDto.getUserId());
         if (!CollectionUtils.isEmpty(userBranchMappingList)) {
             userBranchMappingRepository.deleteAll(userBranchMappingList);
         }
