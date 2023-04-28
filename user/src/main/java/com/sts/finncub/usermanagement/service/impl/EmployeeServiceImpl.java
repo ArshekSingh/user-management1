@@ -76,7 +76,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         // save value in employee master
         employee = saveValueEmployeeMaster(request, employee, request.getEmployeeId(), userSession);
         if (StringUtils.hasText(request.getIsBranchManager()) && "Y".equalsIgnoreCase(request.getIsBranchManager())) {
-            Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchIdAndOrgId(employee.getBranchId(), userSession.getOrganizationId());
+            Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchMasterPK_OrgIdAndBranchMasterPK_BranchId(userSession.getOrganizationId(), employee.getBranchId());
             if (branchMaster.isPresent()) {
                 BranchMaster updatedBranchMaster = branchMaster.get();
                 employee.setIsBranchManager(request.getIsBranchManager());
@@ -193,6 +193,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         employee.setIsVehicle(request.getIsVehicle());
         employee.setVehicleType(request.getVehicleType());
         employee.setVehicleNumber(request.getVehicleNumber());
+        employee.setIsBankValidated("N");
         if (StringUtils.hasText(request.getResignDate())) {
             employee.setResignDate(DateTimeUtil.stringToDate(request.getResignDate()));
         }
@@ -239,9 +240,9 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 if (branchMaster.isPresent()) {
                     BranchMaster updatedBranchMaster = branchMaster.get();
                     updatedBranchMaster.setBranchManagerId(String.valueOf(employee.getEmployeeId()));
+                    branchMasterRepository.save(updatedBranchMaster);
                 }
             }
-            branchMasterRepository.save(updatedBranchMaster);
         }
         return employee;
     }
@@ -389,6 +390,10 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employeeDto.setVehicleNumber(employee.getVehicleNumber());
             employeeDto.setResignDate(DateTimeUtil.dateToString(employee.getResignDate()));
             employeeDto.setExitDate(DateTimeUtil.dateToString(employee.getExitDate()));
+            employeeDto.setIsBankValidated(employee.getIsBankValidated());
+            employeeDto.setBankValidationDate(DateTimeUtil.dateToString(employee.getBankValidationDate()));
+            employeeDto.setBankResponse(employee.getBankResponse());
+            employeeDto.setValidationAttempts(employee.getValidationAttempts());
         }
         return new Response(SUCCESS, employeeDto, HttpStatus.OK);
     }
