@@ -43,9 +43,8 @@ pipeline {
             steps{
                 script {
                 sh 'git submodule update --init --recursive'
-                withDockerContainer(image:'maven:latest',args:'--entrypoint="" -v $HOME/.m2:/root/.m2') {
-                     sh 'mvn clean install'
-                }
+                sh 'mvn clean install'
+                sh 'ls -al'
                 sh 'hadolint Dockerfile > newfile.txt'
                 sh 'cat newfile.txt'
 				sh 'docker build -t ${ENVIRONMENT}-${CUSTOMER_NAME}-${PRODUCT}-${APP}-service .'
