@@ -77,7 +77,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchIdAndOrgId(employee.getBranchId(), userSession.getOrganizationId());
             if (branchMaster.isPresent()) {
                 BranchMaster updatedBranchMaster = branchMaster.get();
-                employee.setIsBranchManager(request.getIsBranchManager());
+//                employee.setIsBranchManager(request.getIsBranchManager());
                 updatedBranchMaster.setBranchManagerId(String.valueOf(employee.getEmployeeId()));
                 branchMasterRepository.save(updatedBranchMaster);
             }
@@ -210,6 +210,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         }
         employee.setSubDepartmentId(request.getSubDepartmentId());
         employee.setBaseLocation(request.getBaseLocation());
+        employee.setIsBranchManager(request.getIsBranchManager());
         //Set branch manager id as null when employee has been changed to inactive and branch manager id in branch
         Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchIdAndOrgId(employee.getBranchId(), userSession.getOrganizationId());
         if (branchMaster.isPresent()) {
@@ -224,8 +225,8 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
 //                updatedBranchMaster.setBranchManagerId(String.valueOf(request.getEmployeeId()));
 //            }
             employee = employeeRepository.save(employee);
-            if (StringUtils.hasText(request.getIsManager()) && request.getBranchId() != null) {
-                if ("Y".equalsIgnoreCase(request.getIsManager())) {
+            if (StringUtils.hasText(request.getIsBranchManager()) && request.getBranchId() != null) {
+                if ("Y".equalsIgnoreCase(request.getIsBranchManager())) {
                     updatedBranchMaster.setBranchManagerId(String.valueOf(employee.getEmployeeId()));
                 }
             }
@@ -276,6 +277,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employeeDto.setDepartmentName(employee.getEmployeeDepartmentMaster() == null ? "" : employee.getEmployeeDepartmentMaster().getEmpDepartmentName());
             employeeDto.setDesignationName(employee.getEmployeeDesignationMaster() == null ? "" : employee.getEmployeeDesignationMaster().getEmpDesignationName());
             employeeDto.setBaseLocation(employee.getBaseLocation());
+            employeeDto.setIsBranchManager(employee.getIsBranchManager());
             if (employee.getSubDepartmentId() != null) {
                 EmployeeDepartmentMaster employeeDepartmentMaster = employeeDepartmentRepository.findByOrgIdAndEmpDepartmentId(userSession.getOrganizationId(), employee.getSubDepartmentId());
                 employeeDto.setSubDepartmentName(employeeDepartmentMaster.getEmpDepartmentName());
@@ -377,6 +379,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employeeDto.setVehicleNumber(employee.getVehicleNumber());
             employeeDto.setResignDate(DateTimeUtil.dateToString(employee.getResignDate()));
             employeeDto.setExitDate(DateTimeUtil.dateToString(employee.getExitDate()));
+            employeeDto.setIsBranchManager(employee.getIsBranchManager());
         }
         return new Response(SUCCESS, employeeDto, HttpStatus.OK);
     }
@@ -473,7 +476,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 }
             }
             if (employee != null) {
-                //Check for relieving date of employee
+                //Check for relieving date of the employee
                 checkRelievingDate(request, employee);
 //                if (StringUtils.hasText(request.getRelievingDate()) || StringUtils.hasText(request.getStatus())) {
 //                    LocalDate relievingDate = DateTimeUtil.stringToDate(request.getRelievingDate());
