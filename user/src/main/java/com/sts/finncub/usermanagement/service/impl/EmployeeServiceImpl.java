@@ -661,14 +661,15 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         employee.setIsBankValidated(employeeRequest.getIsBankValidated());
         employee.setBankAccNo(employeeRequest.getBankAccNo());
         employee.setIfscCode(employeeRequest.getIfscCode());
+        employee.setBankAccType(employeeRequest.getBankAccType());
+        employee.setBankName(employeeRequest.getBankName());
+        employee.setBankBranch(employeeRequest.getBankBranch());
         employeeRepository.save(employee);
         EmployeeBankResponse bankResponse = new EmployeeBankResponse();
         bankResponse.setBankBranch(employee.getBankBranch());
         bankResponse.setBankName(employee.getBankName());
         bankResponse.setBankAccNo(employee.getBankAccNo());
-        bankResponse.setBankResponse(employee.getBankResponse());
         bankResponse.setBankAccType(employee.getBankAccType());
-        bankResponse.setBankValidationDate(DateTimeUtil.dateToString(employee.getBankValidationDate()));
         bankResponse.setIsBankValidated(employee.getIsBankValidated());
         bankResponse.setIfscCode(employee.getIfscCode());
         return new Response(SUCCESS, bankResponse, HttpStatus.OK);
