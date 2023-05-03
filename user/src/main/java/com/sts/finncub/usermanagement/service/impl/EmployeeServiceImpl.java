@@ -214,6 +214,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         employee.setSubDepartmentId(request.getSubDepartmentId());
         employee.setBaseLocation(request.getBaseLocation());
         employee.setIsBranchManager(request.getIsBranchManager());
+        employee.setIsBankValidated("N");
         //Set branch manager id as null when employee has been changed to inactive and branch manager id in branch
         Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchMasterPK_OrgIdAndBranchMasterPK_BranchId(userSession.getOrganizationId(), employee.getBranchId());
         if (branchMaster.isPresent()) {
