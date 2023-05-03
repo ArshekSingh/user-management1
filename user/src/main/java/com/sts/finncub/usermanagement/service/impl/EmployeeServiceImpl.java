@@ -18,7 +18,6 @@ import com.sts.finncub.core.util.ValidationUtils;
 import com.sts.finncub.usermanagement.assembler.EmployeeAssembler;
 import com.sts.finncub.usermanagement.request.EmployeeRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
-import com.sts.finncub.usermanagement.response.EmployeeResponse;
 import com.sts.finncub.usermanagement.response.EmployeeBankResponse;
 import com.sts.finncub.usermanagement.service.EmployeeService;
 import com.sts.finncub.usermanagement.service.UserService;
@@ -31,7 +30,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -60,7 +58,6 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     @Transactional
     public Response addEmployee(EmployeeRequest request) throws BadRequestException {
         UserSession userSession = userCredentialService.getUserSession();
-        EmployeeResponse employeeResponse = new EmployeeResponse();
         validateRequest(request);
         Response response = validateActiveAadhaarOrPanOrMobForSaveEmployee(request);
         if (200 == response.getCode()) {
@@ -80,7 +77,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchMasterPK_OrgIdAndBranchMasterPK_BranchId(userSession.getOrganizationId(), employee.getBranchId());
             if (branchMaster.isPresent()) {
                 BranchMaster updatedBranchMaster = branchMaster.get();
-                employee.setIsBranchManager(request.getIsBranchManager());
+//                employee.setIsBranchManager(request.getIsBranchManager());
                 updatedBranchMaster.setBranchManagerId(String.valueOf(employee.getEmployeeId()));
                 branchMasterRepository.save(updatedBranchMaster);
             }
@@ -88,8 +85,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         log.info("Employee save success fully");
         // create  employee user details in user master
         saveValueInUserMaster(userId, request, true);
-        employeeResponse.setEmployeeId(employee.getEmployeeId());
-        return new Response(SUCCESS, employeeResponse, HttpStatus.OK);
+        return new Response(SUCCESS, HttpStatus.OK);
     }
 
     private void saveValueInUserMaster(String userId, EmployeeRequest employeeRequest, Boolean isActive) throws BadRequestException {
@@ -194,7 +190,6 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         employee.setIsVehicle(request.getIsVehicle());
         employee.setVehicleType(request.getVehicleType());
         employee.setVehicleNumber(request.getVehicleNumber());
-        employee.setIsBankValidated("N");
         if (StringUtils.hasText(request.getResignDate())) {
             employee.setResignDate(DateTimeUtil.stringToDate(request.getResignDate()));
         }
@@ -215,35 +210,27 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         }
         employee.setSubDepartmentId(request.getSubDepartmentId());
         employee.setBaseLocation(request.getBaseLocation());
-        if (StringUtils.hasText(request.getIsBranchManager())) {
-            employee.setIsBranchManager(request.getIsBranchManager());
-            Optional<BranchMaster> branchMasterOptional = branchMasterRepository.findByBranchMasterPK_OrgIdAndBranchMasterPK_BranchId(userSession.getOrganizationId(), request.getBranchId());
-            if (branchMasterOptional.isPresent()) {
-                BranchMaster branchMaster = branchMasterOptional.get();
-                branchMaster.setBranchManagerId(String.valueOf(request.getEmployeeId()));
-            }
-        }
-        //Set branch manager id as null when employee has been changed to inactive
-        if (StringUtils.hasText(request.getStatus())) {
-            if ("X".equals(request.getStatus()) || "Inactive".equals(request.getStatus())) {
-                Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchMasterPK_OrgIdAndBranchMasterPK_BranchId(userSession.getOrganizationId(), employee.getBranchId());
-                if (branchMaster.isPresent()) {
-                    BranchMaster updatedBranchMaster = branchMaster.get();
+        employee.setIsBranchManager(request.getIsBranchManager());
+        //Set branch manager id as null when employee has been changed to inactive and branch manager id in branch
+        Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchMasterPK_OrgIdAndBranchMasterPK_BranchId(userSession.getOrganizationId(), employee.getBranchId());
+        if (branchMaster.isPresent()) {
+            BranchMaster updatedBranchMaster = branchMaster.get();
+            if (StringUtils.hasText(request.getStatus())) {
+                if ("X".equals(request.getStatus()) || "Inactive".equals(request.getStatus())) {
                     updatedBranchMaster.setBranchManagerId(null);
-                    branchMasterRepository.save(updatedBranchMaster);
                 }
             }
-        }
-        employee = employeeRepository.save(employee);
-        if (StringUtils.hasText(request.getIsManager()) && request.getBranchId() != null) {
-            if ("Y".equalsIgnoreCase(request.getIsManager())) {
-                Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchMasterPK_OrgIdAndBranchMasterPK_BranchId(userSession.getOrganizationId(), request.getBranchId());
-                if (branchMaster.isPresent()) {
-                    BranchMaster updatedBranchMaster = branchMaster.get();
+//            if (StringUtils.hasText(request.getIsBranchManager()) && "Y".equalsIgnoreCase(request.getIsBranchManager())) {
+//                employee.setIsBranchManager(request.getIsBranchManager());
+//                updatedBranchMaster.setBranchManagerId(String.valueOf(request.getEmployeeId()));
+//            }
+            employee = employeeRepository.save(employee);
+            if (StringUtils.hasText(request.getIsBranchManager()) && request.getBranchId() != null) {
+                if ("Y".equalsIgnoreCase(request.getIsBranchManager())) {
                     updatedBranchMaster.setBranchManagerId(String.valueOf(employee.getEmployeeId()));
-                    branchMasterRepository.save(updatedBranchMaster);
                 }
             }
+            branchMasterRepository.save(updatedBranchMaster);
         }
         return employee;
     }
@@ -290,6 +277,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employeeDto.setDepartmentName(employee.getEmployeeDepartmentMaster() == null ? "" : employee.getEmployeeDepartmentMaster().getEmpDepartmentName());
             employeeDto.setDesignationName(employee.getEmployeeDesignationMaster() == null ? "" : employee.getEmployeeDesignationMaster().getEmpDesignationName());
             employeeDto.setBaseLocation(employee.getBaseLocation());
+            employeeDto.setIsBranchManager(employee.getIsBranchManager());
             if (employee.getSubDepartmentId() != null) {
                 EmployeeDepartmentMaster employeeDepartmentMaster = employeeDepartmentRepository.findByOrgIdAndEmpDepartmentId(userSession.getOrganizationId(), employee.getSubDepartmentId());
                 employeeDto.setSubDepartmentName(employeeDepartmentMaster.getEmpDepartmentName());
@@ -391,10 +379,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employeeDto.setVehicleNumber(employee.getVehicleNumber());
             employeeDto.setResignDate(DateTimeUtil.dateToString(employee.getResignDate()));
             employeeDto.setExitDate(DateTimeUtil.dateToString(employee.getExitDate()));
-            employeeDto.setIsBankValidated(employee.getIsBankValidated());
-            employeeDto.setBankValidationDate(DateTimeUtil.dateToString(employee.getBankValidationDate()));
-            employeeDto.setBankResponse(employee.getBankResponse());
-            employeeDto.setValidationAttempts(employee.getValidationAttempts());
+            employeeDto.setIsBranchManager(employee.getIsBranchManager());
         }
         return new Response(SUCCESS, employeeDto, HttpStatus.OK);
     }
@@ -491,23 +476,22 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 }
             }
             if (employee != null) {
-                //Check for relieving date of employee
+                //Check for relieving date of the employee
                 checkRelievingDate(request, employee);
-                if (StringUtils.hasText(request.getRelievingDate()) || StringUtils.hasText(request.getStatus())) {
-                    LocalDate relievingDate = DateTimeUtil.stringToDate(request.getRelievingDate());
-                    LocalDate currentDate = LocalDate.now();
-                    if (currentDate.isAfter(relievingDate != null ? relievingDate : currentDate) || "X".equalsIgnoreCase(request.getStatus())) {
-                        log.info("Employee details cannot be updated because either status is inactive or employee is already relieved for employee id {}", request.getEmployeeId());
-                        return new Response("Employee details cannot be updated because either status is inactive or employee is already relieved", HttpStatus.BAD_REQUEST);
-                    }
-                }
-                //updating employee details in employee_movement_logs entity
+//                if (StringUtils.hasText(request.getRelievingDate()) || StringUtils.hasText(request.getStatus())) {
+//                    LocalDate relievingDate = DateTimeUtil.stringToDate(request.getRelievingDate());
+//                    LocalDate currentDate = LocalDate.now();
+//                    if (currentDate.isAfter(relievingDate != null ? relievingDate : currentDate) || "X".equalsIgnoreCase(request.getStatus())) {
+//                        log.info("Employee details cannot be updated because either status is inactive or employee is already relieved for employee id {}", request.getEmployeeId());
+//                        return new Response("Employee details cannot be updated because either status is inactive or employee is already relieved", HttpStatus.BAD_REQUEST);
+//                    }
+//                }
+                //save employee promotion details in employee_movement_logs
                 if (isFieldsUpdated(request, employee)) {
                     employeeAssembler.dtoToEntity(request, userSession);
                 }
                 // save value in employee master table
                 saveValueEmployeeMaster(request, employee, request.getEmployeeId(), userSession);
-
                 //save value in user master table
                 if (request.getStatus().equals("A") || request.getStatus().equals("Active")) {
                     saveValueInUserMaster(request.getUserId(), request, true);
@@ -677,14 +661,15 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         employee.setIsBankValidated(employeeRequest.getIsBankValidated());
         employee.setBankAccNo(employeeRequest.getBankAccNo());
         employee.setIfscCode(employeeRequest.getIfscCode());
+        employee.setBankAccType(employeeRequest.getBankAccType());
+        employee.setBankName(employeeRequest.getBankName());
+        employee.setBankBranch(employeeRequest.getBankBranch());
         employeeRepository.save(employee);
         EmployeeBankResponse bankResponse = new EmployeeBankResponse();
         bankResponse.setBankBranch(employee.getBankBranch());
         bankResponse.setBankName(employee.getBankName());
         bankResponse.setBankAccNo(employee.getBankAccNo());
-        bankResponse.setBankResponse(employee.getBankResponse());
         bankResponse.setBankAccType(employee.getBankAccType());
-        bankResponse.setBankValidationDate(DateTimeUtil.dateToString(employee.getBankValidationDate()));
         bankResponse.setIsBankValidated(employee.getIsBankValidated());
         bankResponse.setIfscCode(employee.getIfscCode());
         return new Response(SUCCESS, bankResponse, HttpStatus.OK);
