@@ -380,6 +380,10 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employeeDto.setResignDate(DateTimeUtil.dateToString(employee.getResignDate()));
             employeeDto.setExitDate(DateTimeUtil.dateToString(employee.getExitDate()));
             employeeDto.setIsBranchManager(employee.getIsBranchManager());
+            employeeDto.setIsBankValidated(employee.getIsBankValidated());
+            employeeDto.setBankValidationDate(DateTimeUtil.dateToString(employee.getBankValidationDate()));
+            employeeDto.setBankResponse(employee.getBankResponse());
+            employeeDto.setValidationAttempts(employee.getValidationAttempts());
         }
         return new Response(SUCCESS, employeeDto, HttpStatus.OK);
     }
