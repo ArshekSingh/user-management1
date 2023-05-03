@@ -74,7 +74,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         // save value in employee master
         employee = saveValueEmployeeMaster(request, employee, request.getEmployeeId(), userSession);
         if (StringUtils.hasText(request.getIsBranchManager()) && "Y".equalsIgnoreCase(request.getIsBranchManager())) {
-            Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchIdAndOrgId(employee.getBranchId(), userSession.getOrganizationId());
+            Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchMasterPK_OrgIdAndBranchMasterPK_BranchId(userSession.getOrganizationId(), employee.getBranchId());
             if (branchMaster.isPresent()) {
                 BranchMaster updatedBranchMaster = branchMaster.get();
 //                employee.setIsBranchManager(request.getIsBranchManager());
@@ -212,7 +212,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         employee.setBaseLocation(request.getBaseLocation());
         employee.setIsBranchManager(request.getIsBranchManager());
         //Set branch manager id as null when employee has been changed to inactive and branch manager id in branch
-        Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchIdAndOrgId(employee.getBranchId(), userSession.getOrganizationId());
+        Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchMasterPK_OrgIdAndBranchMasterPK_BranchId(userSession.getOrganizationId(), employee.getBranchId());
         if (branchMaster.isPresent()) {
             BranchMaster updatedBranchMaster = branchMaster.get();
             if (StringUtils.hasText(request.getStatus())) {
