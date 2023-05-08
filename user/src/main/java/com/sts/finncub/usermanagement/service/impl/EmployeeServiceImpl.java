@@ -18,7 +18,7 @@ import com.sts.finncub.core.util.ValidationUtils;
 import com.sts.finncub.usermanagement.assembler.EmployeeAssembler;
 import com.sts.finncub.usermanagement.request.EmployeeRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
-import com.sts.finncub.usermanagement.response.EmployeeBankResponse;
+import com.sts.finncub.usermanagement.response.EmployeeResponse;
 import com.sts.finncub.usermanagement.service.EmployeeService;
 import com.sts.finncub.usermanagement.service.UserService;
 import lombok.AllArgsConstructor;
@@ -58,6 +58,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     @Transactional
     public Response addEmployee(EmployeeRequest request) throws BadRequestException {
         UserSession userSession = userCredentialService.getUserSession();
+        EmployeeResponse employeeResponse = new EmployeeResponse();
         validateRequest(request);
         Response response = validateActiveAadhaarOrPanOrMobForSaveEmployee(request);
         if (200 == response.getCode()) {
@@ -85,7 +86,8 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         log.info("Employee save success fully");
         // create  employee user details in user master
         saveValueInUserMaster(userId, request, true);
-        return new Response(SUCCESS, HttpStatus.OK);
+        employeeResponse.setEmployeeId(employee.getEmployeeId());
+        return new Response(SUCCESS, employeeResponse, HttpStatus.OK);
     }
 
     private void saveValueInUserMaster(String userId, EmployeeRequest employeeRequest, Boolean isActive) throws BadRequestException {
@@ -94,7 +96,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         request.setUserId(userId);
         request.setEmail(employeeRequest.getOfficialEmail());
         request.setName(employeeRequest.getFirstName());
-        request.setMobileNumber(employeeRequest.getPersonalMob() == null ? null : "" + employeeRequest.getPersonalMob());
+        request.setMobileNumber(employeeRequest.getPersonalMob() != null ? String.valueOf(employeeRequest.getPersonalMob()) : "");
         request.setType("EMP");
         if (Boolean.TRUE.equals(isActive)) {
             request.setIsActive("Y");
