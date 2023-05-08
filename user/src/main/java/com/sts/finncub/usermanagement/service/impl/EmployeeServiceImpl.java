@@ -680,7 +680,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
 
     private void validateEmployeeBankUpdateRequest(EmployeeRequest employeeRequest) throws BadRequestException {
         if (employeeRequest == null || !StringUtils.hasText(employeeRequest.getBankAccNo()) || !StringUtils.hasText(employeeRequest.getIfscCode()) || !StringUtils.hasText(employeeRequest.getIsBankValidated()) || employeeRequest.getEmployeeId() == null) {
-            log.warn("Request failed validation, these field are mandatory : BankAccNo {} , Ifsc {} , IsBankValidated {} ", StringUtils.hasText(employeeRequest.getBankAccNo()), employeeRequest.getIfscCode(), employeeRequest.getIsBankValidated());
+            log.warn("Request failed validation, these field are mandatory : BankAccNo, Ifsc, IsBankValidated");
             throw new BadRequestException("Invalid Request", HttpStatus.BAD_REQUEST);
         }
     }
