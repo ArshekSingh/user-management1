@@ -30,4 +30,7 @@ public interface EmployeeService {
     Response validateActiveAadhaarOrPanOrMobForSaveEmployee(EmployeeRequest request);
 
     Response fetchEmployeeMovementLogs(EmployeeMovementLogsRequest request) throws BadRequestException;
+
+    Response updateEmployeeBankDetails(EmployeeRequest employeeRequest) throws BadRequestException;
+
 }
