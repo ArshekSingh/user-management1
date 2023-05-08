@@ -96,7 +96,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         request.setUserId(userId);
         request.setEmail(employeeRequest.getOfficialEmail());
         request.setName(employeeRequest.getFirstName());
-        request.setMobileNumber(String.valueOf(employeeRequest.getPersonalMob() == null ? null : employeeRequest.getPersonalMob()));
+        request.setMobileNumber(employeeRequest.getPersonalMob() != null ? String.valueOf(employeeRequest.getPersonalMob()) : "");
         request.setType("EMP");
         if (Boolean.TRUE.equals(isActive)) {
             request.setIsActive("Y");
