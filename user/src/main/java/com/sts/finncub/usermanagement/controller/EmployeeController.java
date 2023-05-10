@@ -80,4 +80,10 @@ public class EmployeeController {
         log.info("Request initiated to invoke method fetchEmployeeMovementLogs for employee id {}", request.getEmployeeId());
         return employeeService.fetchEmployeeMovementLogs(request);
     }
+
+    @PostMapping("/updateEmployeeBankDetails")
+    public Response updateEmployeeBankDetails(@RequestBody EmployeeRequest employeeRequest) throws BadRequestException {
+        log.info("Request initiated to update employee bank details");
+        return employeeService.updateEmployeeBankDetails(employeeRequest);
+    }
 }
