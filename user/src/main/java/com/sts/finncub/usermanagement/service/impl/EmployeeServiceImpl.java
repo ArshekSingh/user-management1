@@ -60,7 +60,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         UserSession userSession = userCredentialService.getUserSession();
         EmployeeResponse employeeResponse = new EmployeeResponse();
         validateRequest(request);
-        Response response = validateActiveAadhaarOrPanOrMobForSaveEmployee(request);
+        Response response = validateActiveAadhaarOrPanOrMobOrBankForSaveEmployee(request);
         if (200 == response.getCode()) {
             return new Response(response.getMessage(), response.getData(), response.getStatus());
         }
@@ -382,12 +382,16 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employeeDto.setResignDate(DateTimeUtil.dateToString(employee.getResignDate()));
             employeeDto.setExitDate(DateTimeUtil.dateToString(employee.getExitDate()));
             employeeDto.setIsBranchManager(employee.getIsBranchManager());
+            employeeDto.setIsBankValidated(employee.getIsBankValidated());
+            employeeDto.setBankValidationDate(DateTimeUtil.dateToString(employee.getBankValidationDate()));
+            employeeDto.setBankResponse(employee.getBankResponse());
+            employeeDto.setValidationAttempts(employee.getValidationAttempts());
         }
         return new Response(SUCCESS, employeeDto, HttpStatus.OK);
     }
 
     @Override
-    public Response validateAadhaarPanMobForSaveEmployee(EmployeeRequest request) {
+    public Response validateAadhaarPanMobBankForSaveEmployee(EmployeeRequest request) {
         //check dedupe by Aadhaar card/Pan card/mobile number
         List<String> messages = new ArrayList<>();
         if (request.getAadharCard() != null) {
@@ -409,12 +413,9 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             }
         }
         if (request.getBankAccNo() != null && request.getIfscCode() != null) {
-            List<Employee> employeesWithBankNumber = employeeRepository.findByBankAccNoAndIfscCode(request.getBankAccNo(),request.getIfscCode());
+            List<Employee> employeesWithBankNumber = employeeRepository.findByOrganizationIdAndBankAccNoAndIfscCode(userCredentialService.getUserSession().getOrganizationId(), request.getBankAccNo(),request.getIfscCode());
             if (!CollectionUtils.isEmpty(employeesWithBankNumber)) {
-                List<String> employeesWithSameBankAccNo = employeesWithBankNumber.stream().filter(o -> "A".equalsIgnoreCase(o.getStatus())).map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList());
-                if (!CollectionUtils.isEmpty(employeesWithSameBankAccNo)) {
-                    messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + employeesWithSameBankAccNo + " and bank_account_number : " + request.getBankAccNo() +  " and ifsc_code : "+ request.getIfscCode() + ", you cannot add existing employee");
-                }
+                messages.add(EXISTING_EMPLOYEE_MSG + employeesWithBankNumber.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and bank_account_number-" + request.getBankAccNo() + " and ifsc_code- " + request.getIfscCode());
             }
         }
 
@@ -422,7 +423,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     }
 
     @Override
-    public Response validateAadhaarPanMobForUpdateEmployee(EmployeeRequest request) {
+    public Response validateAadhaarPanMobBankForUpdateEmployee(EmployeeRequest request) {
         //check dedupe by Aadhaar card/Pan card/mobile number
         List<String> messages = new ArrayList<>();
         if (request.getAadharCard() != null) {
@@ -455,6 +456,17 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 Optional<Employee> first = employeesWithMobile.stream().filter(o -> o.getEmployeeId().equals(request.getEmployeeId())).findFirst();
                 if (first.isEmpty()) {
                     messages.add("Employee-" + employeesWithMobile.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " already exist with Mobile-" + request.getPersonalMob());
+                }
+            }
+        }
+        if (StringUtils.hasText(request.getBankAccNo()) && StringUtils.hasText(request.getIfscCode())) {
+            List<Employee> employeesWithBankAccount = employeeRepository.findByOrganizationIdAndBankAccNoAndIfscCode(userCredentialService.getUserSession().getOrganizationId(), request.getBankAccNo(), request.getIfscCode());
+            if (employeesWithBankAccount.size() > 1) {
+                messages.add(EXISTING_EMPLOYEE_MSG + employeesWithBankAccount.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and BANK_ACCOUNT_NUMBER-" + request.getBankAccNo());
+            } else if (employeesWithBankAccount.size() == 1) {
+                Optional<Employee> first = employeesWithBankAccount.stream().filter(o -> o.getEmployeeId().equals(request.getEmployeeId())).findFirst();
+                if (first.isEmpty()) {
+                    messages.add("Employee-" + employeesWithBankAccount.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " already exist with BANK_ACCOUNT_NUMBER and IFSC_CODE-" + request.getBankAccNo()+" , " +request.getIfscCode());
                 }
             }
         }
@@ -596,7 +608,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     }
 
     @Override
-    public Response validateActiveAadhaarOrPanOrMobForSaveEmployee(EmployeeRequest request) {
+    public Response validateActiveAadhaarOrPanOrMobOrBankForSaveEmployee(EmployeeRequest request) {
         //check dedupe by Aadhaar card/Pan card/mobile number
         List<String> messages = new ArrayList<>();
         if (request.getAadharCard() != null) {
@@ -623,6 +635,15 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 List<String> employeeWithPersonalMob = employeesWithMobile.stream().filter(o -> "A".equalsIgnoreCase(o.getStatus())).map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList());
                 if (!CollectionUtils.isEmpty(employeeWithPersonalMob)) {
                     messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + employeeWithPersonalMob + " and Mobile-" + request.getPersonalMob() + " you cannot add existing employee");
+                }
+            }
+        }
+        if (StringUtils.hasText(request.getBankAccNo()) && StringUtils.hasText(request.getIfscCode())) {
+            List<Employee> employeesWithBankNumber = employeeRepository.findByOrganizationIdAndBankAccNoAndIfscCode(userCredentialService.getUserSession().getOrganizationId(), request.getBankAccNo(),request.getIfscCode());
+            if (!CollectionUtils.isEmpty(employeesWithBankNumber)) {
+                List<String> employeesWithSameBankAccNo = employeesWithBankNumber.stream().filter(o -> "A".equalsIgnoreCase(o.getStatus())).map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList());
+                if (!CollectionUtils.isEmpty(employeesWithSameBankAccNo)) {
+                    messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + employeesWithSameBankAccNo + " and bank_account_number : " + request.getBankAccNo() +  " and ifsc_code : "+ request.getIfscCode() + ", you cannot add existing employee");
                 }
             }
         }

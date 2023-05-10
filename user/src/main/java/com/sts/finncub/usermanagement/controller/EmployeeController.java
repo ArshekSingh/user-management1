@@ -65,14 +65,14 @@ public class EmployeeController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @PostMapping(value = "validateAadhaarPanMobForSaveEmployee")
-    public Response validateAadhaarPanMobForSaveEmployee(@RequestBody EmployeeRequest request) {
-        return employeeService.validateAadhaarPanMobForSaveEmployee(request);
+    @PostMapping(value = "validateAadhaarPanMobBankForSaveEmployee")
+    public Response validateAadhaarPanMobBankForSaveEmployee(@RequestBody EmployeeRequest request) {
+        return employeeService.validateAadhaarPanMobBankForSaveEmployee(request);
     }
 
-    @PostMapping(value = "validateAadhaarPanMobForUpdateEmployee")
-    public Response validateAadhaarPanMobForUpdateEmployee(@RequestBody EmployeeRequest request) {
-        return employeeService.validateAadhaarPanMobForUpdateEmployee(request);
+    @PostMapping(value = "validateAadhaarPanMobBankForUpdateEmployee")
+    public Response validateAadhaarPanMobBankForUpdateEmployee(@RequestBody EmployeeRequest request) {
+        return employeeService.validateAadhaarPanMobBankForUpdateEmployee(request);
     }
 
     @PostMapping("/fetchEmployeeMovementLogs")
