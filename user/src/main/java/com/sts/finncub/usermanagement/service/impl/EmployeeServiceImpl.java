@@ -408,6 +408,15 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 messages.add(EXISTING_EMPLOYEE_MSG + employeesWithMobile.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Mobile-" + request.getPersonalMob());
             }
         }
+        if (request.getBankAccNo() != null && request.getIfscCode() != null) {
+            List<Employee> employeesWithBankNumber = employeeRepository.findByBankAccNoAndIfscCode(request.getBankAccNo(),request.getIfscCode());
+            if (!CollectionUtils.isEmpty(employeesWithBankNumber)) {
+                List<String> employeesWithSameBankAccNo = employeesWithBankNumber.stream().filter(o -> "A".equalsIgnoreCase(o.getStatus())).map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList());
+                if (!CollectionUtils.isEmpty(employeesWithSameBankAccNo)) {
+                    messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + employeesWithSameBankAccNo + " and bank_account_number : " + request.getBankAccNo() +  " and ifsc_code : "+ request.getIfscCode() + ", you cannot add existing employee");
+                }
+            }
+        }
 
         return new Response(SUCCESS, messages, HttpStatus.OK);
     }
