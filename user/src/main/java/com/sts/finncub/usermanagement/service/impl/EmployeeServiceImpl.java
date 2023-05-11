@@ -220,7 +220,9 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             BranchMaster updatedBranchMaster = branchMaster.get();
             if (StringUtils.hasText(request.getStatus())) {
                 if ("X".equals(request.getStatus()) || "Inactive".equals(request.getStatus())) {
-                    updatedBranchMaster.setBranchManagerId(null);
+                    if(request.getEmployeeId() != null && request.getEmployeeId().equals(Long.valueOf(updatedBranchMaster.getBranchManagerId()))) {
+                        updatedBranchMaster.setBranchManagerId(null);
+                    }
                 }
             }
 //            if (StringUtils.hasText(request.getIsBranchManager()) && "Y".equalsIgnoreCase(request.getIsBranchManager())) {
