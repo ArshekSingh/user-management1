@@ -1,4 +1,4 @@
-FROM openjdk:11.0
+FROM adoptopenjdk/openjdk11
 ARG JAR_FILE=user/target/*.jar
 ENV env uat
 ENV TZ="Asia/Kolkata"
