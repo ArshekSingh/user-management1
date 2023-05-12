@@ -229,6 +229,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
 //                employee.setIsBranchManager(request.getIsBranchManager());
 //                updatedBranchMaster.setBranchManagerId(String.valueOf(request.getEmployeeId()));
 //            }
+            employee.setIsBankValidated(request.getIsBankValidated());
             employee = employeeRepository.save(employee);
             if (StringUtils.hasText(request.getIsBranchManager()) && request.getBranchId() != null) {
                 if ("Y".equalsIgnoreCase(request.getIsBranchManager())) {
