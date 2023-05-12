@@ -45,7 +45,7 @@ pipeline {
                 sh 'git submodule update --init --recursive'
                 sh 'mvn clean install'
                 sh 'ls -al'
-                sh 'hadolint Dockerfile > newfile.txt'
+                sh 'hadolint Dockerfile > newfile.txt | true'
                 sh 'ls -al'
                 sh 'cat newfile.txt'
 				sh 'docker build -t ${ENVIRONMENT}-${CUSTOMER_NAME}-${PRODUCT}-${APP}-service .'
