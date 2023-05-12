@@ -60,7 +60,7 @@ pipeline {
                         def output_file = 'high_critical_scan_results.json'
                         def scan_output = sh(script: "trivy image --format json --scanners vuln --severity HIGH,CRITICAL ${ENVIRONMENT}-${CUSTOMER_NAME}-${PRODUCT}-${APP}-service:latest", returnStdout: true).trim()
                         if (scan_output) {
-                            def vulnerabilities = sh(script: "echo '${scan_output}' | jq -r '.Results[].Vulnerabilities[] | select(.Severity == \"HIGH\" or .Severity == \"CRITICAL\")'", returnStdout: true).trim()
+                            def vulnerabilities = sh(script: "echo '${scan_output}' | jq -r '.Results[].Vulnerabilities[] '", returnStdout: true).trim()
                             if (vulnerabilities) {
                                 writeFile(file: "${output_file}", text: vulnerabilities)
                             } else {
