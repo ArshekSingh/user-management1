@@ -1,6 +1,5 @@
 #FROM fabric8/java-alpine-openjdk11-jre:1.9.0
-#FROM ubuntu:latest
-FROM alpine:latest
+FROM ubuntu:latest
 # Update the package lists
 RUN apt-get update
 # Install Java
