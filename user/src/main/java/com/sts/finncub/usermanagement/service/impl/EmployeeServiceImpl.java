@@ -161,13 +161,28 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         employee.setDrivingLicenceNo(request.getDrivingLicenceNo());
         employee.setPassportNo(request.getPassportNo());
         employee.setEsicNo(request.getEsicNo());
-        employee.setBankName(request.getBankName());
+        employee.setBankAccNo(request.getBankAccNo());
         employee.setIfscCode(request.getIfscCode());
+        employee.setBankAccType(request.getBankAccType());
+        employee.setBankName(request.getBankName());
+        employee.setBankBranch(request.getBankBranch());
+        employee.setIsBankValidated(request.getIsBankValidated());
+        employee.setBankResponse(request.getBankResponse());
+        employee.setBankValidationDate(DateTimeUtil.stringToDate(request.getBankValidationDate()));
+
+        if(!(request.getBankAccNo().equals(employee.getBankAccNo()) && request.getIfscCode().equals(employee.getIfscCode()))){
+            employee.setBankAccNo(request.getBankAccNo());
+            employee.setIfscCode(request.getIfscCode());
+            employee.setBankAccType(request.getBankAccType());
+            employee.setBankName(request.getBankName());
+            employee.setBankBranch(request.getBankBranch());
+            employee.setIsBankValidated("N");
+            employee.setBankResponse("");
+            employee.setBankValidationDate(null);
+        }
+
         employee.setBankMMID(request.getBankMMID());
         employee.setBankVPA(request.getBankVPA());
-        employee.setBankAccType(request.getBankAccType());
-        employee.setBankAccNo(request.getBankAccNo());
-        employee.setBankBranch(request.getBankBranch());
         employee.setProfileImgPath(request.getProfileImgPath());
         employee.setSignImgPath(request.getSignImgPath());
         employee.setBranchId(request.getBranchId());
@@ -229,7 +244,6 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
 //                employee.setIsBranchManager(request.getIsBranchManager());
 //                updatedBranchMaster.setBranchManagerId(String.valueOf(request.getEmployeeId()));
 //            }
-            employee.setIsBankValidated(request.getIsBankValidated());
             employee = employeeRepository.save(employee);
             if (StringUtils.hasText(request.getIsBranchManager()) && request.getBranchId() != null) {
                 if ("Y".equalsIgnoreCase(request.getIsBranchManager())) {
