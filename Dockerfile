@@ -1,4 +1,5 @@
-#FROM fabric8/java-alpine-openjdk11-jre:1.9.0
+#FROM openjdk:11.0
+
 #FROM ubuntu:latest
 #RUN apt-get update
 #RUN apt-get install -y openjdk-11-jdk
