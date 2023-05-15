@@ -171,11 +171,6 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         employee.setBankValidationDate(DateTimeUtil.stringToDate(request.getBankValidationDate()));
 
         if(!(request.getBankAccNo().equals(employee.getBankAccNo()) && request.getIfscCode().equals(employee.getIfscCode()))){
-            employee.setBankAccNo(request.getBankAccNo());
-            employee.setIfscCode(request.getIfscCode());
-            employee.setBankAccType(request.getBankAccType());
-            employee.setBankName(request.getBankName());
-            employee.setBankBranch(request.getBankBranch());
             employee.setIsBankValidated("N");
             employee.setBankResponse("");
             employee.setBankValidationDate(null);
