@@ -180,6 +180,11 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employee.setBankResponse(request.getBankResponse());
             employee.setBankValidationDate(DateTimeUtil.stringToDate(request.getBankValidationDate()));
         }
+        if(!StringUtils.hasText(employee.getNameInBank())) {
+            employee.setIsNameVerified("N");
+        }else{
+            employee.setIsNameVerified(request.getIsNameVerified());
+        }
         employee.setBankMMID(request.getBankMMID());
         employee.setBankVPA(request.getBankVPA());
         employee.setProfileImgPath(request.getProfileImgPath());
@@ -403,6 +408,10 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employeeDto.setBankValidationDate(DateTimeUtil.dateToString(employee.getBankValidationDate()));
             employeeDto.setBankResponse(employee.getBankResponse());
             employeeDto.setValidationAttempts(employee.getValidationAttempts());
+            if(employee.getIsBankValidated() == "Y") {
+                employeeDto.setNameInBank(employee.getNameInBank());
+            }
+            employeeDto.setIsNameVerified(employee.getIsNameVerified());
         }
         return new Response(SUCCESS, employeeDto, HttpStatus.OK);
     }
@@ -703,6 +712,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         employee.setBankAccType(employeeRequest.getBankAccType());
         employee.setBankName(employeeRequest.getBankName());
         employee.setBankBranch(employeeRequest.getBankBranch());
+        employee.setIsNameVerified(employeeRequest.getIsNameVerified());
         employeeRepository.save(employee);
         EmployeeBankResponse bankResponse = new EmployeeBankResponse();
         bankResponse.setBankBranch(employee.getBankBranch());
