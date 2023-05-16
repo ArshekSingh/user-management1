@@ -180,11 +180,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employee.setBankResponse(request.getBankResponse());
             employee.setBankValidationDate(DateTimeUtil.stringToDate(request.getBankValidationDate()));
         }
-        if(!StringUtils.hasText(employee.getNameInBank())) {
-            employee.setIsNameVerified("N");
-        }else{
-            employee.setIsNameVerified(request.getIsNameVerified());
-        }
+        employee.setIsNameVerified(StringUtils.hasText(employee.getNameInBank())?request.getIsNameVerified():"N");
         employee.setBankMMID(request.getBankMMID());
         employee.setBankVPA(request.getBankVPA());
         employee.setProfileImgPath(request.getProfileImgPath());
@@ -408,7 +404,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employeeDto.setBankValidationDate(DateTimeUtil.dateToString(employee.getBankValidationDate()));
             employeeDto.setBankResponse(employee.getBankResponse());
             employeeDto.setValidationAttempts(employee.getValidationAttempts());
-            if(employee.getIsBankValidated() == "Y") {
+            if("Y".equals(employee.getIsBankValidated())) {
                 employeeDto.setNameInBank(employee.getNameInBank());
             }
             employeeDto.setIsNameVerified(employee.getIsNameVerified());
