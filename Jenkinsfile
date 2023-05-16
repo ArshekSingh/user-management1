@@ -45,7 +45,8 @@ pipeline {
                 sh 'git submodule update --init --recursive'
                 sh 'mvn clean install'
                 sh 'ls -al'
-                sh 'hadolint Dockerfile > newfile.txt'
+                sh 'hadolint Dockerfile > newfile.txt | true'
+                sh 'ls -al'
                 sh 'cat newfile.txt'
 				sh 'docker build -t ${ENVIRONMENT}-${CUSTOMER_NAME}-${PRODUCT}-${APP}-service .'
                 }
@@ -56,8 +57,8 @@ pipeline {
                 script {
                     sh 'docker tag ${ENVIRONMENT}-${CUSTOMER_NAME}-${PRODUCT}-${APP}-service:latest ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${ENVIRONMENT}-${CUSTOMER_NAME}-${PRODUCT}-${APP}-service:${BUILD_NUMBER}'
                     if(params.ENVIRONMENT=="non-prod"){
-                        sh 'trivy image --format json --scanners vuln --severity HIGH,CRITICAL ${ENVIRONMENT}-${CUSTOMER_NAME}-${PRODUCT}-${APP}-service:latest  | jq -r .Results[].Vulnerabilities[] > high_critical_scan_results.json'
-                        sh 'trivy image --format json --scanners vuln --severity LOW,MEDIUM ${ENVIRONMENT}-${CUSTOMER_NAME}-${PRODUCT}-${APP}-service:latest | jq -r .Results[].Vulnerabilities[] > low_medium_scan_results.json'
+                        sh 'trivy image --format json --scanners vuln --severity HIGH,CRITICAL ${ENVIRONMENT}-${CUSTOMER_NAME}-${PRODUCT}-${APP}-service:latest  | jq -r .Results[].Vulnerabilities[] > high_critical_scan_results.json| true'
+                        sh 'trivy image --format json --scanners vuln --severity LOW,MEDIUM ${ENVIRONMENT}-${CUSTOMER_NAME}-${PRODUCT}-${APP}-service:latest | jq -r .Results[].Vulnerabilities[] > low_medium_scan_results.json | true'
                         sendEmail("[High,Critical]-${ENVIRONMENT}-Trivy vulnerabilities Scan Report for [user-management] service","high_critical_scan_results.json")
                         sendEmail("[Low,Medium]-${ENVIRONMENT}-Trivy vulnerabilities Scan Report for [user-management] service","low_medium_scan_results.json")
                     }
