@@ -18,6 +18,8 @@ import com.sts.finncub.core.util.ValidationUtils;
 import com.sts.finncub.usermanagement.assembler.EmployeeAssembler;
 import com.sts.finncub.usermanagement.request.EmployeeRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
+import com.sts.finncub.usermanagement.response.EmployeeBankResponse;
+import com.sts.finncub.usermanagement.response.EmployeeResponse;
 import com.sts.finncub.usermanagement.service.EmployeeService;
 import com.sts.finncub.usermanagement.service.UserService;
 import lombok.AllArgsConstructor;
@@ -57,8 +59,9 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     @Transactional
     public Response addEmployee(EmployeeRequest request) throws BadRequestException {
         UserSession userSession = userCredentialService.getUserSession();
+        EmployeeResponse employeeResponse = new EmployeeResponse();
         validateRequest(request);
-        Response response = validateActiveAadhaarOrPanOrMobForSaveEmployee(request);
+        Response response = validateActiveAadhaarOrPanOrMobOrBankForSaveEmployee(request);
         if (200 == response.getCode()) {
             return new Response(response.getMessage(), response.getData(), response.getStatus());
         }
@@ -84,7 +87,8 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         log.info("Employee save success fully");
         // create  employee user details in user master
         saveValueInUserMaster(userId, request, true);
-        return new Response(SUCCESS, HttpStatus.OK);
+        employeeResponse.setEmployeeId(employee.getEmployeeId());
+        return new Response(SUCCESS, employeeResponse, HttpStatus.OK);
     }
 
     private void saveValueInUserMaster(String userId, EmployeeRequest employeeRequest, Boolean isActive) throws BadRequestException {
@@ -93,7 +97,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         request.setUserId(userId);
         request.setEmail(employeeRequest.getOfficialEmail());
         request.setName(employeeRequest.getFirstName());
-        request.setMobileNumber(employeeRequest.getPersonalMob() == null ? null : "" + employeeRequest.getPersonalMob());
+        request.setMobileNumber(employeeRequest.getPersonalMob() != null ? String.valueOf(employeeRequest.getPersonalMob()) : "");
         request.setType("EMP");
         if (Boolean.TRUE.equals(isActive)) {
             request.setIsActive("Y");
@@ -157,13 +161,28 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         employee.setDrivingLicenceNo(request.getDrivingLicenceNo());
         employee.setPassportNo(request.getPassportNo());
         employee.setEsicNo(request.getEsicNo());
-        employee.setBankName(request.getBankName());
-        employee.setIfscCode(request.getIfscCode());
+        if(!(request.getBankAccNo().equals(employee.getBankAccNo())) || !(request.getIfscCode().equals(employee.getIfscCode()))){
+            employee.setBankAccNo(request.getBankAccNo());
+            employee.setIfscCode(request.getIfscCode());
+            employee.setBankAccType(request.getBankAccType());
+            employee.setBankName(request.getBankName());
+            employee.setBankBranch(request.getBankBranch());
+            employee.setIsBankValidated("N");
+            employee.setBankResponse("");
+            employee.setBankValidationDate(null);
+        }else{
+            employee.setBankAccNo(request.getBankAccNo());
+            employee.setIfscCode(request.getIfscCode());
+            employee.setBankAccType(request.getBankAccType());
+            employee.setBankName(request.getBankName());
+            employee.setBankBranch(request.getBankBranch());
+            employee.setIsBankValidated(request.getIsBankValidated());
+            employee.setBankResponse(request.getBankResponse());
+            employee.setBankValidationDate(DateTimeUtil.stringToDate(request.getBankValidationDate()));
+        }
+        employee.setIsNameVerified(StringUtils.hasText(employee.getNameInBank())?request.getIsNameVerified():"N");
         employee.setBankMMID(request.getBankMMID());
         employee.setBankVPA(request.getBankVPA());
-        employee.setBankAccType(request.getBankAccType());
-        employee.setBankAccNo(request.getBankAccNo());
-        employee.setBankBranch(request.getBankBranch());
         employee.setProfileImgPath(request.getProfileImgPath());
         employee.setSignImgPath(request.getSignImgPath());
         employee.setBranchId(request.getBranchId());
@@ -216,7 +235,9 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             BranchMaster updatedBranchMaster = branchMaster.get();
             if (StringUtils.hasText(request.getStatus())) {
                 if ("X".equals(request.getStatus()) || "Inactive".equals(request.getStatus())) {
-                    updatedBranchMaster.setBranchManagerId(null);
+                    if (request.getEmployeeId() != null && request.getEmployeeId().equals(Long.valueOf(updatedBranchMaster.getBranchManagerId()))) {
+                        updatedBranchMaster.setBranchManagerId(null);
+                    }
                 }
             }
 //            if (StringUtils.hasText(request.getIsBranchManager()) && "Y".equalsIgnoreCase(request.getIsBranchManager())) {
@@ -379,12 +400,20 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employeeDto.setResignDate(DateTimeUtil.dateToString(employee.getResignDate()));
             employeeDto.setExitDate(DateTimeUtil.dateToString(employee.getExitDate()));
             employeeDto.setIsBranchManager(employee.getIsBranchManager());
+            employeeDto.setIsBankValidated(employee.getIsBankValidated());
+            employeeDto.setBankValidationDate(DateTimeUtil.dateToString(employee.getBankValidationDate()));
+            employeeDto.setBankResponse(employee.getBankResponse());
+            employeeDto.setValidationAttempts(employee.getValidationAttempts());
+            if("Y".equals(employee.getIsBankValidated())) {
+                employeeDto.setNameInBank(employee.getNameInBank());
+            }
+            employeeDto.setIsNameVerified(employee.getIsNameVerified());
         }
         return new Response(SUCCESS, employeeDto, HttpStatus.OK);
     }
 
     @Override
-    public Response validateAadhaarPanMobForSaveEmployee(EmployeeRequest request) {
+    public Response validateAadhaarPanMobBankForSaveEmployee(EmployeeRequest request) {
         //check dedupe by Aadhaar card/Pan card/mobile number
         List<String> messages = new ArrayList<>();
         if (request.getAadharCard() != null) {
@@ -405,12 +434,18 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 messages.add(EXISTING_EMPLOYEE_MSG + employeesWithMobile.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Mobile-" + request.getPersonalMob());
             }
         }
+        if (request.getBankAccNo() != null && request.getIfscCode() != null) {
+            Employee employeesWithBankNumber = employeeRepository.findByOrganizationIdAndBankAccNoAndIfscCode(userCredentialService.getUserSession().getOrganizationId(), request.getBankAccNo(), request.getIfscCode());
+            if (employeesWithBankNumber != null) {
+                messages.add(EXISTING_EMPLOYEE_MSG + " : " + employeesWithBankNumber.getEmployeeCode() + ", EmployeeName : " + employeesWithBankNumber.getFirstName() + ", bank_account_number : " + request.getBankAccNo() + " and ifsc_code : " + request.getIfscCode());
+            }
+        }
 
         return new Response(SUCCESS, messages, HttpStatus.OK);
     }
 
     @Override
-    public Response validateAadhaarPanMobForUpdateEmployee(EmployeeRequest request) {
+    public Response validateAadhaarPanMobBankForUpdateEmployee(EmployeeRequest request) {
         //check dedupe by Aadhaar card/Pan card/mobile number
         List<String> messages = new ArrayList<>();
         if (request.getAadharCard() != null) {
@@ -444,6 +479,12 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 if (first.isEmpty()) {
                     messages.add("Employee-" + employeesWithMobile.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " already exist with Mobile-" + request.getPersonalMob());
                 }
+            }
+        }
+        if (StringUtils.hasText(request.getBankAccNo()) && StringUtils.hasText(request.getIfscCode())) {
+            Employee employeesWithBankAccount = employeeRepository.findByOrganizationIdAndBankAccNoAndIfscCode(userCredentialService.getUserSession().getOrganizationId(), request.getBankAccNo(), request.getIfscCode());
+            if (employeesWithBankAccount != null) {
+                messages.add("Employee-" + employeesWithBankAccount.getEmployeeCode() + "," + employeesWithBankAccount.getFirstName() + " already exists with BANK_ACCOUNT_NUMBER and IFSC_CODE-" + request.getBankAccNo() + " , " + request.getIfscCode());
             }
         }
         return new Response(SUCCESS, messages, HttpStatus.OK);
@@ -512,11 +553,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     }
 
     private static boolean isFieldsUpdated(EmployeeRequest request, Employee employee) {
-        return !Objects.equals(request.getPromotionDate(), DateTimeUtil.dateToString(employee.getPromotionDate()))
-                || !Objects.equals(request.getDepartmentId(), employee.getDepartmentId())
-                || !Objects.equals(request.getSubDepartmentId(), employee.getSubDepartmentId())
-                || !Objects.equals(request.getDesignationType(), employee.getDesignationType())
-                || !Objects.equals(request.getDesignationId(), employee.getDesignationId());
+        return !Objects.equals(request.getPromotionDate(), DateTimeUtil.dateToString(employee.getPromotionDate())) || !Objects.equals(request.getDepartmentId(), employee.getDepartmentId()) || !Objects.equals(request.getSubDepartmentId(), employee.getSubDepartmentId()) || !Objects.equals(request.getDesignationType(), employee.getDesignationType()) || !Objects.equals(request.getDesignationId(), employee.getDesignationId());
     }
 
     private void checkRelievingDate(EmployeeRequest request, Employee employee) throws BadRequestException {
@@ -584,7 +621,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     }
 
     @Override
-    public Response validateActiveAadhaarOrPanOrMobForSaveEmployee(EmployeeRequest request) {
+    public Response validateActiveAadhaarOrPanOrMobOrBankForSaveEmployee(EmployeeRequest request) {
         //check dedupe by Aadhaar card/Pan card/mobile number
         List<String> messages = new ArrayList<>();
         if (request.getAadharCard() != null) {
@@ -611,6 +648,14 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 List<String> employeeWithPersonalMob = employeesWithMobile.stream().filter(o -> "A".equalsIgnoreCase(o.getStatus())).map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList());
                 if (!CollectionUtils.isEmpty(employeeWithPersonalMob)) {
                     messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + employeeWithPersonalMob + " and Mobile-" + request.getPersonalMob() + " you cannot add existing employee");
+                }
+            }
+        }
+        if (StringUtils.hasText(request.getBankAccNo()) && StringUtils.hasText(request.getIfscCode())) {
+            Employee employeesWithBankNumber = employeeRepository.findByOrganizationIdAndBankAccNoAndIfscCode(userCredentialService.getUserSession().getOrganizationId(), request.getBankAccNo(), request.getIfscCode());
+            if (employeesWithBankNumber != null) {
+                if (employeesWithBankNumber.getStatus().equalsIgnoreCase("A")) {
+                    messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + ": " + employeesWithBankNumber.getEmployeeCode() + ", employee Name : " + employeesWithBankNumber.getFirstName() + ", " + "bank_account_number : " + request.getBankAccNo() + " and ifsc_code : " + request.getIfscCode() + ", you cannot add existing employee");
                 }
             }
         }
@@ -646,6 +691,39 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         } catch (Exception exception) {
             log.error("Exception occurred due to {}", exception.getMessage());
             return new Response("Exception occurred due to " + exception.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Override
+    public Response updateEmployeeBankDetails(EmployeeRequest employeeRequest) throws BadRequestException {
+        UserSession userSession = userCredentialService.getUserSession();
+        validateEmployeeBankUpdateRequest(employeeRequest);
+        Employee employee = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), employeeRequest.getEmployeeId());
+        if (employee == null) {
+            throw new BadRequestException("No data found", HttpStatus.BAD_REQUEST);
+        }
+        employee.setIsBankValidated(employeeRequest.getIsBankValidated());
+        employee.setBankAccNo(employeeRequest.getBankAccNo());
+        employee.setIfscCode(employeeRequest.getIfscCode());
+        employee.setBankAccType(employeeRequest.getBankAccType());
+        employee.setBankName(employeeRequest.getBankName());
+        employee.setBankBranch(employeeRequest.getBankBranch());
+        employee.setIsNameVerified(employeeRequest.getIsNameVerified());
+        employeeRepository.save(employee);
+        EmployeeBankResponse bankResponse = new EmployeeBankResponse();
+        bankResponse.setBankBranch(employee.getBankBranch());
+        bankResponse.setBankName(employee.getBankName());
+        bankResponse.setBankAccNo(employee.getBankAccNo());
+        bankResponse.setBankAccType(employee.getBankAccType());
+        bankResponse.setIsBankValidated(employee.getIsBankValidated());
+        bankResponse.setIfscCode(employee.getIfscCode());
+        return new Response(SUCCESS, bankResponse, HttpStatus.OK);
+    }
+
+    private void validateEmployeeBankUpdateRequest(EmployeeRequest employeeRequest) throws BadRequestException {
+        if (employeeRequest == null || !StringUtils.hasText(employeeRequest.getBankAccNo()) || !StringUtils.hasText(employeeRequest.getIfscCode()) || !StringUtils.hasText(employeeRequest.getIsBankValidated()) || employeeRequest.getEmployeeId() == null) {
+            log.warn("Request failed validation, these field are mandatory : BankAccNo, Ifsc, IsBankValidated");
+            throw new BadRequestException("Invalid Request", HttpStatus.BAD_REQUEST);
         }
     }
 }

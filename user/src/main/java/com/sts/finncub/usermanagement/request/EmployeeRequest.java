@@ -99,4 +99,9 @@ public class EmployeeRequest {
     private Integer baseLocation;
     private String isManager;
     private String isBranchManager;
+    private String isBankValidated;
+    private String bankValidationDate;
+    private String bankResponse;
+    private Long validationAttempts;
+    private String isNameVerified;
 }

@@ -23,11 +23,14 @@ public interface EmployeeService {
 
     Response transferEmployee(EmployeeTransferRequest employeeTransferRequest) throws BadRequestException;
 
-    Response validateAadhaarPanMobForSaveEmployee(EmployeeRequest request);
+    Response validateAadhaarPanMobBankForSaveEmployee(EmployeeRequest request);
 
-    Response validateAadhaarPanMobForUpdateEmployee(EmployeeRequest request);
+    Response validateAadhaarPanMobBankForUpdateEmployee(EmployeeRequest request);
 
-    Response validateActiveAadhaarOrPanOrMobForSaveEmployee(EmployeeRequest request);
+    Response validateActiveAadhaarOrPanOrMobOrBankForSaveEmployee(EmployeeRequest request);
 
     Response fetchEmployeeMovementLogs(EmployeeMovementLogsRequest request) throws BadRequestException;
+
+    Response updateEmployeeBankDetails(EmployeeRequest employeeRequest) throws BadRequestException;
+
 }
