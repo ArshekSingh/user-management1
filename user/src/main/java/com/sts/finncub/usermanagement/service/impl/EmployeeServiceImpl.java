@@ -161,7 +161,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         employee.setDrivingLicenceNo(request.getDrivingLicenceNo());
         employee.setPassportNo(request.getPassportNo());
         employee.setEsicNo(request.getEsicNo());
-        if(!(request.getBankAccNo().equals(employee.getBankAccNo())) || !(request.getIfscCode().equals(employee.getIfscCode()))){
+        if (!(request.getBankAccNo().equals(employee.getBankAccNo())) || !(request.getIfscCode().equals(employee.getIfscCode()))) {
             employee.setBankAccNo(request.getBankAccNo());
             employee.setIfscCode(request.getIfscCode());
             employee.setBankAccType(request.getBankAccType());
@@ -170,7 +170,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employee.setIsBankValidated("N");
             employee.setBankResponse("");
             employee.setBankValidationDate(null);
-        }else{
+        } else {
             employee.setBankAccNo(request.getBankAccNo());
             employee.setIfscCode(request.getIfscCode());
             employee.setBankAccType(request.getBankAccType());
@@ -180,7 +180,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employee.setBankResponse(request.getBankResponse());
             employee.setBankValidationDate(DateTimeUtil.stringToDate(request.getBankValidationDate()));
         }
-        employee.setIsNameVerified(StringUtils.hasText(employee.getNameInBank())?request.getIsNameVerified():"N");
+        employee.setIsNameVerified(StringUtils.hasText(employee.getNameInBank()) ? request.getIsNameVerified() : "N");
         employee.setBankMMID(request.getBankMMID());
         employee.setBankVPA(request.getBankVPA());
         employee.setProfileImgPath(request.getProfileImgPath());
@@ -405,7 +405,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employeeDto.setBankValidationDate(DateTimeUtil.dateToString(employee.getBankValidationDate()));
             employeeDto.setBankResponse(employee.getBankResponse());
             employeeDto.setValidationAttempts(employee.getValidationAttempts());
-            if("Y".equals(employee.getIsBankValidated())) {
+            if ("Y".equals(employee.getIsBankValidated())) {
                 employeeDto.setNameInBank(employee.getNameInBank());
             }
             employeeDto.setIsNameVerified(employee.getIsNameVerified());
