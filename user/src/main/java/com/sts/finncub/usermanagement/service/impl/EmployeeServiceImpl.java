@@ -180,7 +180,8 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employee.setBankResponse(request.getBankResponse());
             employee.setBankValidationDate(DateTimeUtil.stringToDate(request.getBankValidationDate()));
         }
-        employee.setIsNameVerified(StringUtils.hasText(employee.getNameInBank()) ? request.getIsNameVerified() : "N");
+        employee.setNameInBank("Y".equalsIgnoreCase(request.getIsBankValidated()) ? request.getNameInBank() : null);
+        employee.setIsNameVerified(StringUtils.hasText(request.getNameInBank()) ? request.getIsNameVerified() : "N");
         employee.setBankMMID(request.getBankMMID());
         employee.setBankVPA(request.getBankVPA());
         employee.setProfileImgPath(request.getProfileImgPath());
@@ -229,7 +230,6 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         employee.setSubDepartmentId(request.getSubDepartmentId());
         employee.setBaseLocation(request.getBaseLocation());
         employee.setIsBranchManager(request.getIsBranchManager());
-        employee.setIsBankValidated("N");
         //Set branch manager id as null when employee has been changed to inactive and branch manager id in branch
         Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchMasterPK_OrgIdAndBranchMasterPK_BranchId(userSession.getOrganizationId(), employee.getBranchId());
         if (branchMaster.isPresent()) {
@@ -441,7 +441,6 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 messages.add(EXISTING_EMPLOYEE_MSG + " : " + employeesWithBankNumber.getEmployeeCode() + ", EmployeeName : " + employeesWithBankNumber.getFirstName() + ", bank_account_number : " + request.getBankAccNo() + " and ifsc_code : " + request.getIfscCode());
             }
         }
-
         return new Response(SUCCESS, messages, HttpStatus.OK);
     }
 
@@ -451,41 +450,37 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         List<String> messages = new ArrayList<>();
         if (request.getAadharCard() != null) {
             List<Employee> employeesWithAadhaar = employeeRepository.findByAadharCardNumber(request.getAadharCard());
-            if (employeesWithAadhaar.size() > 1) {
-                messages.add(EXISTING_EMPLOYEE_MSG + employeesWithAadhaar.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Aadhaar-" + request.getAadharCard());
-            } else if (employeesWithAadhaar.size() == 1) {
-                Optional<Employee> first = employeesWithAadhaar.stream().filter(o -> o.getEmployeeId().equals(request.getEmployeeId())).findFirst();
-                if (first.isEmpty()) {
-                    messages.add("Employee-" + employeesWithAadhaar.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " already exist with Aadhaar-" + request.getAadharCard());
+            if (!CollectionUtils.isEmpty(employeesWithAadhaar)) {
+                List<Employee> collect = employeesWithAadhaar.stream().filter(o -> !o.getEmployeeId().equals(request.getEmployeeId())).collect(Collectors.toList());
+                if (!CollectionUtils.isEmpty(collect)) {
+                    messages.add("AADHAAR-" + request.getAadharCard() + " is already mapped with employee- " + collect.stream().map(employee -> employee.getEmployeeId()).collect(Collectors.toList()));
                 }
             }
         }
         if (StringUtils.hasText(request.getPancardNo())) {
             List<Employee> employeesWithPan = employeeRepository.findByPancardNumber(request.getPancardNo());
-            if (employeesWithPan.size() > 1) {
-                messages.add(EXISTING_EMPLOYEE_MSG + employeesWithPan.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and PAN-" + request.getPancardNo());
-            } else if (employeesWithPan.size() == 1) {
-                Optional<Employee> first = employeesWithPan.stream().filter(o -> o.getEmployeeId().equals(request.getEmployeeId())).findFirst();
-                if (first.isEmpty()) {
-                    messages.add("Employee-" + employeesWithPan.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " already exist with PAN-" + request.getPancardNo());
+            if (!CollectionUtils.isEmpty(employeesWithPan)) {
+                List<Employee> collect = employeesWithPan.stream().filter(o -> !o.getEmployeeId().equals(request.getEmployeeId())).collect(Collectors.toList());
+                if (CollectionUtils.isEmpty(collect)) {
+                    messages.add("PAN-" + request.getPancardNo() + " is already mapped with employee- " + collect.stream().map(employee -> employee.getEmployeeId()).collect(Collectors.toList()));
                 }
             }
         }
         if (request.getPersonalMob() != null) {
             List<Employee> employeesWithMobile = employeeRepository.findByPersonalMobileNumber(request.getPersonalMob());
-            if (employeesWithMobile.size() > 1) {
-                messages.add(EXISTING_EMPLOYEE_MSG + employeesWithMobile.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Mobile-" + request.getPersonalMob());
-            } else if (employeesWithMobile.size() == 1) {
-                Optional<Employee> first = employeesWithMobile.stream().filter(o -> o.getEmployeeId().equals(request.getEmployeeId())).findFirst();
-                if (first.isEmpty()) {
-                    messages.add("Employee-" + employeesWithMobile.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " already exist with Mobile-" + request.getPersonalMob());
+            if (!CollectionUtils.isEmpty(employeesWithMobile)) {
+                List<Employee> collect = employeesWithMobile.stream().filter(o -> o.getEmployeeId().equals(request.getEmployeeId())).collect(Collectors.toList());
+                if (CollectionUtils.isEmpty(collect)) {
+                    messages.add("MOBILE_NUMBER-" + request.getPancardNo() + " is already mapped with employee- " + collect.stream().map(employee -> employee.getEmployeeId()).collect(Collectors.toList()));
                 }
             }
         }
         if (StringUtils.hasText(request.getBankAccNo()) && StringUtils.hasText(request.getIfscCode())) {
             Employee employeesWithBankAccount = employeeRepository.findByOrganizationIdAndBankAccNoAndIfscCode(userCredentialService.getUserSession().getOrganizationId(), request.getBankAccNo(), request.getIfscCode());
             if (employeesWithBankAccount != null) {
-                messages.add("Employee-" + employeesWithBankAccount.getEmployeeCode() + "," + employeesWithBankAccount.getFirstName() + " already exists with BANK_ACCOUNT_NUMBER and IFSC_CODE-" + request.getBankAccNo() + " , " + request.getIfscCode());
+                if (!employeesWithBankAccount.getEmployeeId().equals(request.getEmployeeId())) {
+                    messages.add("BANK-" + request.getBankAccNo() + " is already mapped with employee- " + request.getEmployeeId());
+                }
             }
         }
         return new Response(SUCCESS, messages, HttpStatus.OK);
@@ -709,7 +704,11 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         employee.setBankAccType(employeeRequest.getBankAccType());
         employee.setBankName(employeeRequest.getBankName());
         employee.setBankBranch(employeeRequest.getBankBranch());
+        if(employee.getBankAccNo().equals(employeeRequest.getBankAccNo())) {
         employee.setIsNameVerified(employeeRequest.getIsNameVerified());
+        }else {
+            employee.setIsNameVerified("N");
+        }
         employeeRepository.save(employee);
         EmployeeBankResponse bankResponse = new EmployeeBankResponse();
         bankResponse.setBankBranch(employee.getBankBranch());
@@ -718,6 +717,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         bankResponse.setBankAccType(employee.getBankAccType());
         bankResponse.setIsBankValidated(employee.getIsBankValidated());
         bankResponse.setIfscCode(employee.getIfscCode());
+        bankResponse.setIsNameVerified(employee.getIsNameVerified());
         return new Response(SUCCESS, bankResponse, HttpStatus.OK);
     }
 

@@ -104,4 +104,5 @@ public class EmployeeRequest {
     private String bankResponse;
     private Long validationAttempts;
     private String isNameVerified;
+    private String nameInBank;
 }
