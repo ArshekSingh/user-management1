@@ -317,20 +317,20 @@ public class UserServiceImpl implements UserService, Constant {
         for (UserBranchMapping userBranchMapping : userBranchMappingList) {
             userBranchMappingDto.setUserId(userId);
             ServerSideDropDownDto userAssignedBranches = new ServerSideDropDownDto();
-            userAssignedBranches.setId(userBranchMapping.getBranchMaster().getBranchId().toString());
+            userAssignedBranches.setId(userBranchMapping.getBranchMaster().getBranchMasterPK().getBranchId().toString());
             userAssignedBranches.setLabel(userBranchMapping.getBranchMaster().getBranchCode() + "-" + userBranchMapping.getBranchMaster().getBranchName());
             userAssignedBranchesList.add(userAssignedBranches);
-            branchList.add(userBranchMapping.getBranchMaster().getBranchId());
+            branchList.add(userBranchMapping.getBranchMaster().getBranchMasterPK().getBranchId());
         }
         List<BranchMaster> branchMasterList;
         if (branchList.isEmpty()) {
-            branchMasterList = branchMasterRepository.findAllByOrgIdAndBranchType(userSession.getOrganizationId(), "BR");
+            branchMasterList = branchMasterRepository.findAllByBranchMasterPK_OrgIdAndBranchType(userSession.getOrganizationId(), "BR");
         } else {
-            branchMasterList = branchMasterRepository.findByBranchIdNotInAndOrgIdAndBranchType(branchList, userSession.getOrganizationId(), "BR");
+            branchMasterList = branchMasterRepository.findByBranchMasterPK_OrgIdAndBranchMasterPK_BranchIdNotInAndBranchType(userSession.getOrganizationId(), branchList, "BR");
         }
         for (BranchMaster branchMaster : branchMasterList) {
             ServerSideDropDownDto userAvailableBranches = new ServerSideDropDownDto();
-            userAvailableBranches.setId(branchMaster.getBranchId().toString());
+            userAvailableBranches.setId(branchMaster.getBranchMasterPK().getBranchId().toString());
             userAvailableBranches.setLabel(branchMaster.getBranchName());
             userAvailableBranches.setLabel(branchMaster.getBranchCode() + "-" + branchMaster.getBranchName());
             userAvailableBranchesList.add(userAvailableBranches);

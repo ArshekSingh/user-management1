@@ -59,13 +59,13 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     @Transactional
     public Response addEmployee(EmployeeRequest request) throws BadRequestException {
         UserSession userSession = userCredentialService.getUserSession();
-        EmployeeResponse employeeResponse = new EmployeeResponse();
         validateRequest(request);
         Response response = validateActiveAadhaarOrPanOrMobOrBankForSaveEmployee(request);
         if (200 == response.getCode()) {
             return new Response(response.getMessage(), response.getData(), response.getStatus());
         }
         Employee employee = new Employee();
+        EmployeeResponse employeeResponse = new EmployeeResponse();
         String userEmployeeId = userRepository.getGeneratedUserEmployeeId(userSession.getOrganizationId(), "EMP");
         final String userId = userEmployeeId.split(",")[0];
         final String employeeId = userEmployeeId.split(",")[1];
@@ -76,7 +76,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         // save value in employee master
         employee = saveValueEmployeeMaster(request, employee, request.getEmployeeId(), userSession);
         if (StringUtils.hasText(request.getIsBranchManager()) && "Y".equalsIgnoreCase(request.getIsBranchManager())) {
-            Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchIdAndOrgId(employee.getBranchId(), userSession.getOrganizationId());
+            Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchMasterPK_OrgIdAndBranchMasterPK_BranchId(userSession.getOrganizationId(), employee.getBranchId());
             if (branchMaster.isPresent()) {
                 BranchMaster updatedBranchMaster = branchMaster.get();
 //                employee.setIsBranchManager(request.getIsBranchManager());
@@ -161,7 +161,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         employee.setDrivingLicenceNo(request.getDrivingLicenceNo());
         employee.setPassportNo(request.getPassportNo());
         employee.setEsicNo(request.getEsicNo());
-        if(!(request.getBankAccNo().equals(employee.getBankAccNo())) || !(request.getIfscCode().equals(employee.getIfscCode()))){
+        if (!(request.getBankAccNo().equals(employee.getBankAccNo())) || !(request.getIfscCode().equals(employee.getIfscCode()))) {
             employee.setBankAccNo(request.getBankAccNo());
             employee.setIfscCode(request.getIfscCode());
             employee.setBankAccType(request.getBankAccType());
@@ -170,7 +170,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employee.setIsBankValidated("N");
             employee.setBankResponse("");
             employee.setBankValidationDate(null);
-        }else{
+        } else {
             employee.setBankAccNo(request.getBankAccNo());
             employee.setIfscCode(request.getIfscCode());
             employee.setBankAccType(request.getBankAccType());
@@ -180,7 +180,8 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employee.setBankResponse(request.getBankResponse());
             employee.setBankValidationDate(DateTimeUtil.stringToDate(request.getBankValidationDate()));
         }
-        employee.setIsNameVerified(StringUtils.hasText(employee.getNameInBank())?request.getIsNameVerified():"N");
+        employee.setNameInBank("Y".equalsIgnoreCase(request.getIsBankValidated()) ? request.getNameInBank() : null);
+        employee.setIsNameVerified(StringUtils.hasText(request.getNameInBank()) ? request.getIsNameVerified() : "N");
         employee.setBankMMID(request.getBankMMID());
         employee.setBankVPA(request.getBankVPA());
         employee.setProfileImgPath(request.getProfileImgPath());
@@ -230,7 +231,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         employee.setBaseLocation(request.getBaseLocation());
         employee.setIsBranchManager(request.getIsBranchManager());
         //Set branch manager id as null when employee has been changed to inactive and branch manager id in branch
-        Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchIdAndOrgId(employee.getBranchId(), userSession.getOrganizationId());
+        Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchMasterPK_OrgIdAndBranchMasterPK_BranchId(userSession.getOrganizationId(), employee.getBranchId());
         if (branchMaster.isPresent()) {
             BranchMaster updatedBranchMaster = branchMaster.get();
             if (StringUtils.hasText(request.getStatus())) {
@@ -321,7 +322,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 employeeDto.setExitDate(DateTimeUtil.dateToString(employee.getExitDate()));
             }
             if (employee.getBranchId() != null) {
-                BranchMaster branchMaster = branchMasterRepository.findByBranchIdAndOrgId(employee.getBranchId(), userSession.getOrganizationId()).orElse(null);
+                BranchMaster branchMaster = branchMasterRepository.findByBranchMasterPK_OrgIdAndBranchMasterPK_BranchId(userSession.getOrganizationId(), employee.getBranchId()).orElse(null);
                 if (branchMaster != null) {
                     employeeDto.setBranchBcName(StringUtils.hasText(branchMaster.getBusinessPartner()) ? branchMaster.getBusinessPartner() : "");
                     employeeDto.setBaseLocationName(StringUtils.hasText(branchMaster.getBranchName()) ? branchMaster.getBranchName() : "");
@@ -404,7 +405,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employeeDto.setBankValidationDate(DateTimeUtil.dateToString(employee.getBankValidationDate()));
             employeeDto.setBankResponse(employee.getBankResponse());
             employeeDto.setValidationAttempts(employee.getValidationAttempts());
-            if("Y".equals(employee.getIsBankValidated())) {
+            if ("Y".equals(employee.getIsBankValidated())) {
                 employeeDto.setNameInBank(employee.getNameInBank());
             }
             employeeDto.setIsNameVerified(employee.getIsNameVerified());
@@ -440,7 +441,6 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 messages.add(EXISTING_EMPLOYEE_MSG + " : " + employeesWithBankNumber.getEmployeeCode() + ", EmployeeName : " + employeesWithBankNumber.getFirstName() + ", bank_account_number : " + request.getBankAccNo() + " and ifsc_code : " + request.getIfscCode());
             }
         }
-
         return new Response(SUCCESS, messages, HttpStatus.OK);
     }
 
@@ -450,41 +450,37 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         List<String> messages = new ArrayList<>();
         if (request.getAadharCard() != null) {
             List<Employee> employeesWithAadhaar = employeeRepository.findByAadharCardNumber(request.getAadharCard());
-            if (employeesWithAadhaar.size() > 1) {
-                messages.add(EXISTING_EMPLOYEE_MSG + employeesWithAadhaar.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Aadhaar-" + request.getAadharCard());
-            } else if (employeesWithAadhaar.size() == 1) {
-                Optional<Employee> first = employeesWithAadhaar.stream().filter(o -> o.getEmployeeId().equals(request.getEmployeeId())).findFirst();
-                if (first.isEmpty()) {
-                    messages.add("Employee-" + employeesWithAadhaar.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " already exist with Aadhaar-" + request.getAadharCard());
+            if (!CollectionUtils.isEmpty(employeesWithAadhaar)) {
+                List<Employee> collect = employeesWithAadhaar.stream().filter(o -> !o.getEmployeeId().equals(request.getEmployeeId())).collect(Collectors.toList());
+                if (!CollectionUtils.isEmpty(collect)) {
+                    messages.add("AADHAAR-" + request.getAadharCard() + " is already mapped with employee- " + collect.stream().map(employee -> employee.getEmployeeId()).collect(Collectors.toList()));
                 }
             }
         }
         if (StringUtils.hasText(request.getPancardNo())) {
             List<Employee> employeesWithPan = employeeRepository.findByPancardNumber(request.getPancardNo());
-            if (employeesWithPan.size() > 1) {
-                messages.add(EXISTING_EMPLOYEE_MSG + employeesWithPan.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and PAN-" + request.getPancardNo());
-            } else if (employeesWithPan.size() == 1) {
-                Optional<Employee> first = employeesWithPan.stream().filter(o -> o.getEmployeeId().equals(request.getEmployeeId())).findFirst();
-                if (first.isEmpty()) {
-                    messages.add("Employee-" + employeesWithPan.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " already exist with PAN-" + request.getPancardNo());
+            if (!CollectionUtils.isEmpty(employeesWithPan)) {
+                List<Employee> collect = employeesWithPan.stream().filter(o -> !o.getEmployeeId().equals(request.getEmployeeId())).collect(Collectors.toList());
+                if (CollectionUtils.isEmpty(collect)) {
+                    messages.add("PAN-" + request.getPancardNo() + " is already mapped with employee- " + collect.stream().map(employee -> employee.getEmployeeId()).collect(Collectors.toList()));
                 }
             }
         }
         if (request.getPersonalMob() != null) {
             List<Employee> employeesWithMobile = employeeRepository.findByPersonalMobileNumber(request.getPersonalMob());
-            if (employeesWithMobile.size() > 1) {
-                messages.add(EXISTING_EMPLOYEE_MSG + employeesWithMobile.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " and Mobile-" + request.getPersonalMob());
-            } else if (employeesWithMobile.size() == 1) {
-                Optional<Employee> first = employeesWithMobile.stream().filter(o -> o.getEmployeeId().equals(request.getEmployeeId())).findFirst();
-                if (first.isEmpty()) {
-                    messages.add("Employee-" + employeesWithMobile.stream().map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList()) + " already exist with Mobile-" + request.getPersonalMob());
+            if (!CollectionUtils.isEmpty(employeesWithMobile)) {
+                List<Employee> collect = employeesWithMobile.stream().filter(o -> o.getEmployeeId().equals(request.getEmployeeId())).collect(Collectors.toList());
+                if (CollectionUtils.isEmpty(collect)) {
+                    messages.add("MOBILE_NUMBER-" + request.getPancardNo() + " is already mapped with employee- " + collect.stream().map(employee -> employee.getEmployeeId()).collect(Collectors.toList()));
                 }
             }
         }
         if (StringUtils.hasText(request.getBankAccNo()) && StringUtils.hasText(request.getIfscCode())) {
             Employee employeesWithBankAccount = employeeRepository.findByOrganizationIdAndBankAccNoAndIfscCode(userCredentialService.getUserSession().getOrganizationId(), request.getBankAccNo(), request.getIfscCode());
             if (employeesWithBankAccount != null) {
-                messages.add("Employee-" + employeesWithBankAccount.getEmployeeCode() + "," + employeesWithBankAccount.getFirstName() + " already exists with BANK_ACCOUNT_NUMBER and IFSC_CODE-" + request.getBankAccNo() + " , " + request.getIfscCode());
+                if (!employeesWithBankAccount.getEmployeeId().equals(request.getEmployeeId())) {
+                    messages.add("BANK-" + request.getBankAccNo() + " is already mapped with employee- " + request.getEmployeeId());
+                }
             }
         }
         return new Response(SUCCESS, messages, HttpStatus.OK);
@@ -508,7 +504,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 if (StringUtils.hasText(request.getStatus()) && !employee.getStatus().equalsIgnoreCase(request.getStatus())) {
                     String id = Long.toString(request.getEmployeeId());
                     List<String> statusList = Stream.of("A", "C", "R", "C2", "G").collect(Collectors.toList());
-                    List<CenterMaster> centerMasterList = centerMasterRepository.findByOrgIdAndAssignedToAndStatusIn(userSession.getOrganizationId(), id, statusList);
+                    List<CenterMaster> centerMasterList = centerMasterRepository.findByCenterMasterPK_OrgIdAndAssignedToAndStatusIn(userSession.getOrganizationId(), id, statusList);
                     if (!CollectionUtils.isEmpty(centerMasterList)) {
                         log.info("You can't mark this employee as Inactive because center is active for this employee {} ", employee.getEmployeeId());
                         throw new BadRequestException("You can't mark this employee as Inactive ", HttpStatus.BAD_REQUEST);
@@ -560,7 +556,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         if (request.getRelievingDate() != null) {
             List<String> status = new ArrayList<>();
             status.add("A");
-            List<CenterMaster> centerMasters = centerMasterRepository.findByBranchIdAndOrgIdAndStatusInAndAssignedTo(employee.getBranchId(), employee.getOrganizationId(), status, employee.getEmployeeCode());
+            List<CenterMaster> centerMasters = centerMasterRepository.findByCenterMasterPK_OrgIdAndBranchIdAndStatusInAndAssignedTo(employee.getOrganizationId(), employee.getBranchId(), status, employee.getEmployeeCode());
             if (centerMasters != null && !centerMasters.isEmpty()) {
                 throw new BadRequestException("Cannot edit relieving date of an employee when active center is assigned!", HttpStatus.BAD_REQUEST);
             }
@@ -708,7 +704,11 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         employee.setBankAccType(employeeRequest.getBankAccType());
         employee.setBankName(employeeRequest.getBankName());
         employee.setBankBranch(employeeRequest.getBankBranch());
+        if(employee.getBankAccNo().equals(employeeRequest.getBankAccNo())) {
         employee.setIsNameVerified(employeeRequest.getIsNameVerified());
+        }else {
+            employee.setIsNameVerified("N");
+        }
         employeeRepository.save(employee);
         EmployeeBankResponse bankResponse = new EmployeeBankResponse();
         bankResponse.setBankBranch(employee.getBankBranch());
@@ -717,6 +717,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         bankResponse.setBankAccType(employee.getBankAccType());
         bankResponse.setIsBankValidated(employee.getIsBankValidated());
         bankResponse.setIfscCode(employee.getIfscCode());
+        bankResponse.setIsNameVerified(employee.getIsNameVerified());
         return new Response(SUCCESS, bankResponse, HttpStatus.OK);
     }
 

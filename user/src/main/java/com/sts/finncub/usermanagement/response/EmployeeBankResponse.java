@@ -21,4 +21,5 @@ public class EmployeeBankResponse {
     private String bankAccType;
     private String bankResponse;
     private String bankBranch;
+    private String isNameVerified;
 }
