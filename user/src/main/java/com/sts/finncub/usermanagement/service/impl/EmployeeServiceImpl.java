@@ -235,11 +235,6 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         if (branchMaster.isPresent()) {
             BranchMaster updatedBranchMaster = branchMaster.get();
             if (StringUtils.hasText(request.getStatus())) {
-//                if ("X".equals(request.getStatus()) || "Inactive".equals(request.getStatus())) {
-//                    if (request.getEmployeeId() != null && request.getEmployeeId().equals(Long.valueOf(updatedBranchMaster.getBranchManagerId()))) {
-//                        updatedBranchMaster.setBranchManagerId(null);
-//                    }
-//                }
                 if ("X".equals(request.getStatus()) || "Inactive".equals(request.getStatus())) {
                     if (request.getEmployeeId() != null && StringUtils.hasText(updatedBranchMaster.getBranchManagerId())) {
                         if (request.getEmployeeId().equals(Long.valueOf(updatedBranchMaster.getBranchManagerId()))) {
