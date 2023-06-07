@@ -451,7 +451,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             }
         }
         if (request.getBankAccNo() != null && request.getIfscCode() != null) {
-            Employee employeesWithBankNumber = employeeRepository.findByOrganizationIdAndBankAccNoAndIfscCode(userCredentialService.getUserSession().getOrganizationId(), request.getBankAccNo(), request.getIfscCode());
+            Employee employeesWithBankNumber = employeeRepository.findByOrganizationIdAndBankAccNoAndIfscCodeAndStatus(userCredentialService.getUserSession().getOrganizationId(), request.getBankAccNo(), request.getIfscCode(), "A");
             if (employeesWithBankNumber != null) {
                 messages.add(EXISTING_EMPLOYEE_MSG + " : " + employeesWithBankNumber.getEmployeeCode() + ", EmployeeName : " + employeesWithBankNumber.getFirstName() + ", bank_account_number : " + request.getBankAccNo() + " and ifsc_code : " + request.getIfscCode());
             }
@@ -491,7 +491,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             }
         }
         if (StringUtils.hasText(request.getBankAccNo()) && StringUtils.hasText(request.getIfscCode())) {
-            Employee employeesWithBankAccount = employeeRepository.findByOrganizationIdAndBankAccNoAndIfscCode(userCredentialService.getUserSession().getOrganizationId(), request.getBankAccNo(), request.getIfscCode());
+            Employee employeesWithBankAccount = employeeRepository.findByOrganizationIdAndBankAccNoAndIfscCodeAndStatus(userCredentialService.getUserSession().getOrganizationId(), request.getBankAccNo(), request.getIfscCode(), "A");
             if (employeesWithBankAccount != null) {
                 if (!employeesWithBankAccount.getEmployeeId().equals(request.getEmployeeId())) {
                     messages.add("BANK-" + request.getBankAccNo() + " is already mapped with employee- " + request.getEmployeeId());
@@ -663,11 +663,9 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             }
         }
         if (StringUtils.hasText(request.getBankAccNo()) && StringUtils.hasText(request.getIfscCode())) {
-            Employee employeesWithBankNumber = employeeRepository.findByOrganizationIdAndBankAccNoAndIfscCode(userCredentialService.getUserSession().getOrganizationId(), request.getBankAccNo(), request.getIfscCode());
+            Employee employeesWithBankNumber = employeeRepository.findByOrganizationIdAndBankAccNoAndIfscCodeAndStatus(userCredentialService.getUserSession().getOrganizationId(), request.getBankAccNo(), request.getIfscCode(), "A");
             if (employeesWithBankNumber != null) {
-                if (employeesWithBankNumber.getStatus().equalsIgnoreCase("A")) {
                     messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + ": " + employeesWithBankNumber.getEmployeeCode() + ", employee Name : " + employeesWithBankNumber.getFirstName() + ", " + "bank_account_number : " + request.getBankAccNo() + " and ifsc_code : " + request.getIfscCode() + ", you cannot add existing employee");
-                }
             }
         }
         if (!CollectionUtils.isEmpty(messages)) {
