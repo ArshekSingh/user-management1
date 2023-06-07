@@ -236,8 +236,10 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             BranchMaster updatedBranchMaster = branchMaster.get();
             if (StringUtils.hasText(request.getStatus())) {
                 if ("X".equals(request.getStatus()) || "Inactive".equals(request.getStatus())) {
-                    if (request.getEmployeeId() != null && request.getEmployeeId().equals(Long.valueOf(updatedBranchMaster.getBranchManagerId()))) {
-                        updatedBranchMaster.setBranchManagerId(null);
+                    if (request.getEmployeeId() != null && StringUtils.hasText(updatedBranchMaster.getBranchManagerId())) {
+                        if (request.getEmployeeId().equals(Long.valueOf(updatedBranchMaster.getBranchManagerId()))) {
+                            updatedBranchMaster.setBranchManagerId(null);
+                        }
                     }
                 }
             }
@@ -374,7 +376,20 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             }
             if (employee.getAccManagerId() != null) {
                 Employee accManager = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), employee.getAccManagerId());
-                employeeDto.setAccountManagerName(accManager.getEmployeeId() + " " + accManager.getFirstName());
+                if (accManager != null) {
+                    Long accEmployee;
+                    String name;
+                    String finalName = null;
+                    if (accManager.getEmployeeId() != null) {
+                        accEmployee = accManager.getEmployeeId();
+                        finalName = accEmployee + "-";
+                    }
+                    if (StringUtils.hasText(accManager.getFirstName())) {
+                        name = accManager.getFirstName();
+                        finalName = finalName + name;
+                    }
+                    employeeDto.setAccountManagerName(finalName);
+                }
             }
             if (employee.getReportManagerId() != null) {
                 Employee reportManager = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), employee.getReportManagerId());
@@ -436,7 +451,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             }
         }
         if (request.getBankAccNo() != null && request.getIfscCode() != null) {
-            Employee employeesWithBankNumber = employeeRepository.findByOrganizationIdAndBankAccNoAndIfscCode(userCredentialService.getUserSession().getOrganizationId(), request.getBankAccNo(), request.getIfscCode());
+            Employee employeesWithBankNumber = employeeRepository.findByOrganizationIdAndBankAccNoAndIfscCodeAndStatus(userCredentialService.getUserSession().getOrganizationId(), request.getBankAccNo(), request.getIfscCode(), "A");
             if (employeesWithBankNumber != null) {
                 messages.add(EXISTING_EMPLOYEE_MSG + " : " + employeesWithBankNumber.getEmployeeCode() + ", EmployeeName : " + employeesWithBankNumber.getFirstName() + ", bank_account_number : " + request.getBankAccNo() + " and ifsc_code : " + request.getIfscCode());
             }
@@ -476,7 +491,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             }
         }
         if (StringUtils.hasText(request.getBankAccNo()) && StringUtils.hasText(request.getIfscCode())) {
-            Employee employeesWithBankAccount = employeeRepository.findByOrganizationIdAndBankAccNoAndIfscCode(userCredentialService.getUserSession().getOrganizationId(), request.getBankAccNo(), request.getIfscCode());
+            Employee employeesWithBankAccount = employeeRepository.findByOrganizationIdAndBankAccNoAndIfscCodeAndStatus(userCredentialService.getUserSession().getOrganizationId(), request.getBankAccNo(), request.getIfscCode(), "A");
             if (employeesWithBankAccount != null) {
                 if (!employeesWithBankAccount.getEmployeeId().equals(request.getEmployeeId())) {
                     messages.add("BANK-" + request.getBankAccNo() + " is already mapped with employee- " + request.getEmployeeId());
@@ -648,11 +663,9 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             }
         }
         if (StringUtils.hasText(request.getBankAccNo()) && StringUtils.hasText(request.getIfscCode())) {
-            Employee employeesWithBankNumber = employeeRepository.findByOrganizationIdAndBankAccNoAndIfscCode(userCredentialService.getUserSession().getOrganizationId(), request.getBankAccNo(), request.getIfscCode());
+            Employee employeesWithBankNumber = employeeRepository.findByOrganizationIdAndBankAccNoAndIfscCodeAndStatus(userCredentialService.getUserSession().getOrganizationId(), request.getBankAccNo(), request.getIfscCode(), "A");
             if (employeesWithBankNumber != null) {
-                if (employeesWithBankNumber.getStatus().equalsIgnoreCase("A")) {
                     messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + ": " + employeesWithBankNumber.getEmployeeCode() + ", employee Name : " + employeesWithBankNumber.getFirstName() + ", " + "bank_account_number : " + request.getBankAccNo() + " and ifsc_code : " + request.getIfscCode() + ", you cannot add existing employee");
-                }
             }
         }
         if (!CollectionUtils.isEmpty(messages)) {
@@ -704,9 +717,9 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         employee.setBankAccType(employeeRequest.getBankAccType());
         employee.setBankName(employeeRequest.getBankName());
         employee.setBankBranch(employeeRequest.getBankBranch());
-        if(employee.getBankAccNo().equals(employeeRequest.getBankAccNo())) {
-        employee.setIsNameVerified(employeeRequest.getIsNameVerified());
-        }else {
+        if (employee.getBankAccNo().equals(employeeRequest.getBankAccNo())) {
+            employee.setIsNameVerified(employeeRequest.getIsNameVerified());
+        } else {
             employee.setIsNameVerified("N");
         }
         employeeRepository.save(employee);
