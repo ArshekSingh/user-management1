@@ -326,11 +326,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public ResponseEntity<Response> logout(HttpServletRequest request) {
         Response response = new Response();
+        UserSession userSession = userCredentialService.getUserSession();
         String tokenString = request.getHeader("Authorization");
         String token = tokenString.split(" ")[1];
         template.delete(KEY + ":" + token);
-        log.info("logout successful");
-        UserLoginLog loginLog = userLoginLogRepository.findByTokenId(token);
+        log.info("Logout successful");
+        UserLoginLog loginLog = userLoginLogRepository.findByUserIdAndTokenId(userSession.getUserId(), token);
         if (loginLog != null) {
             loginLog.setLogoutTime(LocalDateTime.now());
             userLoginLogRepository.save(loginLog);
