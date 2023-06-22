@@ -54,6 +54,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     private final EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository;
     private final CenterMasterRepository centerMasterRepository;
     private final EmployeeAssembler employeeAssembler;
+    private final InventoryTransferDetailsRepository inventoryTransferDetailsRepository;
 
     @Override
     @Transactional
@@ -524,7 +525,9 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                         log.info("You can't mark this employee as Inactive because center is active for this employee {} ", employee.getEmployeeId());
                         throw new BadRequestException("You can't mark this employee as Inactive ", HttpStatus.BAD_REQUEST);
                     }
+
                 }
+
             }
             if (employee != null) {
                 //Check for relieving date of the employee
