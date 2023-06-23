@@ -42,6 +42,7 @@ import java.util.stream.Stream;
 @Service
 @AllArgsConstructor
 public class EmployeeServiceImpl implements EmployeeService, Constant {
+    private final ReferenceDetailRepository referenceDetailRepository;
 
     private final UserService userService;
     private final EmployeeDao employeeDao;
@@ -516,8 +517,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             } catch (Exception exception) {
                 throw new BadRequestException(exception.getMessage(), HttpStatus.BAD_REQUEST);
             }
-            if (request.getEmployeeId() != null) {
-                if (StringUtils.hasText(request.getStatus()) && !employee.getStatus().equalsIgnoreCase(request.getStatus())) {
+            if (request.getEmployeeId() != null && (StringUtils.hasText(request.getStatus()) && !employee.getStatus().equalsIgnoreCase(request.getStatus()))) {
                     String id = Long.toString(request.getEmployeeId());
                     List<String> statusList = Stream.of("A", "C", "R", "C2", "G").collect(Collectors.toList());
                     List<CenterMaster> centerMasterList = centerMasterRepository.findByCenterMasterPK_OrgIdAndAssignedToAndStatusIn(userSession.getOrganizationId(), id, statusList);
@@ -525,9 +525,20 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                         log.info("You can't mark this employee as Inactive because center is active for this employee {} ", employee.getEmployeeId());
                         throw new BadRequestException("You can't mark this employee as Inactive ", HttpStatus.BAD_REQUEST);
                     }
-
-                }
-
+                    List<InventoryTransferDetails> inventoryTransferDetails = inventoryTransferDetailsRepository.findByOrgIdAndInventoryStaffId(userSession.getOrganizationId(), employee.getEmployeeId());
+                    if(!CollectionUtils.isEmpty(inventoryTransferDetails)) {
+                        List<ReferenceDetail> referenceDetail = referenceDetailRepository.findByReferenceDetailPK_ReferenceDomain(ReferenceDomain.RD_INVENTORY_ASSET_STATUS.name());
+                        for(InventoryTransferDetails transferDetails : inventoryTransferDetails) {
+                            if(!"RS".equalsIgnoreCase(transferDetails.getAssetStatus())) {
+                                Optional<String> assetStatusOptional = referenceDetail.stream().filter(o -> o.getReferenceDetailPK().getKeyValue().equalsIgnoreCase(transferDetails.getAssetStatus())).map(ReferenceDetail::getDescription).findFirst();
+                                if (assetStatusOptional.isPresent()) {
+                                    String assetStatus = assetStatusOptional.get();
+                                    log.info("You can't mark this employee {} as Inactive because asset status is {}", employee.getEmployeeId(), assetStatus);
+                                    throw new BadRequestException("You can't mark this employee as Inactive because asset status is " + assetStatus, HttpStatus.BAD_REQUEST);
+                                }
+                            }
+                        }
+                    }
             }
             if (employee != null) {
                 //Check for relieving date of the employee
