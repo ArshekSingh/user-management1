@@ -534,7 +534,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                                 if (assetStatusOptional.isPresent()) {
                                     String assetStatus = assetStatusOptional.get();
                                     log.info("You can't mark this employee {} as Inactive because asset status is {}", employee.getEmployeeId(), assetStatus);
-                                    throw new BadRequestException("You can't mark this employee as Inactive because asset status is " + assetStatus, HttpStatus.BAD_REQUEST);
+                                    return new Response("You can't mark this employee as Inactive because asset status is " + assetStatus, HttpStatus.BAD_REQUEST);
                                 }
                             }
                         }
