@@ -56,7 +56,6 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     private final EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository;
     private final CenterMasterRepository centerMasterRepository;
     private final EmployeeAssembler employeeAssembler;
-    private final InventoryTransferDetailsRepository inventoryTransferDetailsRepository;
 
     @Override
     @Transactional
