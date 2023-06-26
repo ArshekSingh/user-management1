@@ -42,6 +42,7 @@ import java.util.stream.Stream;
 @Service
 @AllArgsConstructor
 public class EmployeeServiceImpl implements EmployeeService, Constant {
+    private final InventoryDetailsRepository inventoryDetailsRepository;
     private final ReferenceDetailRepository referenceDetailRepository;
 
     private final UserService userService;
@@ -525,12 +526,12 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                         log.info("You can't mark this employee as Inactive because center is active for this employee {} ", employee.getEmployeeId());
                         throw new BadRequestException("You can't mark this employee as Inactive ", HttpStatus.BAD_REQUEST);
                     }
-                    List<InventoryTransferDetails> inventoryTransferDetails = inventoryTransferDetailsRepository.findByOrgIdAndInventoryStaffId(userSession.getOrganizationId(), employee.getEmployeeId());
-                    if(!CollectionUtils.isEmpty(inventoryTransferDetails)) {
+                List<InventoryDetails> inventoryDetailsList = inventoryDetailsRepository.findByOrgIdAndInventoryStaffId(userSession.getOrganizationId(), employee.getEmployeeId());
+                if(!CollectionUtils.isEmpty(inventoryDetailsList)) {
                         List<ReferenceDetail> referenceDetail = referenceDetailRepository.findByReferenceDetailPK_ReferenceDomain(ReferenceDomain.RD_INVENTORY_ASSET_STATUS.name());
-                        for(InventoryTransferDetails transferDetails : inventoryTransferDetails) {
-                            if(!"RS".equalsIgnoreCase(transferDetails.getAssetStatus())) {
-                                Optional<String> assetStatusOptional = referenceDetail.stream().filter(o -> o.getReferenceDetailPK().getKeyValue().equalsIgnoreCase(transferDetails.getAssetStatus())).map(ReferenceDetail::getDescription).findFirst();
+                        for(InventoryDetails inventoryDetails : inventoryDetailsList) {
+                            if(!"RS".equalsIgnoreCase(inventoryDetails.getAssetStatus())) {
+                                Optional<String> assetStatusOptional = referenceDetail.stream().filter(o -> o.getReferenceDetailPK().getKeyValue().equalsIgnoreCase(inventoryDetails.getAssetStatus())).map(ReferenceDetail::getDescription).findFirst();
                                 if (assetStatusOptional.isPresent()) {
                                     String assetStatus = assetStatusOptional.get();
                                     log.info("You can't mark this employee {} as Inactive because asset status is {}", employee.getEmployeeId(), assetStatus);
