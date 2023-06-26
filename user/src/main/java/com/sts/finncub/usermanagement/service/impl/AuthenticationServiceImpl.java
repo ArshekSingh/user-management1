@@ -201,6 +201,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             Map<Integer, String> branchIdMap = new HashMap<>();
             Map<Integer, String> divisionMap = new HashMap<>();
             Map<Integer, String> zoneMap = new HashMap<>();
+            Map<Integer, String> circleMap = new HashMap<>();
             userSession.setEmail(user.getEmail());
             userSession.setName(user.getName());
             userSession.setType(user.getType());
@@ -245,16 +246,31 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             }
             if (!CollectionUtils.isEmpty(parentIdList)) {
                 List<Object[]> zoneList = branchMasterRepository.findByDivisionZoneByBranchId(getActiveOrganizationId(user), parentIdList);
+                parentIdList.clear();
                 for (Object[] zone : zoneList) {
+                    if (zone[3] != null) {
+                        BigDecimal parentId = (BigDecimal) zone[3];
+                        parentIdList.add(parentId.intValue());
+                    }
                     if (zone[2] != null) {
                         BigDecimal branchId = (BigDecimal) zone[2];
                         zoneMap.put(branchId.intValue(), zone[0] + "-" + zone[1]);
                     }
                 }
             }
+            if (!CollectionUtils.isEmpty(parentIdList)) {
+                List<Object[]> circleList = branchMasterRepository.findByDivisionZoneByBranchId(getActiveOrganizationId(user), parentIdList);
+                for (Object[] circle : circleList) {
+                    if (circle[2] != null) {
+                        BigDecimal branchId = (BigDecimal) circle[2];
+                        circleMap.put(branchId.intValue(), circle[0] + "-" + circle[1]);
+                    }
+                }
+            }
             userSession.setBranchMap(branchIdMap);
             userSession.setDivisionMap(divisionMap);
             userSession.setZoneMap(zoneMap);
+            userSession.setCircleMap(circleMap);
             try {
                 Employee employee = employeeRepository.findByUserId(user.getUserId()).orElse(null);
                 if (employee != null) {
