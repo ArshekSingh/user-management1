@@ -42,7 +42,8 @@ import java.util.stream.Stream;
 @Service
 @AllArgsConstructor
 public class EmployeeServiceImpl implements EmployeeService, Constant {
-
+    private final InventoryDetailsRepository inventoryDetailsRepository;
+    private final ReferenceDetailRepository referenceDetailRepository;
     private final UserService userService;
     private final EmployeeDao employeeDao;
     private final UserRepository userRepository;
@@ -515,14 +516,26 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             } catch (Exception exception) {
                 throw new BadRequestException(exception.getMessage(), HttpStatus.BAD_REQUEST);
             }
-            if (request.getEmployeeId() != null) {
-                if (StringUtils.hasText(request.getStatus()) && !employee.getStatus().equalsIgnoreCase(request.getStatus())) {
-                    String id = Long.toString(request.getEmployeeId());
-                    List<String> statusList = Stream.of("A", "C", "R", "C2", "G").collect(Collectors.toList());
-                    List<CenterMaster> centerMasterList = centerMasterRepository.findByCenterMasterPK_OrgIdAndAssignedToAndStatusIn(userSession.getOrganizationId(), id, statusList);
-                    if (!CollectionUtils.isEmpty(centerMasterList)) {
-                        log.info("You can't mark this employee as Inactive because center is active for this employee {} ", employee.getEmployeeId());
-                        throw new BadRequestException("You can't mark this employee as Inactive ", HttpStatus.BAD_REQUEST);
+            if (request.getEmployeeId() != null && (StringUtils.hasText(request.getStatus()) && !employee.getStatus().equalsIgnoreCase(request.getStatus()))) {
+                String id = Long.toString(request.getEmployeeId());
+                List<String> statusList = Stream.of("A", "C", "R", "C2", "G").collect(Collectors.toList());
+                List<CenterMaster> centerMasterList = centerMasterRepository.findByCenterMasterPK_OrgIdAndAssignedToAndStatusIn(userSession.getOrganizationId(), id, statusList);
+                if (!CollectionUtils.isEmpty(centerMasterList)) {
+                    log.info("You can't mark this employee as Inactive because center is active for this employee {} ", employee.getEmployeeId());
+                    throw new BadRequestException("You can't mark this employee as Inactive ", HttpStatus.BAD_REQUEST);
+                }
+                List<InventoryDetails> inventoryDetailsList = inventoryDetailsRepository.findByOrgIdAndInventoryStaffId(userSession.getOrganizationId(), employee.getEmployeeId());
+                if (!CollectionUtils.isEmpty(inventoryDetailsList)) {
+                    List<ReferenceDetail> referenceDetail = referenceDetailRepository.findByReferenceDetailPK_ReferenceDomain(ReferenceDomain.RD_INVENTORY_ASSET_STATUS.name());
+                    for (InventoryDetails inventoryDetails : inventoryDetailsList) {
+                        if (!"RS".equalsIgnoreCase(inventoryDetails.getAssetStatus())) {
+                            Optional<String> assetStatusOptional = referenceDetail.stream().filter(o -> o.getReferenceDetailPK().getKeyValue().equalsIgnoreCase(inventoryDetails.getAssetStatus())).map(ReferenceDetail::getDescription).findFirst();
+                            if (assetStatusOptional.isPresent()) {
+                                String assetStatus = assetStatusOptional.get();
+                                log.info("You can't mark this employee {} as Inactive because asset status is {}", employee.getEmployeeId(), assetStatus);
+                                return new Response("You can't mark this employee as Inactive because asset status is " + assetStatus, HttpStatus.BAD_REQUEST);
+                            }
+                        }
                     }
                 }
             }
@@ -665,7 +678,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         if (StringUtils.hasText(request.getBankAccNo()) && StringUtils.hasText(request.getIfscCode())) {
             Employee employeesWithBankNumber = employeeRepository.findByOrganizationIdAndBankAccNoAndIfscCodeAndStatus(userCredentialService.getUserSession().getOrganizationId(), request.getBankAccNo(), request.getIfscCode(), "A");
             if (employeesWithBankNumber != null) {
-                    messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + ": " + employeesWithBankNumber.getEmployeeCode() + ", employee Name : " + employeesWithBankNumber.getFirstName() + ", " + "bank_account_number : " + request.getBankAccNo() + " and ifsc_code : " + request.getIfscCode() + ", you cannot add existing employee");
+                messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + ": " + employeesWithBankNumber.getEmployeeCode() + ", employee Name : " + employeesWithBankNumber.getFirstName() + ", " + "bank_account_number : " + request.getBankAccNo() + " and ifsc_code : " + request.getIfscCode() + ", you cannot add existing employee");
             }
         }
         if (!CollectionUtils.isEmpty(messages)) {
