@@ -366,7 +366,7 @@ public class UserServiceImpl implements UserService, Constant {
     public Response postGeoLocationOfUser(GeoLocationRequest geoLocationRequest, String authToken) {
         UserSession userSession = userCredentialService.getUserSession();
         log.info("Adding geo location , userId : {}", userSession.getUserId());
-        UserLoginLog userLoginLog = userLoginLogRepository.findByTokenId(authToken.split(" ")[1]);
+        UserLoginLog userLoginLog = userLoginLogRepository.findByUserIdAndTokenId(userSession.getUserId(), authToken.split(" ")[1]);
         geoLocationRequest.getUserLocationTrackerRequests().forEach(coordinates -> saveGeoLocation(coordinates, userLoginLog, userSession));
         return new Response(SUCCESS, HttpStatus.OK);
     }
