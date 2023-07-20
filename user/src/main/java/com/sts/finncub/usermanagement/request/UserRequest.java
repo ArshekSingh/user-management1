@@ -22,6 +22,5 @@ public class UserRequest {
     private String bcId;
     private String extUserId;
     private String isFrozenBookFlag;
-    private List<String> bcIdList;
     private String imeiNumber;
 }
