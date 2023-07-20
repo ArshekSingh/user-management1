@@ -116,6 +116,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 log.error("User is not active , userId : {}", loginRequest.getUserId());
                 throw new BadRequestException("User is not active.", HttpStatus.BAD_REQUEST);
             }
+//            if(StringUtils.hasText(user.getImeiNumber()) && !user.getImeiNumber().equals(loginRequest.getImeiNumber1())){
+//                log.error("User {} not authorized due to IMEI Number ", loginRequest.getUserId());
+//                throw new BadRequestException("You are not authorized. Please contact HR", HttpStatus.BAD_REQUEST);
+//            }
             if ("N".equalsIgnoreCase(user.getIsPasswordActive())) {
                 log.error("User password is blocked , userId : {}", loginRequest.getUserId());
                 throw new BadRequestException("Your password is blocked. Please contact HR", HttpStatus.BAD_REQUEST);
