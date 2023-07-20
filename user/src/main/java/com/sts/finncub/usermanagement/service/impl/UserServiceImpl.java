@@ -93,6 +93,7 @@ public class UserServiceImpl implements UserService, Constant {
         userDetailDto.setApprovedOn(DateTimeUtil.dateToString(user.get().getApprovedOn()));
         userDetailDto.setInsertedOn(DateTimeUtil.dateTimeToString(user.get().getInsertedOn()));
         userDetailDto.setUpdatedOn(DateTimeUtil.dateTimeToString(user.get().getUpdatedOn()));
+        userDetailDto.setImeiNumber(user.get().getImeiNumber());
         return new Response(SUCCESS, userDetailDto, HttpStatus.OK);
     }
 
@@ -124,6 +125,7 @@ public class UserServiceImpl implements UserService, Constant {
         user.setIsTemporaryPassword("Y");
         user.setIsActive(request.getIsActive());
         user.setIsFrozenBookFlag("N");
+        user.setImeiNumber(request.getImeiNumber());
         userRepository.save(user);
         //Save in user organization
         try {
@@ -209,6 +211,10 @@ public class UserServiceImpl implements UserService, Constant {
             } else {
                 userDetail.setIsActive(request.getIsActive());
             }
+        }
+        if(StringUtils.hasText(request.getImeiNumber()))
+        {
+            userDetail.setImeiNumber(request.getImeiNumber());
         }
         userDetail.setIsFrozenBookFlag(request.getIsFrozenBookFlag());
         userDetail.setUpdatedBy(userSession.getUserId());
