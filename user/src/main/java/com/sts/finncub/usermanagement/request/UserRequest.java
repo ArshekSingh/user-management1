@@ -3,6 +3,8 @@ package com.sts.finncub.usermanagement.request;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 public class UserRequest {
@@ -20,4 +22,5 @@ public class UserRequest {
     private String bcId;
     private String extUserId;
     private String isFrozenBookFlag;
+    private String imeiNumber;
 }
