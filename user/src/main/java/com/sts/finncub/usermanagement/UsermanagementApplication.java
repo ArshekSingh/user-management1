@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
+import org.springframework.cloud.aws.messaging.config.annotation.EnableSqs;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.annotation.PropertySources;
@@ -17,6 +18,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @ComponentScan({"com.sts"})
 @SpringBootApplication(exclude = { SecurityAutoConfiguration.class, UserDetailsServiceAutoConfiguration.class})
 @EnableAsync
+@EnableSqs
 @ComponentScan("com.sts.finncub")
 @EntityScan("com.sts.finncub")
 @EnableJpaRepositories("com.sts.finncub")

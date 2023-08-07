@@ -16,13 +16,13 @@ public class QueueConsumer {
 
     private final SmsService smsService;
 
-    @SqsListener(value = "servitium-sms-queue")
+    @SqsListener(value = "finncub-sms-queue")
     public void loadMessageFromSQS(String message) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         SmsQueueRequest smsQueueRequest = mapper.readValue(message, SmsQueueRequest.class);
         if (smsQueueRequest != null) {
             log.info("API to send SMS for collection is triggered for mobile {}", smsQueueRequest.getMobileNo());
-            smsService.sendSms(smsQueueRequest.getMobileNo(), smsQueueRequest.getMessageType(), smsQueueRequest.getCenterId(), smsQueueRequest.getCollectionAmt(), smsQueueRequest.getUserId(), smsQueueRequest.getOrganizationId());
+            smsService.sendSms(smsQueueRequest.getMobileNo(), smsQueueRequest.getUserId(), smsQueueRequest.getOrganizationId(), smsQueueRequest.getMessage());
             log.info("SMS sent successfully of collection for mobile {}", smsQueueRequest.getMobileNo());
         }
     }
