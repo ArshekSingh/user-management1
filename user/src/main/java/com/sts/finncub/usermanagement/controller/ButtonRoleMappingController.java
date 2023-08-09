@@ -1,6 +1,7 @@
 package com.sts.finncub.usermanagement.controller;
 
 import com.sts.finncub.core.dto.ButtonRoleRequest;
+import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.service.ButtonRoleMappingService;
 import lombok.AllArgsConstructor;
@@ -19,9 +20,9 @@ public class ButtonRoleMappingController {
     private final ButtonRoleMappingService buttonRoleMappingService;
 
     @PostMapping("/mapButtonToRole")
-    public Response mapButtonToRole(@RequestBody ButtonRoleRequest request) {
+    public Response mapButtonToRole(@RequestBody ButtonRoleRequest request) throws BadRequestException {
         log.info("Request initiated to map button to roles");
-        buttonRoleMappingService.mapButtonToRole(request);
+        return buttonRoleMappingService.mapButtonToRole(request);
     }
 
 }

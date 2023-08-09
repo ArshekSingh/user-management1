@@ -19,6 +19,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static com.sts.finncub.core.constants.Constant.FAILED;
 import static com.sts.finncub.core.constants.Constant.SUCCESS;
@@ -40,6 +41,10 @@ public class ButtonMenuMappingServiceImpl implements ButtonMenuMappingService {
                 return new Response("Menu name and Button name are mandatory", HttpStatus.BAD_REQUEST);
             }
             UserSession userSession = userCredentialService.getUserSession();
+            Optional<MenuButtonMapping> menuButtonMappingOptional = buttonMenuMapRepository.findByOrgIdAndMenuIdAndButtonName(userSession.getOrganizationId(), request.getMenuId(), request.getButtonName());
+            if (menuButtonMappingOptional.isPresent()) {
+                return new Response("This button is already mapped in the given menu", HttpStatus.BAD_REQUEST);
+            }
             MenuButtonMapping mapping = new MenuButtonMapping();
             mapping.setMenuId(request.getMenuId());
             mapping.setButtonName(request.getButtonName());
