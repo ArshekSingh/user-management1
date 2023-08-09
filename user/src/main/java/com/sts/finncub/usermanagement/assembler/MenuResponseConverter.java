@@ -5,6 +5,7 @@ import com.sts.finncub.core.entity.MenuView;
 import com.sts.finncub.usermanagement.response.MenuResponse;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class MenuResponseConverter {
@@ -26,6 +27,7 @@ public class MenuResponseConverter {
                                 pageList.add(convert(page));
                             }
                         }
+                        pageList.sort(Comparator.comparing(MenuDto::getLabel));
                         subMenuDTO.setContent(pageList);
                         subMenuList.add(subMenuDTO);
                         menuDTO.setContent(subMenuList);
