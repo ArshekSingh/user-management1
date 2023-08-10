@@ -14,6 +14,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -41,13 +42,14 @@ public class ButtonMenuMappingServiceImpl implements ButtonMenuMappingService {
                 return new Response("Menu name and Button name are mandatory", HttpStatus.BAD_REQUEST);
             }
             UserSession userSession = userCredentialService.getUserSession();
-            Optional<MenuButtonMapping> menuButtonMappingOptional = buttonMenuMapRepository.findByOrgIdAndMenuIdAndButtonName(userSession.getOrganizationId(), request.getMenuId(), request.getButtonName());
+            Optional<MenuButtonMapping> menuButtonMappingOptional = buttonMenuMapRepository.findByOrgIdAndMenuIdAndButtonName(userSession.getOrganizationId(), request.getMenuId(), request.getButtonName().toUpperCase());
             if (menuButtonMappingOptional.isPresent()) {
                 return new Response("This button is already mapped in the given menu", HttpStatus.BAD_REQUEST);
             }
             MenuButtonMapping mapping = new MenuButtonMapping();
+            mapping.setOrgId(userSession.getOrganizationId());
             mapping.setMenuId(request.getMenuId());
-            mapping.setButtonName(request.getButtonName());
+            mapping.setButtonName(request.getButtonName().toUpperCase());
             mapping.setInsertedBy(userSession.getUserId());
             mapping.setInsertedOn(LocalDateTime.now());
             buttonMenuMapRepository.save(mapping);
@@ -79,11 +81,12 @@ public class ButtonMenuMappingServiceImpl implements ButtonMenuMappingService {
     }
 
     @Override
+    @Transactional
     public Response deleteButton(MenuButtonRequest request) {
         UserSession userSession = userCredentialService.getUserSession();
         try {
             if (request.getMenuId() != null && StringUtils.hasText(request.getButtonName())) {
-                buttonMenuMapRepository.deleteByOrgIdAndMenuIdAndButtonName(userSession.getOrganizationId(), request.getMenuId(), request.getButtonName());
+                buttonMenuMapRepository.deleteByOrgIdAndMenuIdAndButtonName(userSession.getOrganizationId(), request.getMenuId(), request.getButtonName().toUpperCase());
                 return new Response(SUCCESS, HttpStatus.OK);
             } else {
                 return new Response("Please enter the valid menu id and button name", HttpStatus.BAD_REQUEST);

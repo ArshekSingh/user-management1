@@ -6,4 +6,6 @@ import com.sts.finncub.core.response.Response;
 
 public interface ButtonRoleMappingService {
     Response mapButtonToRole(ButtonRoleRequest request) throws BadRequestException;
+
+    Response getButtonToRoleMap(ButtonRoleRequest request) throws BadRequestException;
 }

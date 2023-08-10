@@ -25,4 +25,10 @@ public class ButtonRoleMappingController {
         return buttonRoleMappingService.mapButtonToRole(request);
     }
 
+    @PostMapping("/getButtonToRoleMap")
+    public Response getButtonToRoleMap(@RequestBody ButtonRoleRequest request) throws BadRequestException {
+        log.info("Request initiated to fetch assigned roles to particular button");
+        return buttonRoleMappingService.getButtonToRoleMap(request);
+    }
+
 }
