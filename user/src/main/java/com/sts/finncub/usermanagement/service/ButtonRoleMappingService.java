@@ -8,4 +8,6 @@ public interface ButtonRoleMappingService {
     Response mapButtonToRole(ButtonRoleRequest request) throws BadRequestException;
 
     Response getButtonToRoleMap(ButtonRoleRequest request) throws BadRequestException;
+
+    Response listOfRolesOnButton(String request);
 }

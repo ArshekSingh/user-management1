@@ -6,10 +6,7 @@ import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.service.ButtonRoleMappingService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api")
@@ -29,6 +26,12 @@ public class ButtonRoleMappingController {
     public Response getButtonToRoleMap(@RequestBody ButtonRoleRequest request) throws BadRequestException {
         log.info("Request initiated to fetch assigned roles to particular button");
         return buttonRoleMappingService.getButtonToRoleMap(request);
+    }
+
+    @GetMapping("/listOfRolesOnButton")
+    public Response listOfRolesOnButton(@RequestParam String action) {
+        log.info("Request initiated to get list of roles assigned to button");
+        return buttonRoleMappingService.listOfRolesOnButton(action);
     }
 
 }
