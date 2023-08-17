@@ -69,6 +69,9 @@ public class ButtonRoleMappingServiceImpl implements ButtonRoleMappingService {
     public Response getButtonToRoleMap(ButtonRoleRequest request) throws BadRequestException {
         ValidationUtils.validateGetButtonRoleMapRequest(request);
         UserSession userSession = userCredentialService.getUserSession();
+        ButtonRoleMappingResponse response = new ButtonRoleMappingResponse();
+        List<ServerSideDropDownDto> availableRolesArray = new ArrayList<>();
+        List<ServerSideDropDownDto> assignedRolesArray = new ArrayList<>();
         Optional<ButtonRoleMapping> buttonRoleMappingOptional = buttonRoleMappingRepository.findByOrgIdAndMenuIdAndButtonNameContainingIgnoreCase(userSession.getOrganizationId(), request.getMenuId(), request.getButtonName());
         if (buttonRoleMappingOptional.isPresent()) {
             ButtonRoleMapping mapping = buttonRoleMappingOptional.get();
@@ -76,8 +79,6 @@ public class ButtonRoleMappingServiceImpl implements ButtonRoleMappingService {
             List<Long> roleIdList = roleIds.stream().map(Long::valueOf).collect(Collectors.toList());
             List<RoleMaster> availableRoles = roleMasterRepository.findByRoleIdNotIn(roleIdList);
             List<RoleMaster> assignedRoles = roleMasterRepository.findByRoleIdIn(roleIdList);
-            List<ServerSideDropDownDto> availableRolesArray = new ArrayList<>();
-            List<ServerSideDropDownDto> assignedRolesArray = new ArrayList<>();
             if (!CollectionUtils.isEmpty(availableRoles)) {
                 availableRoles.forEach(o -> {
                     ServerSideDropDownDto availableRolesList = new ServerSideDropDownDto();
@@ -94,7 +95,6 @@ public class ButtonRoleMappingServiceImpl implements ButtonRoleMappingService {
                     assignedRolesArray.add(assignedRolesList);
                 });
             }
-            ButtonRoleMappingResponse response = new ButtonRoleMappingResponse();
             response.setMenuId(mapping.getMenuId());
             response.setButtonName(mapping.getButtonName());
             response.setAssignedRoles(assignedRolesArray);
@@ -103,7 +103,19 @@ public class ButtonRoleMappingServiceImpl implements ButtonRoleMappingService {
             return new Response(SUCCESS, response, HttpStatus.OK);
         } else {
             log.info("No records found for menu Id {} and button Name {}", request.getMenuId(), request.getButtonName());
-            return new Response(FAILED, HttpStatus.BAD_REQUEST);
+            List<RoleMaster> availableRoles = roleMasterRepository.findAll();
+            if(!CollectionUtils.isEmpty(availableRoles)) {
+                availableRoles.forEach(o -> {
+                    ServerSideDropDownDto availableRolesList = new ServerSideDropDownDto();
+                    availableRolesList.setId(o.getRoleId().toString());
+                    availableRolesList.setLabel(o.getRoleName());
+                    availableRolesArray.add(availableRolesList);
+                });
+            }
+            response.setMenuId(request.getMenuId());
+            response.setButtonName(request.getButtonName());
+            response.setAvailableRoles(availableRolesArray);
+            return new Response(SUCCESS, response, HttpStatus.OK);
         }
     }
 
