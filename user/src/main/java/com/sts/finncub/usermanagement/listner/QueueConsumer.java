@@ -17,10 +17,7 @@ public class QueueConsumer {
 
     private final SmsService smsService;
 
-    @Value("${queue.name}")
-    private String queueName;
-
-    @SqsListener(value = queueName)
+    @SqsListener(value = "${queue.name}")
     public void loadMessageFromSQS(String message) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         SmsQueueRequest smsQueueRequest = mapper.readValue(message, SmsQueueRequest.class);
