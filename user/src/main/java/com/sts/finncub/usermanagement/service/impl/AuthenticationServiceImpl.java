@@ -478,6 +478,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (StringUtils.hasText(responseId)) {
             vendorSmsLogData.setStatus("D");  // Status D is for Delivered.
             vendorSmsLogData.setSmsResponse(responseId);
+            vendorSmsLogData.setIsDelivered("N");
             vendorSmsLogRepository.save(vendorSmsLogData);
         } else {
             throw new InternalServerErrorException("Empty response received from vendor.", HttpStatus.INTERNAL_SERVER_ERROR);
