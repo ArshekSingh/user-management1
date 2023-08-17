@@ -1,14 +1,13 @@
 package com.sts.finncub.usermanagement.service.impl;
 
-import com.sts.finncub.core.dto.ButtonRoleMappingResponse;
-import com.sts.finncub.core.dto.ButtonRoleRequest;
-import com.sts.finncub.core.dto.RoleMasterDto;
-import com.sts.finncub.core.dto.ServerSideDropDownDto;
+import com.sts.finncub.core.dto.*;
 import com.sts.finncub.core.entity.ButtonRoleMapping;
+import com.sts.finncub.core.entity.Menu;
 import com.sts.finncub.core.entity.RoleMaster;
 import com.sts.finncub.core.entity.UserSession;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.ButtonRoleMappingRepository;
+import com.sts.finncub.core.repository.MenuRepository;
 import com.sts.finncub.core.repository.RoleMasterRepository;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.core.service.UserCredentialService;
@@ -21,10 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.sts.finncub.core.constants.Constant.FAILED;
@@ -38,6 +34,8 @@ public class ButtonRoleMappingServiceImpl implements ButtonRoleMappingService {
     private final ButtonRoleMappingRepository buttonRoleMappingRepository;
     private final UserCredentialService userCredentialService;
     private final RoleMasterRepository roleMasterRepository;
+
+    private final MenuRepository menuRepository;
 
     @Override
     public Response mapButtonToRole(ButtonRoleRequest request) throws BadRequestException {
@@ -106,6 +104,36 @@ public class ButtonRoleMappingServiceImpl implements ButtonRoleMappingService {
         } else {
             log.info("No records found for menu Id {} and button Name {}", request.getMenuId(), request.getButtonName());
             return new Response(FAILED, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Override
+    public Response listOfRolesOnButton(String request) {
+        UserSession userSession = userCredentialService.getUserSession();
+        Optional<Menu> byAction = menuRepository.findByAction(request);
+        if(byAction.isPresent()) {
+            Menu menu = byAction.get();
+            List<ButtonRoleMapping> rolesAssignedToButtonList = buttonRoleMappingRepository.findByOrgIdAndMenuId(userSession.getOrganizationId(), menu.getId());
+            if(!CollectionUtils.isEmpty(rolesAssignedToButtonList)) {
+                HashMap<String, List<String>> buttonRoleMap = new HashMap<>();
+                for(ButtonRoleMapping mapping : rolesAssignedToButtonList) {
+                    String roleNames = mapping.getRoleNames();
+                    List<String> roleIdList = Arrays.asList(roleNames.split(","));
+                    List<Long> longRoleIds = roleIdList.stream().map(Long::valueOf).collect(Collectors.toList());
+                    List<String> byRoleIdIn = roleMasterRepository.findByRoleIdIn(longRoleIds).stream().map(RoleMaster::getRoleName).collect(Collectors.toList());
+                    buttonRoleMap.put(mapping.getButtonName(), byRoleIdIn);
+                }
+                log.info("List of roles assigned to buttons");
+                return new Response(SUCCESS, buttonRoleMap, HttpStatus.OK);
+            }
+            else {
+                log.info("No button role mapping found");
+                return new Response("No button role mapping found", HttpStatus.BAD_REQUEST);
+            }
+        }
+        else {
+            log.info("No details found against action {}", request);
+            return new Response("No details found against action", HttpStatus.BAD_REQUEST);
         }
     }
 }
