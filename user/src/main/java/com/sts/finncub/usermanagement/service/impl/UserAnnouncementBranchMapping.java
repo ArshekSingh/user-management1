@@ -12,6 +12,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -40,7 +41,7 @@ public class UserAnnouncementBranchMapping {
             userAnnouncementMappingRepository.saveAndFlush(userAnnouncementMapping);
             Optional<User> user = userRepository.findByUserId(userBranchMapping.getUser().getUserId());
             if (user.isPresent()) {
-                if (user.get().getFbToken() != null && !user.get().getFbToken().isEmpty())
+                if (StringUtils.hasText(user.get().getFbToken()))
                     firebaseMessagingService.sendNotification(userAnnouncement.getTitle(), userAnnouncement.getMessage(), user.get().getFbToken());
             }
         }
