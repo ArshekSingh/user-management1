@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -130,10 +131,12 @@ public class ButtonRoleMappingServiceImpl implements ButtonRoleMappingService {
                 HashMap<String, List<String>> buttonRoleMap = new HashMap<>();
                 for(ButtonRoleMapping mapping : rolesAssignedToButtonList) {
                     String roleNames = mapping.getRoleNames();
-                    List<String> roleIdList = Arrays.asList(roleNames.split(","));
-                    List<Long> longRoleIds = roleIdList.stream().map(Long::valueOf).collect(Collectors.toList());
-                    List<String> byRoleIdIn = roleMasterRepository.findByRoleIdIn(longRoleIds).stream().map(RoleMaster::getRoleName).collect(Collectors.toList());
-                    buttonRoleMap.put(mapping.getButtonName(), byRoleIdIn);
+                    if(StringUtils.hasText(roleNames)) {
+                        List<String> roleIdList = Arrays.asList(roleNames.split(","));
+                        List<Long> longRoleIds = roleIdList.stream().map(Long::valueOf).collect(Collectors.toList());
+                        List<String> byRoleIdIn = roleMasterRepository.findByRoleIdIn(longRoleIds).stream().map(RoleMaster::getRoleName).collect(Collectors.toList());
+                        buttonRoleMap.put(mapping.getButtonName(), byRoleIdIn);
+                    }
                 }
                 log.info("List of roles assigned to buttons");
                 return new Response(SUCCESS, buttonRoleMap, HttpStatus.OK);
