@@ -21,11 +21,11 @@
             <artifactId>core-commons</artifactId>
             <version>1.0.0</version>
         </dependency>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-s3</artifactId>
-            <version>1.11.931</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.amazonaws</groupId>-->
+<!--            <artifactId>aws-java-sdk-s3</artifactId>-->
+<!--            <version>1.11.931</version>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>org.springframework.retry</groupId>
@@ -86,6 +86,21 @@
             <artifactId>assertj-core</artifactId>
             <version>3.19.0</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.awspring.cloud</groupId>
+            <artifactId>spring-cloud-starter-aws-secrets-manager-config</artifactId>
+            <version>2.4.4</version>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-sqs</artifactId>
+            <version>1.12.349</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-aws-messaging</artifactId>
+            <version>2.2.6.RELEASE</version>
         </dependency>
     </dependencies>
     <build>
