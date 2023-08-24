@@ -1,23 +1,22 @@
 package com.sts.finncub.usermanagement.service;
 
 import com.google.firebase.messaging.FirebaseMessagingException;
-import com.sts.finncub.core.entity.UserAnnouncement;
-import com.sts.finncub.core.exception.ObjectNotFoundException;
+import com.sts.finncub.core.request.UserAnnouncementFilterRequest;
 import com.sts.finncub.core.request.UserAnnouncementRequest;
 import com.sts.finncub.core.response.Response;
 
 public interface AnnouncementService {
 
-    Response createAnnouncement(UserAnnouncement userAnnouncement) throws ObjectNotFoundException, FirebaseMessagingException;
+    Response createAnnouncement(UserAnnouncementRequest userAnnouncementRequest) throws FirebaseMessagingException;
 
-    Response getAdminAnnouncements(UserAnnouncementRequest userAnnouncementRequest);
+    Response getAdminAnnouncements(UserAnnouncementFilterRequest userAnnouncementFilterRequest);
 
-    Response getAdminAnnouncement(Long AnnouncementId) throws ObjectNotFoundException;
+    Response getAdminAnnouncement(Long AnnouncementId);
 
-    Response updateAnnouncement(Long announcementId, UserAnnouncement userAnnouncement) throws ObjectNotFoundException;
+    Response updateAnnouncement(Long announcementId, UserAnnouncementRequest userAnnouncementRequest);
 
-    Response getAnnouncements() throws ObjectNotFoundException;
+    Response getAnnouncements();
 
-    Response readAnnouncement(String announcementId) throws ObjectNotFoundException;
+    Response readAnnouncement(String announcementId);
 
 }

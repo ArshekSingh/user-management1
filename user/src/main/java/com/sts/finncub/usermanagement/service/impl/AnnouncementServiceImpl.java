@@ -2,26 +2,34 @@ package com.sts.finncub.usermanagement.service.impl;
 
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.sts.finncub.core.entity.*;
-import com.sts.finncub.core.exception.ObjectNotFoundException;
+import com.sts.finncub.core.repository.BranchMasterRepository;
 import com.sts.finncub.core.repository.UserAnnouncementMappingRepository;
 import com.sts.finncub.core.repository.UserAnnouncementRepository;
 import com.sts.finncub.core.repository.UserBranchMappingRepository;
+import com.sts.finncub.core.request.UserAnnouncementFilterRequest;
 import com.sts.finncub.core.request.UserAnnouncementRequest;
 import com.sts.finncub.core.response.Response;
+import com.sts.finncub.core.response.UserAnnouncementResponse;
 import com.sts.finncub.core.service.UserCredentialService;
+import com.sts.finncub.core.util.DateTimeUtil;
+import com.sts.finncub.usermanagement.assembler.UserAnnouncementAssembler;
 import com.sts.finncub.usermanagement.service.AnnouncementService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 @AllArgsConstructor
 public class AnnouncementServiceImpl implements AnnouncementService {
+
+    private final BranchMasterRepository branchMasterRepository;
 
     private final UserAnnouncementRepository userAnnouncementRepository;
 
@@ -33,126 +41,98 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
     private final UserCredentialService userCredentialService;
 
+    private final UserAnnouncementAssembler userAnnouncementAssembler;
+
     @Override
-    public Response createAnnouncement(UserAnnouncement userAnnouncement) throws ObjectNotFoundException, FirebaseMessagingException {
-        Response response = new Response();
+    public Response createAnnouncement(UserAnnouncementRequest userAnnouncementRequest) throws FirebaseMessagingException {
         UserSession userSession = userCredentialService.getUserSession();
-        List<UserBranchMapping> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_OrgIdAndStatusAndUserBranchMappingPK_BranchIdIn(userSession.getOrganizationId(), "A", userAnnouncement.getBranch());
+        List<UserBranchMapping> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_OrgIdAndStatusAndUserBranchMappingPK_BranchIdIn(userSession.getOrganizationId(), "A", userAnnouncementRequest.getBranchId());
         if (userBranchMappingList.isEmpty()) {
-            log.info("No users are found for branch : {}", userAnnouncement.getBranch());
-            throw new ObjectNotFoundException("No users are found for branch : " + userAnnouncement.getBranch(), HttpStatus.NOT_FOUND);
+            log.info("No users are found for branch : {}", userAnnouncementRequest.getBranchId());
+            return new Response("No users are found for branch : " + userAnnouncementRequest.getBranchId(), HttpStatus.NOT_FOUND);
         }
-        userAnnouncement.setOrgId(userSession.getOrganizationId());
-        userAnnouncement.setInsertedBy(userSession.getUserId());
+        UserAnnouncement userAnnouncement = userAnnouncementAssembler.convertToUserAnnouncement(userAnnouncementRequest, userSession);
         UserAnnouncement userAnnouncementResponse = userAnnouncementRepository.saveAndFlush(userAnnouncement);
         userAnnouncementBranchMapping.insertUserAnnouncementBranchMapping(userBranchMappingList, userAnnouncement, userAnnouncementResponse.getAnnouncementId().toString());
         log.info("Announcement created successfully");
-        response.setMessage("Announcement created successfully");
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        return response;
+        return new Response("Announcement created successfully", HttpStatus.OK);
     }
 
-
     @Override
-    public Response getAdminAnnouncements(UserAnnouncementRequest userAnnouncementRequest) {
-        Response response = new Response();
+    public Response getAdminAnnouncements(UserAnnouncementFilterRequest userAnnouncementFilterRequest) {
         List<UserAnnouncement> userAnnouncementList;
-        if (userAnnouncementRequest.getStartDate() != null && userAnnouncementRequest.getEndDate() != null) {
-            userAnnouncementList = userAnnouncementRepository.findByStartDateAndEndDate(userAnnouncementRequest.getStartDate(), userAnnouncementRequest.getEndDate());
-        } else {
-            userAnnouncementList = userAnnouncementRepository.findAll();
+        List<UserAnnouncementResponse> userAnnouncementResponseList = new ArrayList<>();
+        if (StringUtils.hasText(userAnnouncementFilterRequest.getStartDate()) && StringUtils.hasText(userAnnouncementFilterRequest.getEndDate()))
+            userAnnouncementList = userAnnouncementRepository.findByStartDateBetweenOrderByAnnouncementIdDesc(DateTimeUtil.stringToDate(userAnnouncementFilterRequest.getStartDate()), DateTimeUtil.stringToDate(userAnnouncementFilterRequest.getEndDate()));
+        else
+            userAnnouncementList = userAnnouncementRepository.findAllByOrderByAnnouncementIdDesc();
+        if (userAnnouncementList.isEmpty()) {
+            log.info("No announcements are present");
+            return new Response("No announcements are present", HttpStatus.NOT_FOUND);
         }
         for (UserAnnouncement userAnnouncement : userAnnouncementList) {
-            List<Long> userAnnouncementMappingList = userAnnouncementMappingRepository.findDistinctBranchIdByAnnouncementId(userAnnouncement.getAnnouncementId().toString());
-            userAnnouncement.setBranch(userAnnouncementMappingList);
+            List<Long> branchIds = userAnnouncementMappingRepository.findDistinctBranchIdByAnnouncementId(userAnnouncement.getAnnouncementId().toString());
+            List<String> branchNames = branchMasterRepository.findByBranchName(userAnnouncement.getOrgId(), branchIds);
+            UserAnnouncementResponse userAnnouncementResponse = userAnnouncementAssembler.convertToResponse(userAnnouncement);
+            userAnnouncementResponse.setBranchId(branchIds);
+            userAnnouncementResponse.setBranchName(branchNames);
+            userAnnouncementResponseList.add(userAnnouncementResponse);
         }
         log.info("Announcements fetched successfully");
-        response.setMessage("Announcements fetched successfully");
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setData(userAnnouncementList);
-        response.setTotalCount((long) userAnnouncementList.size());
-        return response;
+        return new Response("Announcements fetched successfully", userAnnouncementResponseList, (long) userAnnouncementList.size(), HttpStatus.OK);
     }
 
     @Override
-    public Response getAdminAnnouncement(Long announcementId) throws ObjectNotFoundException {
-        Response response = new Response();
-        Optional<UserAnnouncement> userAnnouncementResponse = userAnnouncementRepository.findById(announcementId);
-        if (userAnnouncementResponse.isEmpty()) {
+    public Response getAdminAnnouncement(Long announcementId) {
+        Optional<UserAnnouncement> userAnnouncement = userAnnouncementRepository.findById(announcementId);
+        if (userAnnouncement.isEmpty()) {
             log.info("No announcement is found with id : {}", announcementId);
-            throw new ObjectNotFoundException("No announcement is found with id : " + announcementId, HttpStatus.NOT_FOUND);
+            return new Response("No announcement is found with id : " + announcementId, HttpStatus.NOT_FOUND);
         }
-        UserAnnouncement userAnnouncement = userAnnouncementResponse.get();
-        List<Long> userAnnouncementMappingList = userAnnouncementMappingRepository.findDistinctBranchIdByAnnouncementId(announcementId.toString());
-        userAnnouncement.setBranch(userAnnouncementMappingList);
+        UserAnnouncementResponse userAnnouncementResponse = userAnnouncementAssembler.convertToResponse(userAnnouncement.get());
+        List<Long> branchIds = userAnnouncementMappingRepository.findDistinctBranchIdByAnnouncementId(announcementId.toString());
+        List<String> branchNames = branchMasterRepository.findByBranchName(userAnnouncementResponse.getOrgId(), branchIds);
+        userAnnouncementResponse.setBranchId(branchIds);
+        userAnnouncementResponse.setBranchName(branchNames);
         log.info("Announcement fetched successfully");
-        response.setMessage("Announcement fetched successfully");
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setData(userAnnouncement);
-        return response;
+        return new Response("Announcement fetched successfully", userAnnouncementResponse, HttpStatus.OK);
     }
 
     @Override
-    public Response updateAnnouncement(Long announcementId, UserAnnouncement userAnnouncement) throws ObjectNotFoundException {
-        Response response = new Response();
+    public Response updateAnnouncement(Long announcementId, UserAnnouncementRequest userAnnouncementRequest) {
         UserSession userSession = userCredentialService.getUserSession();
         Optional<UserAnnouncement> userAnnouncementResponse = userAnnouncementRepository.findById(announcementId);
         if (userAnnouncementResponse.isEmpty()) {
             log.info("No announcement is found with id : {}", announcementId);
-            throw new ObjectNotFoundException("No announcement is found with id : " + announcementId, HttpStatus.NOT_FOUND);
+            return new Response("No announcement is found with id : " + announcementId, HttpStatus.NOT_FOUND);
         }
-        UserAnnouncement announcement = userAnnouncementResponse.get();
-        if (userAnnouncement.getTitle() != null)
-            announcement.setTitle(userAnnouncement.getTitle());
-        if (userAnnouncement.getMessage() != null)
-            announcement.setMessage(userAnnouncement.getMessage());
-        if (userAnnouncement.getAttachment() != null)
-            announcement.setAttachment(userAnnouncement.getAttachment());
-        if (userAnnouncement.getStatus() != null)
-            announcement.setStatus(userAnnouncement.getStatus());
-        if (userAnnouncement.getStartDate() != null)
-            announcement.setStartDate(userAnnouncement.getStartDate());
-        if (userAnnouncement.getEndDate() != null)
-            announcement.setEndDate(userAnnouncement.getEndDate());
-        announcement.setUpdatedBy(userSession.getUserId());
+        UserAnnouncement announcement = userAnnouncementAssembler.prepareUpdateRequest(userAnnouncementResponse.get(), userAnnouncementRequest, userSession);
         userAnnouncementRepository.saveAndFlush(announcement);
         log.info("Announcement with id : {} updated", announcementId);
-        response.setMessage("Announcement with id : " + announcementId + " updated");
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        return response;
+        return new Response("Announcement with id : " + announcementId + " updated", HttpStatus.OK);
     }
 
     @Override
-    public Response getAnnouncements() throws ObjectNotFoundException {
-        Response response = new Response();
+    public Response getAnnouncements() {
         UserSession userSession = userCredentialService.getUserSession();
-        List<UserAnnouncement> announcements = userAnnouncementRepository.getAnnouncements(userSession.getUserId(), userSession.getOrganizationId());
+        List<Object[]> announcements = userAnnouncementRepository.getAnnouncements(userSession.getUserId(), userSession.getOrganizationId());
+        List<UserAnnouncementResponse> userAnnouncementResponse = announcements.stream().map(userAnnouncementAssembler::populateUserAnnouncementResponseData).collect(Collectors.toList());
         if (announcements.isEmpty()) {
             log.info("No announcements are found for user : {}", userSession.getUserId());
-            throw new ObjectNotFoundException("No announcements are found for user : " + userSession.getUserId(), HttpStatus.NOT_FOUND);
+            return new Response("No announcements are found for user : " + userSession.getUserId(), HttpStatus.NOT_FOUND);
         }
         log.info("Announcements fetched successfully for user : {}", userSession.getUserId());
-        response.setMessage("Announcements fetched successfully for user : " + userSession.getUserId());
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setData(announcements);
-        response.setTotalCount((long) announcements.size());
-        return response;
+        return new Response("Announcements fetched successfully for user : " + userSession.getUserId(), userAnnouncementResponse, (long) announcements.size(), HttpStatus.OK);
     }
 
     @Override
-    public Response readAnnouncement(String announcementId) throws ObjectNotFoundException {
-        Response response = new Response();
+    public Response readAnnouncement(String announcementId) {
         UserSession userSession = userCredentialService.getUserSession();
         UserAnnouncementMapping userAnnouncementMappingResponse = null;
         List<UserAnnouncementMapping> userAnnouncementMappingList = userAnnouncementMappingRepository.findByOrgIdAndUserIdAndAnnouncementId(userSession.getOrganizationId(), userSession.getUserId(), announcementId);
         if (userAnnouncementMappingList.isEmpty()) {
             log.info("No announcement is found with userId : {} or announcementId : {}", userSession.getUserId(), announcementId);
-            throw new ObjectNotFoundException("No announcement is found with userId : " + userSession.getUserId() + " or announcementId : " + announcementId, HttpStatus.NOT_FOUND);
+            return new Response("No announcement is found with userId : " + userSession.getUserId() + " or announcementId : " + announcementId, HttpStatus.NOT_FOUND);
         }
         for (UserAnnouncementMapping userAnnouncementMapping : userAnnouncementMappingList) {
             userAnnouncementMapping.setIsRead("Y");
@@ -161,13 +141,9 @@ public class AnnouncementServiceImpl implements AnnouncementService {
             userAnnouncementMappingResponse = userAnnouncementMappingRepository.saveAndFlush(userAnnouncementMapping);
         }
         log.info("Announcement with userId : {} and announcementId : {} is marked as read", userSession.getUserId(), announcementId);
-        response.setMessage("Announcement with userId : " + userSession.getUserId() + " and announcementId : " + announcementId + " is marked as read");
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
         Map<String, String> map = new HashMap<>();
         map.put("isRead", userAnnouncementMappingResponse.getIsRead());
-        response.setData(map);
-        return response;
+        return new Response("Announcement with userId : " + userSession.getUserId() + " and announcementId : " + announcementId + " is marked as read", map, HttpStatus.OK);
     }
 
 }
