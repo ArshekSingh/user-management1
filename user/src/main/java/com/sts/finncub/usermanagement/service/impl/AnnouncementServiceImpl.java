@@ -22,6 +22,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -45,10 +46,10 @@ public class AnnouncementServiceImpl implements AnnouncementService {
     @Override
     public Response createAnnouncement(UserAnnouncementRequest userAnnouncementRequest) throws FirebaseMessagingException {
         UserSession userSession = userCredentialService.getUserSession();
-        List<UserBranchMapping> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_OrgIdAndStatusAndUserBranchMappingPK_BranchIdIn(userSession.getOrganizationId(), "A", userAnnouncementRequest.getBranch());
+        List<UserBranchMapping> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_OrgIdAndStatusAndUserBranchMappingPK_BranchIdIn(userSession.getOrganizationId(), "A", userAnnouncementRequest.getBranchId());
         if (userBranchMappingList.isEmpty()) {
-            log.info("No users are found for branch : {}", userAnnouncementRequest.getBranch());
-            return new Response("No users are found for branch : " + userAnnouncementRequest.getBranch(), HttpStatus.NOT_FOUND);
+            log.info("No users are found for branch : {}", userAnnouncementRequest.getBranchId());
+            return new Response("No users are found for branch : " + userAnnouncementRequest.getBranchId(), HttpStatus.NOT_FOUND);
         }
         UserAnnouncement userAnnouncement = userAnnouncementAssembler.convertToUserAnnouncement(userAnnouncementRequest, userSession);
         UserAnnouncement userAnnouncementResponse = userAnnouncementRepository.saveAndFlush(userAnnouncement);
@@ -114,18 +115,14 @@ public class AnnouncementServiceImpl implements AnnouncementService {
     @Override
     public Response getAnnouncements() {
         UserSession userSession = userCredentialService.getUserSession();
-        List<UserAnnouncement> announcements = userAnnouncementRepository.getAnnouncements(userSession.getUserId(), userSession.getOrganizationId());
-        List<UserAnnouncementResponse> userAnnouncementResponseList = new ArrayList<>();
-        for (UserAnnouncement userAnnouncement : announcements) {
-            UserAnnouncementResponse userAnnouncementResponse = userAnnouncementAssembler.convertToResponse(userAnnouncement);
-            userAnnouncementResponseList.add(userAnnouncementResponse);
-        }
+        List<Object[]> announcements = userAnnouncementRepository.getAnnouncements(userSession.getUserId(), userSession.getOrganizationId());
+        List<UserAnnouncementResponse> userAnnouncementResponse = announcements.stream().map(userAnnouncementAssembler::populateUserAnnouncementResponseData).collect(Collectors.toList());
         if (announcements.isEmpty()) {
             log.info("No announcements are found for user : {}", userSession.getUserId());
             return new Response("No announcements are found for user : " + userSession.getUserId(), HttpStatus.NOT_FOUND);
         }
         log.info("Announcements fetched successfully for user : {}", userSession.getUserId());
-        return new Response("Announcements fetched successfully for user : " + userSession.getUserId(), userAnnouncementResponseList, (long) announcements.size(), HttpStatus.OK);
+        return new Response("Announcements fetched successfully for user : " + userSession.getUserId(), userAnnouncementResponse, (long) announcements.size(), HttpStatus.OK);
     }
 
     @Override
@@ -148,6 +145,5 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         map.put("isRead", userAnnouncementMappingResponse.getIsRead());
         return new Response("Announcement with userId : " + userSession.getUserId() + " and announcementId : " + announcementId + " is marked as read", map, HttpStatus.OK);
     }
-
 
 }

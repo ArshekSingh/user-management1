@@ -8,6 +8,8 @@ import com.sts.finncub.core.util.DateTimeUtil;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.sql.Timestamp;
+
 @Component
 public class UserAnnouncementAssembler {
 
@@ -57,6 +59,24 @@ public class UserAnnouncementAssembler {
             announcement.setEndDate(DateTimeUtil.stringToDate(userAnnouncementRequest.getEndDate()));
         announcement.setUpdatedBy(userSession.getUserId());
         return announcement;
+    }
+
+    public UserAnnouncementResponse populateUserAnnouncementResponseData(Object[] userAnnouncementObject) {
+        UserAnnouncementResponse userAnnouncementResponse = new UserAnnouncementResponse();
+        userAnnouncementResponse.setAnnouncementId(Long.parseLong(String.valueOf(userAnnouncementObject[0])));
+        userAnnouncementResponse.setMessage((String) userAnnouncementObject[1]);
+        userAnnouncementResponse.setAttachment((String) userAnnouncementObject[2]);
+        userAnnouncementResponse.setStatus((String) userAnnouncementObject[3]);
+        userAnnouncementResponse.setStartDate(String.valueOf(DateTimeUtil.dateToString(((Timestamp) userAnnouncementObject[4]).toLocalDateTime().toLocalDate())));
+        userAnnouncementResponse.setEndDate(String.valueOf(DateTimeUtil.dateToString(((Timestamp) userAnnouncementObject[5]).toLocalDateTime().toLocalDate())));
+        userAnnouncementResponse.setInsertedOn(((Timestamp) userAnnouncementObject[6]).toLocalDateTime());
+        userAnnouncementResponse.setInsertedBy((String) userAnnouncementObject[7]);
+        userAnnouncementResponse.setUpdatedOn(((Timestamp) userAnnouncementObject[8]).toLocalDateTime());
+        userAnnouncementResponse.setUpdatedBy((String) userAnnouncementObject[9]);
+        userAnnouncementResponse.setOrgId(Long.parseLong(String.valueOf(userAnnouncementObject[10])));
+        userAnnouncementResponse.setTitle((String) userAnnouncementObject[11]);
+        userAnnouncementResponse.setIsRead((String) userAnnouncementObject[12]);
+        return userAnnouncementResponse;
     }
 
 }
