@@ -32,10 +32,14 @@ public class MiscellServiceImpl implements MiscellService {
     public Response updateMiscellaneousNames(String key, String value) {
         UserSession userSession = userCredentialService.getUserSession();
         MiscellaneousService byKey = miscellaneousServiceRepository.findByKey(key);
+        if(byKey == null) {
+            return new Response("Provided key is not present", HttpStatus.BAD_REQUEST);
+        }
         byKey.setValue(value);
         byKey.setUpdatedBy(userSession.getUserId());
         byKey.setUpdatedOn(LocalDateTime.now());
         miscellaneousServiceRepository.save(byKey);
+        log.info("data updated successfully for key {}", key);
         return new Response(SUCCESS, HttpStatus.OK);
     }
 }
