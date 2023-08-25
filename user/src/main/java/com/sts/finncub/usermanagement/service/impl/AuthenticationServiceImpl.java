@@ -542,6 +542,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             log.error("New password is not same as confirm password for userId : {} ", createNewPasswordRequest.getUserId());
             throw new BadRequestException("New password is not same as confirm password ", HttpStatus.BAD_REQUEST);
         }
+        if(StringUtils.hasText(createNewPasswordRequest.getNewPassword()) && createNewPasswordRequest.getNewPassword().length() < 8){
+            log.error("Password length should at least 8 character  for user: {} ", createNewPasswordRequest.getUserId());
+            throw new BadRequestException("Password length should at least 8 character", HttpStatus.BAD_REQUEST);
+        }
+        if (createNewPasswordRequest.getUserId().equalsIgnoreCase(createNewPasswordRequest.getNewPassword())) {
+            log.error("New password can't be userId  for user: {} ", createNewPasswordRequest.getUserId());
+            throw new BadRequestException("New password can't be userId", HttpStatus.BAD_REQUEST);
+        }
         if (createNewPasswordRequest.getNewPassword().length() < 5) {
             log.error("Minimum length of new password should be at least 5 characters");
             throw new BadRequestException("Minimum length of new password should be at least 5 characters", HttpStatus.BAD_REQUEST);
