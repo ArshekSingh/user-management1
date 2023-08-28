@@ -103,28 +103,29 @@ public class ButtonRoleMappingServiceImpl implements ButtonRoleMappingService {
                 response.setAvailableRoles(availableRolesArray);
                 log.info("Response received for menu Id {} and button Name {}", request.getMenuId(), request.getButtonName());
                 return new Response(SUCCESS, response, HttpStatus.OK);
+            } else {
+                return getAllAvailableRoles(request, response, availableRolesArray);
             }
-            else {
-                log.info("No role found for menu Id {} and button Name {}", request.getMenuId(), request.getButtonName());
-                List<RoleMaster> availableRoles = roleMasterRepository.findAll();
-                if(!CollectionUtils.isEmpty(availableRoles)) {
-                    availableRoles.forEach(o -> {
-                        ServerSideDropDownDto availableRolesList = new ServerSideDropDownDto();
-                        availableRolesList.setId(o.getRoleId().toString());
-                        availableRolesList.setLabel(o.getRoleName());
-                        availableRolesArray.add(availableRolesList);
-                    });
-                }
-                response.setMenuId(request.getMenuId());
-                response.setButtonName(request.getButtonName());
-                response.setAvailableRoles(availableRolesArray);
-                return new Response(SUCCESS, response, HttpStatus.OK);
-            }
+        } else {
+            return getAllAvailableRoles(request, response, availableRolesArray);
         }
-        else {
-            log.info("No records found for menu Id {} and button Name {}", request.getMenuId(), request.getButtonName());
-            return new Response(FAILED, HttpStatus.BAD_REQUEST);
+    }
+
+    private Response getAllAvailableRoles(ButtonRoleRequest request, ButtonRoleMappingResponse response, List<ServerSideDropDownDto> availableRolesArray) {
+        log.info("No role found for menu Id {} and button Name {}", request.getMenuId(), request.getButtonName());
+        List<RoleMaster> availableRoles = roleMasterRepository.findAll();
+        if(!CollectionUtils.isEmpty(availableRoles)) {
+            availableRoles.forEach(o -> {
+                ServerSideDropDownDto availableRolesList = new ServerSideDropDownDto();
+                availableRolesList.setId(o.getRoleId().toString());
+                availableRolesList.setLabel(o.getRoleName());
+                availableRolesArray.add(availableRolesList);
+            });
         }
+        response.setMenuId(request.getMenuId());
+        response.setButtonName(request.getButtonName());
+        response.setAvailableRoles(availableRolesArray);
+        return new Response(SUCCESS, response, HttpStatus.OK);
     }
 
     @Override
