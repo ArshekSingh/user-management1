@@ -8,4 +8,6 @@ public interface MiscellService {
     Response getMiscellaneousNames();
 
     Response updateMiscellaneousNames(String key, String value);
+
+    Response getKeyValue(String key);
 }
