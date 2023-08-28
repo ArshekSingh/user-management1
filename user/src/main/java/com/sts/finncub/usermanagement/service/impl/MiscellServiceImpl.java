@@ -42,4 +42,13 @@ public class MiscellServiceImpl implements MiscellService {
         log.info("data updated successfully for key {}", key);
         return new Response(SUCCESS, HttpStatus.OK);
     }
+
+    @Override
+    public Response getKeyValue(String key) {
+        MiscellaneousService byKey = miscellaneousServiceRepository.findByKey(key);
+        if(byKey == null) {
+            return new Response("Provided key is not present", HttpStatus.BAD_REQUEST);
+        }
+        return new Response(SUCCESS, byKey, HttpStatus.OK);
+    }
 }
