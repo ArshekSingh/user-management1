@@ -25,4 +25,10 @@ public class MiscellaneousController {
         log.info("Request initiated to update email ids for key {}", key);
         return miscellService.updateMiscellaneousNames(key, value);
     }
+
+    @GetMapping("/getKeyValue/{key}")
+    public Response getKeyValue(@PathVariable String key) {
+        log.info("Request initiated to fetch value against the key {}", key);
+        return miscellService.getKeyValue(key);
+    }
 }
