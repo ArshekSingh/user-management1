@@ -42,6 +42,9 @@ import java.util.stream.Stream;
 @Service
 @AllArgsConstructor
 public class EmployeeServiceImpl implements EmployeeService, Constant {
+    private final ClientMasterRepository clientMasterRepository;
+    private final ClientMasterDraftRepository clientMasterDraftRepository;
+    private final ClientBankDetailRepository clientBankDetailRepository;
     private final InventoryDetailsRepository inventoryDetailsRepository;
     private final ReferenceDetailRepository referenceDetailRepository;
     private final UserService userService;
@@ -261,10 +264,32 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
 
     private void validateRequest(EmployeeRequest request) throws BadRequestException {
         // validate employee add or update request
+        UserSession userSession = userCredentialService.getUserSession();
         if (request == null || !StringUtils.hasText(request.getStatus()) || !StringUtils.hasText(request.getFirstName()) || !StringUtils.hasText(request.getGender())) {
             assert request != null;
             log.warn("Request failed validation, these field are mandatory : Status {} , FirstName {} , Gender {} ", StringUtils.hasText(request.getStatus()), request.getFirstName(), request.getGender());
             throw new BadRequestException("Invalid Request", HttpStatus.BAD_REQUEST);
+        }
+        if(StringUtils.hasText(request.getIfscCode()) && StringUtils.hasText(request.getBankAccNo())) {
+            List<ClientBankDetail> bankDetails = clientBankDetailRepository.findByClientBankDetailPk_OrgIdAndBankIfscCodeAndBankAccountNumber(userSession.getOrganizationId(), request.getIfscCode(), request.getBankAccNo());
+            if(!CollectionUtils.isEmpty(bankDetails)) {
+                log.warn("With the given bank acc no {} and ifsc code {} client exist", request.getBankAccNo(), request.getIfscCode());
+                throw new BadRequestException("With the given bak details client exist, please enter new bank account number and ifsc code", HttpStatus.BAD_REQUEST);
+            }
+        }
+        if(request.getPersonalMob() != null) {
+            List<ClientMasterDraft> clientMasterDraftList = clientMasterDraftRepository.findByClientMasterDraftPK_OrgIdAndMobileNumber(userSession.getOrganizationId(), String.valueOf(request.getPersonalMob()));
+            if(!CollectionUtils.isEmpty(clientMasterDraftList)) {
+                log.warn("This mobile number {} is linked with other client", request.getPersonalMob());
+                throw new BadRequestException("This mobile number is linked with other client", HttpStatus.BAD_REQUEST);
+            }
+            else {
+                List<ClientMaster> clientMaster = clientMasterRepository.findByClientMasterPK_OrgIdAndMobileNumber(userSession.getOrganizationId(), request.getPersonalMob().toString());
+                if(!CollectionUtils.isEmpty(clientMaster)) {
+                    log.warn("Mobile number {} is already registered with client ", request.getPersonalMob());
+                    throw new BadRequestException("This mobile number is linked with other client", HttpStatus.BAD_REQUEST);
+                }
+            }
         }
     }
 
