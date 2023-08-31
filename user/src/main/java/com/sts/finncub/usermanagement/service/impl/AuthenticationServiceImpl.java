@@ -121,7 +121,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 //                throw new BadRequestException("You are not authorized. Please contact HR", HttpStatus.BAD_REQUEST);
 //            }
             if ("N".equalsIgnoreCase(user.getIsPasswordActive())) {
-                log.error("User password is blocked , userId : {}", loginRequest.getUserId());
+                log.error("User password is blocked for userId : {}", loginRequest.getUserId());
                 throw new BadRequestException("Your password is blocked. Please contact HR", HttpStatus.BAD_REQUEST);
             }
             if (!user.isPasswordCorrect(loginRequest.getPassword())) {
