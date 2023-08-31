@@ -121,7 +121,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 //                throw new BadRequestException("You are not authorized. Please contact HR", HttpStatus.BAD_REQUEST);
 //            }
             if ("N".equalsIgnoreCase(user.getIsPasswordActive())) {
-                log.error("User password is blocked , userId : {}", loginRequest.getUserId());
+                log.error("User password is blocked for userId : {}", loginRequest.getUserId());
                 throw new BadRequestException("Your password is blocked. Please contact HR", HttpStatus.BAD_REQUEST);
             }
             if (!user.isPasswordCorrect(loginRequest.getPassword())) {
@@ -416,11 +416,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public ResponseEntity<Response> resetPassword(LoginRequest loginRequest) throws ObjectNotFoundException {
+    public ResponseEntity<Response> resetPassword(LoginRequest loginRequest) throws ObjectNotFoundException, BadRequestException {
         Response response = new Response();
         log.info("Fetching userSession for resetPassword request, userId : {} ", loginRequest.getUserId());
         UserSession userSession = userCredentialService.getUserSession();
         User user = userRepository.findByUserIdIgnoreCase(loginRequest.getUserId()).orElseThrow(() -> new ObjectNotFoundException("Invalid userId - " + userSession.getUserId(), HttpStatus.NOT_FOUND));
+        if (loginRequest.getUserId().equalsIgnoreCase(loginRequest.getPassword())) {
+            log.error("New password can't be userId  for user: {} ", loginRequest.getUserId());
+            throw new BadRequestException("New password can't be userId", HttpStatus.BAD_REQUEST);
+        }
+        if(StringUtils.hasText(loginRequest.getPassword()) && loginRequest.getPassword().length() < 8){
+            log.error("Password length should at least 8 character  for user: {} ", loginRequest.getUserId());
+            throw new BadRequestException("Password length should at least 8 character", HttpStatus.BAD_REQUEST);
+        }
         user.setPassword(passwordEncoder, loginRequest.getPassword());
         user.setIsTemporaryPassword("Y");
         user.setIsPasswordActive("Y");
