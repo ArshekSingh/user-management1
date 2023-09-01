@@ -271,10 +271,10 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             throw new BadRequestException("Invalid Request", HttpStatus.BAD_REQUEST);
         }
         if(StringUtils.hasText(request.getIfscCode()) && StringUtils.hasText(request.getBankAccNo())) {
-            List<ClientBankDetail> bankDetails = clientBankDetailRepository.findByClientBankDetailPk_OrgIdAndBankIfscCodeAndBankAccountNumber(userSession.getOrganizationId(), request.getIfscCode(), request.getBankAccNo());
+            List<ClientBankDetail> bankDetails = clientBankDetailRepository.findByClientBankDetailPk_OrgIdAndBankAccountNumber(userSession.getOrganizationId(), request.getBankAccNo());
             if(!CollectionUtils.isEmpty(bankDetails)) {
-                log.warn("With the given bank acc no {} and ifsc code {} client exist", request.getBankAccNo(), request.getIfscCode());
-                throw new BadRequestException("With the given bak details client exist, please enter new bank account number and ifsc code", HttpStatus.BAD_REQUEST);
+                log.warn("With the given bank acc no {} client exist", request.getBankAccNo());
+                throw new BadRequestException("With the given bak details client exist, please enter new bank account number", HttpStatus.BAD_REQUEST);
             }
         }
         if(request.getPersonalMob() != null) {
