@@ -274,21 +274,19 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             List<ClientBankDetail> bankDetails = clientBankDetailRepository.findByClientBankDetailPk_OrgIdAndBankAccountNumber(userSession.getOrganizationId(), request.getBankAccNo());
             if(!CollectionUtils.isEmpty(bankDetails)) {
                 log.warn("With the given bank acc no {} client exist", request.getBankAccNo());
-                throw new BadRequestException("With the given bak details client exist, please enter new bank account number", HttpStatus.BAD_REQUEST);
+                throw new BadRequestException("This bank account details already associated with another client", HttpStatus.BAD_REQUEST);
             }
         }
         if(request.getPersonalMob() != null) {
             List<ClientMasterDraft> clientMasterDraftList = clientMasterDraftRepository.findByClientMasterDraftPK_OrgIdAndMobileNumber(userSession.getOrganizationId(), String.valueOf(request.getPersonalMob()));
-            if(!CollectionUtils.isEmpty(clientMasterDraftList)) {
+            if (!CollectionUtils.isEmpty(clientMasterDraftList)) {
                 log.warn("This mobile number {} is linked with other client", request.getPersonalMob());
-                throw new BadRequestException("This mobile number is linked with other client", HttpStatus.BAD_REQUEST);
+                throw new BadRequestException("This mobile number already associated with another client", HttpStatus.BAD_REQUEST);
             }
-            else {
-                List<ClientMaster> clientMaster = clientMasterRepository.findByClientMasterPK_OrgIdAndMobileNumber(userSession.getOrganizationId(), request.getPersonalMob().toString());
-                if(!CollectionUtils.isEmpty(clientMaster)) {
-                    log.warn("Mobile number {} is already registered with client ", request.getPersonalMob());
-                    throw new BadRequestException("This mobile number is linked with other client", HttpStatus.BAD_REQUEST);
-                }
+            List<ClientMaster> clientMaster = clientMasterRepository.findByClientMasterPK_OrgIdAndMobileNumber(userSession.getOrganizationId(), request.getPersonalMob().toString());
+            if (!CollectionUtils.isEmpty(clientMaster)) {
+                log.warn("Mobile number {} is already registered with client ", request.getPersonalMob());
+                throw new BadRequestException("This mobile number already associated with another client", HttpStatus.BAD_REQUEST);
             }
         }
     }
