@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
 
 @Slf4j
 @RestController
@@ -49,7 +50,7 @@ public class AuthenticationController {
 
     // API replaces with User Controller Add user API
     @PostMapping("/api/signup")
-    public ResponseEntity<Response> signup(@RequestBody SignupRequest signupRequest) throws BadRequestException {
+    public ResponseEntity<Response> signup(@Valid @RequestBody SignupRequest signupRequest) throws BadRequestException {
         signupRequest.validate();
         log.info("Signup Request received , email : {} , userType : {}", signupRequest.getEmail(), signupRequest.getUserType());
         return ResponseEntity.ok(new Response(RestMappingConstants.SUCCESS, authenticationService.signup(signupRequest), HttpStatus.OK));
@@ -66,7 +67,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/api/changePassword")
-    public ResponseEntity<Response> changePassword(HttpServletRequest httpServletRequest, @RequestBody LoginRequest request) throws ObjectNotFoundException, BadRequestException {
+    public ResponseEntity<Response> changePassword(HttpServletRequest httpServletRequest,@Valid @RequestBody LoginRequest request) throws ObjectNotFoundException, BadRequestException {
         log.info("changePassword request received , userId : {} ", request.getUserId());
         ResponseEntity<Response> responseEntity = authenticationService.changePassword(request);
         authenticationService.logout(httpServletRequest);
@@ -74,7 +75,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/api/resetPassword")
-    public ResponseEntity<Response> resetPassword(@RequestBody LoginRequest loginRequest) throws ObjectNotFoundException {
+    public ResponseEntity<Response> resetPassword(@Valid @RequestBody LoginRequest loginRequest) throws ObjectNotFoundException {
         log.info("resetPassword request received , userId : {} ", loginRequest.getUserId());
         ResponseEntity<Response> responseEntity = authenticationService.resetPassword(loginRequest);
         return responseEntity;
@@ -94,7 +95,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/updatePassword")
-    public ResponseEntity<Response> createNewPassword(@RequestBody CreateNewPasswordRequest createNewPasswordRequest) throws ObjectNotFoundException, BadRequestException {
+    public ResponseEntity<Response> createNewPassword(@Valid @RequestBody CreateNewPasswordRequest createNewPasswordRequest) throws ObjectNotFoundException, BadRequestException {
         log.info("Request initiated to updatePassword for userId : {}", createNewPasswordRequest.getUserId());
         return authenticationService.updatePassword(createNewPasswordRequest);
     }
