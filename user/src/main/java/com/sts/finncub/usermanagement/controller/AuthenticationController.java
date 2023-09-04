@@ -33,7 +33,7 @@ public class AuthenticationController {
         this.authenticationService = authenticationService;
     }
 
-    @PostMapping("login")
+    @PostMapping("/login")
     public ResponseEntity<Response> login(@RequestBody LoginRequest loginRequest) throws BadRequestException, ObjectNotFoundException, InternalServerErrorException {
         Response response = new Response();
         if (!loginRequest.isValid()) {
