@@ -429,7 +429,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         user.setPassword(passwordEncoder, loginRequest.getPassword());
         user.setIsTemporaryPassword("Y");
         user.setIsPasswordActive("Y");
-        user.setIsPasswordExpired("N");
+        user.setIsPasswordExpired(null);
         user.setLoginAttempt(0);
         user.setUpdatedOn(LocalDateTime.now());
         user.setUpdatedBy(userSession.getUserId());
