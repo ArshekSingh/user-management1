@@ -22,7 +22,7 @@ public interface AuthenticationService {
 
     ResponseEntity<Response> changePassword(LoginRequest password) throws ObjectNotFoundException, BadRequestException;
 
-    ResponseEntity<Response> resetPassword(LoginRequest loginRequest) throws ObjectNotFoundException;
+    ResponseEntity<Response> resetPassword(LoginRequest loginRequest) throws ObjectNotFoundException, BadRequestException;
 
     ResponseEntity<Response> forgetPassword(String userId) throws ObjectNotFoundException, InternalServerErrorException, BadRequestException;
 
