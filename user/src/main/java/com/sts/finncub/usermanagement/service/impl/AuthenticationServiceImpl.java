@@ -11,7 +11,6 @@ import com.sts.finncub.core.exception.ObjectNotFoundException;
 import com.sts.finncub.core.repository.*;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.core.service.UserCredentialService;
-import com.sts.finncub.core.util.MaintainPasswordHistory;
 import com.sts.finncub.core.util.SmsUtil;
 import com.sts.finncub.usermanagement.assembler.SignUpConverter;
 import com.sts.finncub.usermanagement.config.MobileAppConfig;
@@ -22,6 +21,7 @@ import com.sts.finncub.usermanagement.request.SignupRequest;
 import com.sts.finncub.usermanagement.response.LoginResponse;
 import com.sts.finncub.usermanagement.response.SignupResponse;
 import com.sts.finncub.usermanagement.service.AuthenticationService;
+import com.sts.finncub.usermanagement.util.MaintainPasswordHistory;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,10 +40,8 @@ import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -549,18 +547,10 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
             log.error("New password is not same as confirm password for userId : {} ", createNewPasswordRequest.getUserId());
             throw new BadRequestException("New password is not same as confirm password ", HttpStatus.BAD_REQUEST);
         }
-//        if(StringUtils.hasText(createNewPasswordRequest.getNewPassword()) && createNewPasswordRequest.getNewPassword().length() < 8){
-//            log.error("Password length should at least 8 character  for user: {} ", createNewPasswordRequest.getUserId());
-//            throw new BadRequestException("Password length should at least 8 character", HttpStatus.BAD_REQUEST);
-//        }
         if (createNewPasswordRequest.getUserId().equalsIgnoreCase(createNewPasswordRequest.getNewPassword())) {
             log.error("New password can't be userId  for user: {} ", createNewPasswordRequest.getUserId());
             throw new BadRequestException("New password can't be userId", HttpStatus.BAD_REQUEST);
         }
-//        if (createNewPasswordRequest.getNewPassword().length() < 5) {
-//            log.error("Minimum length of new password should be at least 5 characters");
-//            throw new BadRequestException("Minimum length of new password should be at least 5 characters", HttpStatus.BAD_REQUEST);
-//        }
         User user = getUser(createNewPasswordRequest.getUserId());
         //      check new password with 5 old password
         String oldPassword = user.getOldPassword();
