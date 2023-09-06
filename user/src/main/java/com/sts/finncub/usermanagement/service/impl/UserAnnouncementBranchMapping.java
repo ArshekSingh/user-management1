@@ -40,9 +40,8 @@ public class UserAnnouncementBranchMapping {
             userAnnouncementMapping.setOrgId(userAnnouncement.getOrgId());
             userAnnouncementMappingRepository.saveAndFlush(userAnnouncementMapping);
             Optional<User> user = userRepository.findByUserId(userBranchMapping.getUser().getUserId());
-            if (user.isPresent()) {
-                if (StringUtils.hasText(user.get().getFbToken()))
-                    firebaseMessagingService.sendNotification(userAnnouncement.getTitle(), userAnnouncement.getMessage(), user.get().getFbToken());
+            if (user.isPresent() && StringUtils.hasText(user.get().getFbToken())) {
+                firebaseMessagingService.sendNotification(userAnnouncement.getTitle(), userAnnouncement.getMessage(), user.get().getFbToken(), userAnnouncement.getAttachment());
             }
         }
     }

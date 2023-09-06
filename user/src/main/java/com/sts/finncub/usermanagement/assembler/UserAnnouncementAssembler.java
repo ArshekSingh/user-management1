@@ -43,8 +43,7 @@ public class UserAnnouncementAssembler {
         return userAnnouncement;
     }
 
-    public UserAnnouncement prepareUpdateRequest(UserAnnouncement userAnnouncement, UserAnnouncementRequest userAnnouncementRequest, UserSession userSession) {
-        UserAnnouncement announcement = userAnnouncement;
+    public UserAnnouncement prepareUpdateRequest(UserAnnouncement announcement, UserAnnouncementRequest userAnnouncementRequest, UserSession userSession) {
         if (StringUtils.hasText(userAnnouncementRequest.getTitle()))
             announcement.setTitle(userAnnouncementRequest.getTitle());
         if (StringUtils.hasText(userAnnouncementRequest.getMessage()))
