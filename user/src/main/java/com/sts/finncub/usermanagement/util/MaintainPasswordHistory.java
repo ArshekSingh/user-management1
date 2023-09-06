@@ -4,11 +4,14 @@ import com.sts.finncub.core.exception.BadRequestException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
 @Component
 @Slf4j
 public class MaintainPasswordHistory {
+
     @Value("${old.password.count}")
     private Integer oldPasswordCount;
+
     public void maintainOldPasswordHistory(String oldPasswordList[], String oldPassword, String PASSWORD_SEPARATOR,String password) throws BadRequestException {
 //          Maintain old passwords
         if (oldPasswordList.length < oldPasswordCount) {

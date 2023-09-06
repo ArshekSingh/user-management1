@@ -12,7 +12,7 @@ public class CreateNewPasswordRequest {
     private String userId;
     private String otp;
     @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-zA-Z])([a-zA-Z0-9])$",message = "Password should contain alpha-numeric values")
-    @Size(min = 8,max = 16,message = "Password length should at least 8 amd maximum of 16 characters for user")
+    @Size(min = 8,max = 16,message = "Password length should at least 8 and maximum of 16 characters")
     private String newPassword;
     private String confirmPassword;
 }

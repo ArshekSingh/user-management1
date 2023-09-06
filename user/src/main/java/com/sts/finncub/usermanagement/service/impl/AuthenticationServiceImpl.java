@@ -40,10 +40,8 @@ import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -549,18 +547,10 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
             log.error("New password is not same as confirm password for userId : {} ", createNewPasswordRequest.getUserId());
             throw new BadRequestException("New password is not same as confirm password ", HttpStatus.BAD_REQUEST);
         }
-//        if(StringUtils.hasText(createNewPasswordRequest.getNewPassword()) && createNewPasswordRequest.getNewPassword().length() < 8){
-//            log.error("Password length should at least 8 character  for user: {} ", createNewPasswordRequest.getUserId());
-//            throw new BadRequestException("Password length should at least 8 character", HttpStatus.BAD_REQUEST);
-//        }
         if (createNewPasswordRequest.getUserId().equalsIgnoreCase(createNewPasswordRequest.getNewPassword())) {
             log.error("New password can't be userId  for user: {} ", createNewPasswordRequest.getUserId());
             throw new BadRequestException("New password can't be userId", HttpStatus.BAD_REQUEST);
         }
-//        if (createNewPasswordRequest.getNewPassword().length() < 5) {
-//            log.error("Minimum length of new password should be at least 5 characters");
-//            throw new BadRequestException("Minimum length of new password should be at least 5 characters", HttpStatus.BAD_REQUEST);
-//        }
         User user = getUser(createNewPasswordRequest.getUserId());
         //      check new password with 5 old password
         String oldPassword = user.getOldPassword();
