@@ -117,6 +117,7 @@ public class UserServiceImpl implements UserService, Constant {
         user.setPasswordResetDate(LocalDate.now());
         user.setType(request.getType());
         user.setUserId(request.getUserId());
+        user.setIsPasswordActive("N");
         if (StringUtils.hasText(request.getUserId())) {
             user.setPassword(passwordEncoder, request.getUserId());
         }

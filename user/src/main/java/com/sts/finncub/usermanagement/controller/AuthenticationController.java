@@ -32,7 +32,7 @@ public class AuthenticationController {
         this.authenticationService = authenticationService;
     }
 
-    @PostMapping("login")
+    @PostMapping("/login")
     public ResponseEntity<Response> login(@RequestBody LoginRequest loginRequest) throws BadRequestException, ObjectNotFoundException, InternalServerErrorException {
         Response response = new Response();
         if (!loginRequest.isValid()) {
@@ -74,7 +74,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/api/resetPassword")
-    public ResponseEntity<Response> resetPassword(@RequestBody LoginRequest loginRequest) throws ObjectNotFoundException {
+    public ResponseEntity<Response> resetPassword(@RequestBody LoginRequest loginRequest) throws ObjectNotFoundException, BadRequestException {
         log.info("resetPassword request received , userId : {} ", loginRequest.getUserId());
         ResponseEntity<Response> responseEntity = authenticationService.resetPassword(loginRequest);
         return responseEntity;
