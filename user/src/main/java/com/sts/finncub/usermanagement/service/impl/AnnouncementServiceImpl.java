@@ -51,7 +51,8 @@ public class AnnouncementServiceImpl implements AnnouncementService {
     private final AwsService awsService;
 
     @Override
-    public Response createAnnouncement(UserAnnouncementRequest userAnnouncementRequest) throws FirebaseMessagingException, IOException {
+    public Response
+    createAnnouncement(UserAnnouncementRequest userAnnouncementRequest) throws FirebaseMessagingException, IOException {
         UserSession userSession = userCredentialService.getUserSession();
         List<UserBranchMapping> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_OrgIdAndStatusAndUserBranchMappingPK_BranchIdIn(userSession.getOrganizationId(), "A", userAnnouncementRequest.getBranchId());
         if (userBranchMappingList.isEmpty()) {
@@ -62,9 +63,9 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         userAnnouncementRepository.saveAndFlush(userAnnouncement);
         userAnnouncementBranchMapping.insertUserAnnouncementBranchMapping(userBranchMappingList, userAnnouncement, userAnnouncement.getAnnouncementId().toString());
         log.info("Announcement created successfully");
-        UserAnnouncementResponse userAnnouncementResponse = userAnnouncementAssembler.convertToResponse(userAnnouncement);
-        userAnnouncementResponse.setAttachment(awsService.signedDocumentUrl(userAnnouncement.getAttachment()));
-        return new Response("Announcement created successfully", userAnnouncementResponse, HttpStatus.OK);
+//        UserAnnouncementResponse userAnnouncementResponse = userAnnouncementAssembler.convertToResponse(userAnnouncement);
+//        userAnnouncementResponse.setAttachment(awsService.signedDocumentUrl(userAnnouncement.getAttachment()));
+        return new Response("Announcement created successfully", HttpStatus.OK);
     }
 
     @Override
