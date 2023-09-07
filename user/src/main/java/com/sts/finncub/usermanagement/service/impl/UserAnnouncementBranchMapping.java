@@ -33,7 +33,7 @@ public class UserAnnouncementBranchMapping {
         log.info("Going to create user notification for branches {}", branchId);
         for (UserBranchMapping userBranchMapping : userBranchMappingList) {
             UserAnnouncementMapping userAnnouncementMapping = new UserAnnouncementMapping();
-            userAnnouncementMapping.setAnnouncementId(Long.valueOf(announcementId));
+            userAnnouncementMapping.setAnnouncementId(announcementId);
             userAnnouncementMapping.setUserId(userBranchMapping.getUser().getUserId());
             userAnnouncementMapping.setIsRead("N");
             userAnnouncementMapping.setBranchId(userBranchMapping.getUserBranchMappingPK().getBranchId());
