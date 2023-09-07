@@ -22,6 +22,7 @@ import com.sts.finncub.usermanagement.response.LoginResponse;
 import com.sts.finncub.usermanagement.response.SignupResponse;
 import com.sts.finncub.usermanagement.service.AuthenticationService;
 import com.sts.finncub.usermanagement.util.MaintainPasswordHistory;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,12 +46,11 @@ import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-
+@Slf4j
 @Service
 public class AuthenticationServiceImpl implements AuthenticationService, Constant {
 
     private static final String KEY = "USER_SESSION";
-    private static final Logger log = org.slf4j.LoggerFactory.getLogger(AuthenticationServiceImpl.class);
     private final RedisTemplate<String, Object> template;
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
