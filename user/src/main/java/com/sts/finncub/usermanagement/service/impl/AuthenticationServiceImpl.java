@@ -24,7 +24,6 @@ import com.sts.finncub.usermanagement.service.AuthenticationService;
 import com.sts.finncub.usermanagement.util.MaintainPasswordHistory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -41,6 +40,7 @@ import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
@@ -401,6 +401,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         user.setIsTemporaryPassword("N");
         user.setUpdatedOn(LocalDateTime.now());
         user.setUpdatedBy(userSession.getUserId());
+        user.setPasswordResetDate(LocalDate.now());
         userRepository.save(user);
 //        userRedisRepository.deleteById(userSession.g);
         log.info("Password updated successfully , userId : {}", request.getUserId());
@@ -429,6 +430,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         user.setIsPasswordActive("Y");
         user.setIsPasswordExpired(null);
         user.setLoginAttempt(0);
+        user.setPasswordResetDate(LocalDate.now());
         user.setUpdatedOn(LocalDateTime.now());
         user.setUpdatedBy(userSession.getUserId());
         userRepository.save(user);
@@ -576,6 +578,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
             user.setIsTemporaryPassword("N");
             user.setIsPasswordActive("Y");
             user.setIsPasswordExpired(null);
+            user.setPasswordResetDate(LocalDate.now());
             user.setOldPassword(oldPassword);
             user.setUpdatedOn(LocalDateTime.now());
             user.setUpdatedBy(createNewPasswordRequest.getUserId());
