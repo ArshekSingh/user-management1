@@ -234,6 +234,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         employee.setSubDepartmentId(request.getSubDepartmentId());
         employee.setBaseLocation(request.getBaseLocation());
         employee.setIsBranchManager(request.getIsBranchManager());
+        employee.setRelativeName(request.getRelativeName());
         //Set branch manager id as null when employee has been changed to inactive and branch manager id in branch
         Optional<BranchMaster> branchMaster = branchMasterRepository.findByBranchMasterPK_OrgIdAndBranchMasterPK_BranchId(userSession.getOrganizationId(), employee.getBranchId());
         if (branchMaster.isPresent()) {
@@ -364,6 +365,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             }
             employeeDto.setEmergencyCon(employee.getEmergencyCon());
             employeeDto.setInsertedOn(DateTimeUtil.dateTimeToString(employee.getInsertedOn(), DD_MM_YYYY));
+            employeeDto.setRelativeName(employee.getRelativeName());
             employeeDtoList.add(employeeDto);
         }
         return new Response(SUCCESS, employeeDtoList, count, HttpStatus.OK);
@@ -444,6 +446,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             employeeDto.setBankValidationDate(DateTimeUtil.dateToString(employee.getBankValidationDate()));
             employeeDto.setBankResponse(employee.getBankResponse());
             employeeDto.setValidationAttempts(employee.getValidationAttempts());
+            employeeDto.setRelativeName(employee.getRelativeName());
             if ("Y".equals(employee.getIsBankValidated())) {
                 employeeDto.setNameInBank(employee.getNameInBank());
             }
