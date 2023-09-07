@@ -402,8 +402,6 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         user.setUpdatedOn(LocalDateTime.now());
         user.setUpdatedBy(userSession.getUserId());
         user.setPasswordResetDate(LocalDate.now());
-        user.setInsertedBy(userSession.getUserId());
-        user.setInsertedOn(LocalDateTime.now());
         userRepository.save(user);
 //        userRedisRepository.deleteById(userSession.g);
         log.info("Password updated successfully , userId : {}", request.getUserId());
@@ -433,8 +431,6 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         user.setIsPasswordExpired(null);
         user.setLoginAttempt(0);
         user.setPasswordResetDate(LocalDate.now());
-        user.setInsertedOn(LocalDateTime.now());
-        user.setInsertedBy(userSession.getUserId());
         user.setUpdatedOn(LocalDateTime.now());
         user.setUpdatedBy(userSession.getUserId());
         userRepository.save(user);
@@ -583,8 +579,6 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
             user.setIsPasswordActive("Y");
             user.setIsPasswordExpired(null);
             user.setPasswordResetDate(LocalDate.now());
-            user.setInsertedOn(LocalDateTime.now());
-            user.setInsertedBy(createNewPasswordRequest.getUserId());
             user.setOldPassword(oldPassword);
             user.setUpdatedOn(LocalDateTime.now());
             user.setUpdatedBy(createNewPasswordRequest.getUserId());
