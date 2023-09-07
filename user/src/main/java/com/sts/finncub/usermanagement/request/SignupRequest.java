@@ -11,12 +11,17 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
+
 @Slf4j
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
 public class SignupRequest {
     String name;
+    @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-zA-Z])([a-zA-Z0-9])$",message = "Password should contain alpha-numeric values")
+    @Size(min = 8,max = 16, message = "Password length should at least 8 and maximum of 16 characters")
     String password;
     List<Long> roleList;
     String email;

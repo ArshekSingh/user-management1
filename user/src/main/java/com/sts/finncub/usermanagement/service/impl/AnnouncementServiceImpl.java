@@ -1,7 +1,10 @@
 package com.sts.finncub.usermanagement.service.impl;
 
 import com.google.firebase.messaging.FirebaseMessagingException;
-import com.sts.finncub.core.entity.*;
+import com.sts.finncub.core.entity.UserAnnouncement;
+import com.sts.finncub.core.entity.UserAnnouncementMapping;
+import com.sts.finncub.core.entity.UserBranchMapping;
+import com.sts.finncub.core.entity.UserSession;
 import com.sts.finncub.core.repository.BranchMasterRepository;
 import com.sts.finncub.core.repository.UserAnnouncementMappingRepository;
 import com.sts.finncub.core.repository.UserAnnouncementRepository;
@@ -14,12 +17,14 @@ import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.assembler.UserAnnouncementAssembler;
 import com.sts.finncub.usermanagement.service.AnnouncementService;
+import com.sts.finncub.usermanagement.service.AwsService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -43,8 +48,10 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
     private final UserAnnouncementAssembler userAnnouncementAssembler;
 
+    private final AwsService awsService;
+
     @Override
-    public Response createAnnouncement(UserAnnouncementRequest userAnnouncementRequest) throws FirebaseMessagingException {
+    public Response createAnnouncement(UserAnnouncementRequest userAnnouncementRequest) throws FirebaseMessagingException, IOException {
         UserSession userSession = userCredentialService.getUserSession();
         List<UserBranchMapping> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_OrgIdAndStatusAndUserBranchMappingPK_BranchIdIn(userSession.getOrganizationId(), "A", userAnnouncementRequest.getBranchId());
         if (userBranchMappingList.isEmpty()) {
@@ -52,9 +59,9 @@ public class AnnouncementServiceImpl implements AnnouncementService {
             return new Response("No users are found for branch : " + userAnnouncementRequest.getBranchId(), HttpStatus.NOT_FOUND);
         }
         UserAnnouncement userAnnouncement = userAnnouncementAssembler.convertToUserAnnouncement(userAnnouncementRequest, userSession);
-        UserAnnouncement userAnnouncementResponse = userAnnouncementRepository.saveAndFlush(userAnnouncement);
-        userAnnouncementBranchMapping.insertUserAnnouncementBranchMapping(userBranchMappingList, userAnnouncement, userAnnouncementResponse.getAnnouncementId().toString());
-        log.info("Announcement created successfully");
+        userAnnouncementRepository.saveAndFlush(userAnnouncement);
+        userAnnouncementBranchMapping.insertUserAnnouncementBranchMapping(userBranchMappingList, userAnnouncement, userAnnouncement.getAnnouncementId(), userAnnouncementRequest.getBranchId());
+        log.info("Announcement created successfully for branches {}", userAnnouncementRequest.getBranchId());
         return new Response("Announcement created successfully", HttpStatus.OK);
     }
 
@@ -74,6 +81,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
             List<Long> branchIds = userAnnouncementMappingRepository.findDistinctBranchIdByAnnouncementId(userAnnouncement.getAnnouncementId().toString());
             List<String> branchNames = branchMasterRepository.findByBranchName(userAnnouncement.getOrgId(), branchIds);
             UserAnnouncementResponse userAnnouncementResponse = userAnnouncementAssembler.convertToResponse(userAnnouncement);
+            userAnnouncementResponse.setAttachment(awsService.signedDocumentUrl(userAnnouncementResponse.getAttachment()));
             userAnnouncementResponse.setBranchId(branchIds);
             userAnnouncementResponse.setBranchName(branchNames);
             userAnnouncementResponseList.add(userAnnouncementResponse);
@@ -90,6 +98,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
             return new Response("No announcement is found with id : " + announcementId, HttpStatus.NOT_FOUND);
         }
         UserAnnouncementResponse userAnnouncementResponse = userAnnouncementAssembler.convertToResponse(userAnnouncement.get());
+        userAnnouncementResponse.setAttachment(awsService.signedDocumentUrl(userAnnouncementResponse.getAttachment()));
         List<Long> branchIds = userAnnouncementMappingRepository.findDistinctBranchIdByAnnouncementId(announcementId.toString());
         List<String> branchNames = branchMasterRepository.findByBranchName(userAnnouncementResponse.getOrgId(), branchIds);
         userAnnouncementResponse.setBranchId(branchIds);
