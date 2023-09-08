@@ -19,6 +19,6 @@ public interface AnnouncementService {
 
     Response getAnnouncements();
 
-    Response readAnnouncement(String announcementId);
+    Response readAnnouncement(Long announcementId, UserAnnouncementRequest request);
 
 }

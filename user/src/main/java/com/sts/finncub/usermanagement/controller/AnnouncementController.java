@@ -50,8 +50,8 @@ public class AnnouncementController {
     }
 
     @PutMapping("/announcement/{announcementId}")
-    public Response readAnnouncement(@PathVariable("announcementId") String announcementId) {
+    public Response readAnnouncement(@PathVariable("announcementId") Long announcementId, @RequestBody UserAnnouncementRequest request) {
         log.info("Request initiated to update announcement status with id : {}", announcementId);
-        return announcementService.readAnnouncement(announcementId);
+        return announcementService.readAnnouncement(announcementId,request);
     }
 }
