@@ -1,19 +1,14 @@
 package com.sts.finncub.usermanagement.service.impl;
 
 import com.google.firebase.messaging.FirebaseMessagingException;
-import com.sts.finncub.core.entity.UserAnnouncement;
-import com.sts.finncub.core.entity.UserAnnouncementMapping;
-import com.sts.finncub.core.entity.UserBranchMapping;
-import com.sts.finncub.core.entity.UserSession;
-import com.sts.finncub.core.repository.BranchMasterRepository;
-import com.sts.finncub.core.repository.UserAnnouncementMappingRepository;
-import com.sts.finncub.core.repository.UserAnnouncementRepository;
-import com.sts.finncub.core.repository.UserBranchMappingRepository;
+import com.sts.finncub.core.entity.*;
+import com.sts.finncub.core.repository.*;
 import com.sts.finncub.core.request.UserAnnouncementFilterRequest;
 import com.sts.finncub.core.request.UserAnnouncementRequest;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.core.response.UserAnnouncementResponse;
 import com.sts.finncub.core.service.UserCredentialService;
+import com.sts.finncub.core.util.CommonUtil;
 import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.assembler.UserAnnouncementAssembler;
 import com.sts.finncub.usermanagement.service.AnnouncementService;
@@ -22,6 +17,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.io.IOException;
@@ -50,6 +46,10 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
     private final AwsService awsService;
 
+    private final CommonUtil commonUtil;
+
+    private final ReferenceDetailRepository referenceDetailRepository;
+
     @Override
     public Response createAnnouncement(UserAnnouncementRequest userAnnouncementRequest) throws FirebaseMessagingException, IOException {
         UserSession userSession = userCredentialService.getUserSession();
@@ -62,7 +62,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         userAnnouncementRepository.saveAndFlush(userAnnouncement);
         userAnnouncementBranchMapping.insertUserAnnouncementBranchMapping(userBranchMappingList, userAnnouncement, userAnnouncement.getAnnouncementId(), userAnnouncementRequest.getBranchId());
         log.info("Announcement created successfully for branches {}", userAnnouncementRequest.getBranchId());
-        return new Response("Announcement created successfully", HttpStatus.OK);
+        return new Response("Announcement created successfully", userAnnouncement.getAnnouncementId(), HttpStatus.OK);
     }
 
     @Override
@@ -82,6 +82,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
             List<String> branchNames = branchMasterRepository.findByBranchName(userAnnouncement.getOrgId(), branchIds);
             UserAnnouncementResponse userAnnouncementResponse = userAnnouncementAssembler.convertToResponse(userAnnouncement);
             userAnnouncementResponse.setAttachment(awsService.signedDocumentUrl(userAnnouncementResponse.getAttachment()));
+            userAnnouncementResponse.setType(getType(userAnnouncementResponse.getAttachment()));
             userAnnouncementResponse.setBranchId(branchIds);
             userAnnouncementResponse.setBranchName(branchNames);
             userAnnouncementResponseList.add(userAnnouncementResponse);
@@ -99,12 +100,25 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         }
         UserAnnouncementResponse userAnnouncementResponse = userAnnouncementAssembler.convertToResponse(userAnnouncement.get());
         userAnnouncementResponse.setAttachment(awsService.signedDocumentUrl(userAnnouncementResponse.getAttachment()));
+        userAnnouncementResponse.setType(getType(userAnnouncementResponse.getAttachment()));
         List<Long> branchIds = userAnnouncementMappingRepository.findDistinctBranchIdByAnnouncementId(announcementId.toString());
         List<String> branchNames = branchMasterRepository.findByBranchName(userAnnouncementResponse.getOrgId(), branchIds);
         userAnnouncementResponse.setBranchId(branchIds);
         userAnnouncementResponse.setBranchName(branchNames);
-        log.info("Announcement fetched successfully");
+        log.info("Announcement fetched successfully with id {}", announcementId);
         return new Response("Announcement fetched successfully", userAnnouncementResponse, HttpStatus.OK);
+    }
+
+    private String getType(String attachment) {
+        List<ReferenceDetail> rdNotificationType = referenceDetailRepository.findByReferenceDetailPK_ReferenceDomain("RD_NOTIFICATION_TYPE");
+        if (CollectionUtils.isEmpty(rdNotificationType)) {
+            return "";
+        }
+        Optional<ReferenceDetail> first = rdNotificationType.stream().filter(o -> o.getReferenceDetailPK().getKeyValue().equalsIgnoreCase(commonUtil.getExtention(attachment))).findFirst();
+        if (first.isPresent() && StringUtils.hasText(first.get().getValue1())) {
+            return first.get().getValue1();
+        }
+        return null;
     }
 
     @Override
@@ -154,5 +168,5 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         map.put("isRead", userAnnouncementMappingResponse.getIsRead());
         return new Response("Announcement with userId : " + userSession.getUserId() + " and announcementId : " + announcementId + " is marked as read", map, HttpStatus.OK);
     }
-
+    
 }
