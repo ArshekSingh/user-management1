@@ -139,13 +139,20 @@ public class AnnouncementServiceImpl implements AnnouncementService {
     public Response getAnnouncements() {
         UserSession userSession = userCredentialService.getUserSession();
         List<Object[]> announcements = userAnnouncementRepository.getAnnouncements(userSession.getUserId(), userSession.getOrganizationId());
-        List<UserAnnouncementResponse> userAnnouncementResponse = announcements.stream().map(userAnnouncementAssembler::populateUserAnnouncementResponseData).collect(Collectors.toList());
+        List<UserAnnouncementResponse> userAnnouncementResponse = announcements.stream().map(this::toResponse).collect(Collectors.toList());
         if (announcements.isEmpty()) {
             log.info("No announcements are found for user : {}", userSession.getUserId());
             return new Response("No announcements are found for user : " + userSession.getUserId(), HttpStatus.NOT_FOUND);
         }
         log.info("Announcements fetched successfully for user : {}", userSession.getUserId());
         return new Response("Announcements fetched successfully for user : " + userSession.getUserId(), userAnnouncementResponse, (long) announcements.size(), HttpStatus.OK);
+    }
+
+    private UserAnnouncementResponse toResponse(Object[] announcement) {
+        UserAnnouncementResponse userAnnouncementResponse = userAnnouncementAssembler.populateUserAnnouncementResponseData(announcement);
+        userAnnouncementResponse.setType(getType(userAnnouncementResponse.getAttachment()));
+        userAnnouncementResponse.setAttachment(awsService.signedDocumentUrl(userAnnouncementResponse.getAttachment()));
+        return userAnnouncementResponse;
     }
 
     @Override
