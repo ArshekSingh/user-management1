@@ -81,8 +81,8 @@ public class AnnouncementServiceImpl implements AnnouncementService {
             List<Long> branchIds = userAnnouncementMappingRepository.findDistinctBranchIdByAnnouncementId(userAnnouncement.getAnnouncementId().toString());
             List<String> branchNames = branchMasterRepository.findByBranchName(userAnnouncement.getOrgId(), branchIds);
             UserAnnouncementResponse userAnnouncementResponse = userAnnouncementAssembler.convertToResponse(userAnnouncement);
-            userAnnouncementResponse.setAttachment(awsService.signedDocumentUrl(userAnnouncementResponse.getAttachment()));
             userAnnouncementResponse.setType(getType(userAnnouncementResponse.getAttachment()));
+            userAnnouncementResponse.setAttachment(awsService.signedDocumentUrl(userAnnouncementResponse.getAttachment()));
             userAnnouncementResponse.setBranchId(branchIds);
             userAnnouncementResponse.setBranchName(branchNames);
             userAnnouncementResponseList.add(userAnnouncementResponse);
@@ -99,8 +99,8 @@ public class AnnouncementServiceImpl implements AnnouncementService {
             return new Response("No announcement is found with id : " + announcementId, HttpStatus.NOT_FOUND);
         }
         UserAnnouncementResponse userAnnouncementResponse = userAnnouncementAssembler.convertToResponse(userAnnouncement.get());
-        userAnnouncementResponse.setAttachment(awsService.signedDocumentUrl(userAnnouncementResponse.getAttachment()));
         userAnnouncementResponse.setType(getType(userAnnouncementResponse.getAttachment()));
+        userAnnouncementResponse.setAttachment(awsService.signedDocumentUrl(userAnnouncementResponse.getAttachment()));
         List<Long> branchIds = userAnnouncementMappingRepository.findDistinctBranchIdByAnnouncementId(announcementId.toString());
         List<String> branchNames = branchMasterRepository.findByBranchName(userAnnouncementResponse.getOrgId(), branchIds);
         userAnnouncementResponse.setBranchId(branchIds);
