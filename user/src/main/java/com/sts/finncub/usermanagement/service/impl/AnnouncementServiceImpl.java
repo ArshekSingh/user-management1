@@ -164,7 +164,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
             return new Response("No announcement is found with userId : " + userSession.getUserId() + " or announcementId : " + announcementId, HttpStatus.NOT_FOUND);
         }
         UserAnnouncementMapping userAnnouncementMapping = optional.get();
-        userAnnouncementMapping.setIsRead("Y");
+        userAnnouncementMapping.setIsRead(request.getIsRead());
         userAnnouncementMapping.setUpdatedBy(userSession.getUserId());
         userAnnouncementMapping.setReadOn(LocalDate.now());
         userAnnouncementMappingRepository.save(userAnnouncementMapping);
