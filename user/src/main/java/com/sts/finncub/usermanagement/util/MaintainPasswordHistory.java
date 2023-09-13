@@ -12,7 +12,7 @@ public class MaintainPasswordHistory {
     @Value("${old.password.count}")
     private Integer oldPasswordCount;
 
-    public void maintainOldPasswordHistory(String oldPasswordList[], String oldPassword, String PASSWORD_SEPARATOR,String password) throws BadRequestException {
+    public String maintainOldPasswordHistory(String oldPasswordList[], String oldPassword, String PASSWORD_SEPARATOR,String password) throws BadRequestException {
 //          Maintain old passwords
         if (oldPasswordList.length < oldPasswordCount) {
             oldPassword = oldPassword + PASSWORD_SEPARATOR + password;
@@ -27,5 +27,6 @@ public class MaintainPasswordHistory {
             }
             oldPassword = updatedOldPassword + PASSWORD_SEPARATOR + password;
         }
+        return oldPassword;
     }
 }

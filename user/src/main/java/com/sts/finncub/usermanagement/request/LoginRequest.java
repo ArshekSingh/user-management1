@@ -17,7 +17,7 @@ import java.math.BigDecimal;
 public class LoginRequest {
     private String userId;
     private String password;
-    @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-zA-Z])[a-zA-Z0-9]*$",message = "Password should contain alpha-numeric values")
+    @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]*$",message = "Password should contain alpha-numeric values")
     @Size(min = 8,max = 16,message = "Password length should at least 8 and maximum of 16 characters")
     private String newPassword;
     private String applicationVersion;
