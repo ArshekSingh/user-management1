@@ -382,7 +382,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         }
         // check confirm password
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-            log.error("New password is not same as confirm password for userId : {} ", request.getUserId());
+            log.error("Confirm password is not same as new password for userId : {} ", request.getUserId());
             throw new BadRequestException("Confirm password is not same as new password", HttpStatus.BAD_REQUEST);
         }
         String newPassword = passwordEncoder.encode(request.getNewPassword());
