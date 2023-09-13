@@ -60,6 +60,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         }
         UserAnnouncement userAnnouncement = userAnnouncementAssembler.convertToUserAnnouncement(userAnnouncementRequest, userSession);
         userAnnouncementRepository.saveAndFlush(userAnnouncement);
+        userAnnouncement.setAttachment(awsService.signedDocumentUrl(userAnnouncement.getAttachment()));
         userAnnouncementBranchMapping.insertUserAnnouncementBranchMapping(userBranchMappingList, userAnnouncement, userAnnouncement.getAnnouncementId(), userAnnouncementRequest.getBranchId());
         log.info("Announcement created successfully for branches {}", userAnnouncementRequest.getBranchId());
         return new Response("Announcement created successfully", userAnnouncement.getAnnouncementId(), HttpStatus.OK);
@@ -82,7 +83,9 @@ public class AnnouncementServiceImpl implements AnnouncementService {
             List<String> branchNames = branchMasterRepository.findByBranchName(userAnnouncement.getOrgId(), branchIds);
             UserAnnouncementResponse userAnnouncementResponse = userAnnouncementAssembler.convertToResponse(userAnnouncement);
             userAnnouncementResponse.setType(getType(userAnnouncementResponse.getAttachment()));
-            userAnnouncementResponse.setAttachment(awsService.signedDocumentUrl(userAnnouncementResponse.getAttachment()));
+            if (StringUtils.hasText(userAnnouncementResponse.getAttachment())) {
+                userAnnouncementResponse.setAttachment(awsService.signedDocumentUrl(userAnnouncementResponse.getAttachment()));
+            }
             userAnnouncementResponse.setBranchId(branchIds);
             userAnnouncementResponse.setBranchName(branchNames);
             userAnnouncementResponseList.add(userAnnouncementResponse);
