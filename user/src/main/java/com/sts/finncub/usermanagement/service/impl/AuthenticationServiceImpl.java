@@ -380,6 +380,11 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
             log.error("Incorrect password supplied , userId : {}", request.getUserId());
             throw new BadRequestException("Invalid current password", HttpStatus.BAD_REQUEST);
         }
+        // check confirm password
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            log.error("New password is not same as confirm password for userId : {} ", request.getUserId());
+            throw new BadRequestException("New password is not same as confirm password ", HttpStatus.BAD_REQUEST);
+        }
         String newPassword = passwordEncoder.encode(request.getNewPassword());
 //      check new password with 5 old password
         String oldPassword = user.getOldPassword();

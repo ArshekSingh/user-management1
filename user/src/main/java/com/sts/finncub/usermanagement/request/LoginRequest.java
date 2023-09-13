@@ -28,6 +28,7 @@ public class LoginRequest {
     private String loginMode;
     private BigDecimal latitude;
     private BigDecimal longitude;
+    private String confirmPassword;
 
     @JsonIgnore
     public boolean isValid(){
