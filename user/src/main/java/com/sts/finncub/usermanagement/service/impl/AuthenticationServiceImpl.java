@@ -383,7 +383,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         // check confirm password
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             log.error("New password is not same as confirm password for userId : {} ", request.getUserId());
-            throw new BadRequestException("New password is not same as confirm password ", HttpStatus.BAD_REQUEST);
+            throw new BadRequestException("Confirm password is not same as new password", HttpStatus.BAD_REQUEST);
         }
         String newPassword = passwordEncoder.encode(request.getNewPassword());
 //      check new password with 5 old password
@@ -553,8 +553,8 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
     @Override
     public ResponseEntity<Response> updatePassword(CreateNewPasswordRequest createNewPasswordRequest) throws NullPointerException, ObjectNotFoundException, BadRequestException {
         if (!createNewPasswordRequest.getNewPassword().equals(createNewPasswordRequest.getConfirmPassword())) {
-            log.error("New password is not same as confirm password for userId : {} ", createNewPasswordRequest.getUserId());
-            throw new BadRequestException("New password is not same as confirm password ", HttpStatus.BAD_REQUEST);
+            log.error("Confirm password is not same as new password for userId : {} ", createNewPasswordRequest.getUserId());
+            throw new BadRequestException("Confirm password is not same as new password ", HttpStatus.BAD_REQUEST);
         }
         if (createNewPasswordRequest.getUserId().equalsIgnoreCase(createNewPasswordRequest.getNewPassword())) {
             log.error("New password can't be userId  for user: {} ", createNewPasswordRequest.getUserId());
