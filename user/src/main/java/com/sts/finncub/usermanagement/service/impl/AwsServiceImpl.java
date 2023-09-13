@@ -26,12 +26,17 @@ public class AwsServiceImpl implements AwsService {
 
     @Override
     public String signedDocumentUrl(String fileName) {
-        if (!amazonS3.doesObjectExist(cloudProperties.getBucketName(), fileName)) {
-            log.info("File doesn't exist on specified path {}", fileName);
-            return "";
-        }
-        log.info("Generating signed URL for file {}", fileName);
-        return generateSignedUrl(fileName, HttpMethod.GET);
+       try {
+           if (!amazonS3.doesObjectExist(cloudProperties.getBucketName(), fileName)) {
+               log.info("File doesn't exist on specified path {}", fileName);
+               return "";
+           }
+           log.info("Generating signed URL for file {}", fileName);
+           return generateSignedUrl(fileName, HttpMethod.GET);
+       } catch (Exception exception) {
+           log.info("Exception occurred while generating signed URL for document {}", fileName);
+           return null;
+       }
     }
 
     private String generateSignedUrl(String filePath, HttpMethod httpMethod) {

@@ -19,6 +19,9 @@ public class AnnouncementController {
 
     private final AnnouncementService announcementService;
 
+    /*
+    API for sending Push Notification
+     */
     @PostMapping("/admin/announcement")
     public Response createAnnouncement(@RequestBody UserAnnouncementRequest userAnnouncementRequest) throws FirebaseMessagingException, IOException {
         log.info("Request initiated to create announcement");
