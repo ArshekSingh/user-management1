@@ -41,6 +41,7 @@ public class EmployeeAssembler {
         employeeMovementLogs.setDesignationType(request.getDesignationType());
         employeeMovementLogs.setDesignationId(request.getDesignationId());
         employeeMovementLogs.setBranchId(Long.valueOf(request.getBranchId()));
+        employeeMovementLogs.setFunctionalTitleId(request.getFunctionalTitleId());
         employeeMovementLogs.setBranchJoiningDate(DateTimeUtil.stringToDate(request.getBranchJoinDate()));
         employeeMovementLogs.setConfirmationDate(DateTimeUtil.stringToDate(request.getConfirmationDate()));
         employeeMovementLogs.setRelievingDate(DateTimeUtil.stringToDate(request.getRelievingDate()));
