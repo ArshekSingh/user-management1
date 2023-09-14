@@ -263,14 +263,14 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             log.warn("Request failed validation, these field are mandatory : Status {} , FirstName {} , Gender {} ", StringUtils.hasText(request.getStatus()), request.getFirstName(), request.getGender());
             throw new BadRequestException("Invalid Request", HttpStatus.BAD_REQUEST);
         }
-        if(StringUtils.hasText(request.getIfscCode()) && StringUtils.hasText(request.getBankAccNo())) {
+        if (StringUtils.hasText(request.getIfscCode()) && StringUtils.hasText(request.getBankAccNo())) {
             List<ClientBankDetail> bankDetails = clientBankDetailRepository.findByClientBankDetailPk_OrgIdAndBankAccountNumber(userSession.getOrganizationId(), request.getBankAccNo());
-            if(!CollectionUtils.isEmpty(bankDetails)) {
+            if (!CollectionUtils.isEmpty(bankDetails)) {
                 log.warn("With the given bank acc no {} client exist", request.getBankAccNo());
                 throw new BadRequestException("This bank account details already associated with another client", HttpStatus.BAD_REQUEST);
             }
         }
-        if(request.getPersonalMob() != null) {
+        if (request.getPersonalMob() != null) {
             List<ClientMasterDraft> clientMasterDraftList = clientMasterDraftRepository.findByClientMasterDraftPK_OrgIdAndMobileNumber(userSession.getOrganizationId(), String.valueOf(request.getPersonalMob()));
             if (!CollectionUtils.isEmpty(clientMasterDraftList)) {
                 log.warn("This mobile number {} is linked with other client", request.getPersonalMob());
@@ -590,7 +590,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     }
 
     private static boolean isFieldsUpdated(EmployeeRequest request, Employee employee) {
-        return !Objects.equals(request.getPromotionDate(), DateTimeUtil.dateToString(employee.getPromotionDate())) || !Objects.equals(request.getDepartmentId(), employee.getDepartmentId()) || !Objects.equals(request.getSubDepartmentId(), employee.getSubDepartmentId()) || !Objects.equals(request.getDesignationType(), employee.getDesignationType()) || !Objects.equals(request.getDesignationId(), employee.getDesignationId());
+        return !Objects.equals(request.getPromotionDate(), DateTimeUtil.dateToString(employee.getPromotionDate())) || !Objects.equals(request.getDepartmentId(), employee.getDepartmentId()) || !Objects.equals(request.getSubDepartmentId(), employee.getSubDepartmentId()) || !Objects.equals(request.getDesignationType(), employee.getDesignationType()) || !Objects.equals(request.getDesignationId(), employee.getDesignationId()) || !Objects.equals(request.getPersonalMob(), employee.getPersonalMob());
     }
 
     private void checkRelievingDate(EmployeeRequest request, Employee employee) throws BadRequestException {
