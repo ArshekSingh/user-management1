@@ -5,7 +5,7 @@ import com.sts.finncub.core.entity.*;
 import com.sts.finncub.core.repository.BranchMasterRepository;
 import com.sts.finncub.core.repository.EmployeeDepartmentRepository;
 import com.sts.finncub.core.repository.EmployeeFunctionalTitleRepository;
-import com.sts.finncub.core.repository.EmployeeMovementLogsRepo;
+import com.sts.finncub.core.repository.EmployeeMovementLogsRepository;
 import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.request.EmployeeRequest;
 import lombok.AllArgsConstructor;
@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class EmployeeAssembler {
 
-    private final EmployeeMovementLogsRepo employeeMovementLogsRepo;
+    private final EmployeeMovementLogsRepository employeeMovementLogsRepository;
     private final EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository;
     private final BranchMasterRepository branchMasterRepository;
     private final EmployeeDepartmentRepository employeeDepartmentRepository;
@@ -31,7 +31,7 @@ public class EmployeeAssembler {
         EmployeeMovementLogs employeeMovementLogs = new EmployeeMovementLogs();
         EmployeeMovementLogsPK employeeMovementLogsPK = new EmployeeMovementLogsPK();
         employeeMovementLogsPK.setOrgId(userSession.getOrganizationId());
-        employeeMovementLogsPK.setRev(employeeMovementLogsRepo.getNextRev());
+        employeeMovementLogsPK.setRev(employeeMovementLogsRepository.getNextRev());
         employeeMovementLogs.setEmployeeMovementLogsPK(employeeMovementLogsPK);
         employeeMovementLogs.setEmployeeId(request.getEmployeeId());
         employeeMovementLogs.setEmployementType(request.getEmploymentType());
@@ -40,11 +40,12 @@ public class EmployeeAssembler {
         employeeMovementLogs.setSubDepartmentId(request.getSubDepartmentId());
         employeeMovementLogs.setDesignationType(request.getDesignationType());
         employeeMovementLogs.setDesignationId(request.getDesignationId());
+        employeeMovementLogs.setMobileNumber(request.getPersonalMob() != null ? String.valueOf(request.getPersonalMob()) : "");
         employeeMovementLogs.setInsertedBy(userSession.getUserId());
         employeeMovementLogs.setInsertedOn(LocalDateTime.now());
         employeeMovementLogs.setUpdatedBy(userSession.getUserId());
         employeeMovementLogs.setUpdatedOn(LocalDateTime.now());
-        employeeMovementLogsRepo.save(employeeMovementLogs);
+        employeeMovementLogsRepository.save(employeeMovementLogs);
     }
 
     public List<EmployeeDto> entityToDtoList(List<EmployeeMovementLogs> employeeMovementLogsList, UserSession userSession) {
@@ -67,15 +68,17 @@ public class EmployeeAssembler {
         }
         employeeDto.setBranchId(employeeMovementLogs.getBranchId());
         employeeDto.setBranchJoinDate(DateTimeUtil.dateToString(employeeMovementLogs.getBranchJoiningDate()));
-        employeeDto.setDepartmentName(employeeMovementLogs.getEmployeeDepartmentMaster() != null ? employeeMovementLogs.getEmployeeDepartmentMaster().getEmpDepartmentName() : "");
+        EmployeeDepartmentMaster employeeDepartmentMaster = employeeMovementLogs.getEmployeeDepartmentMaster();
+        employeeDto.setDepartmentName(employeeDepartmentMaster != null ? employeeDepartmentMaster.getEmpDepartmentName() : "");
         employeeDto.setDepartmentId(employeeMovementLogs.getDepartmentId());
         if (employeeMovementLogs.getSubDepartmentId() != null) {
-            EmployeeDepartmentMaster employeeDepartmentMaster = employeeDepartmentRepository.findByOrgIdAndEmpDepartmentId(userSession.getOrganizationId(), employeeMovementLogs.getSubDepartmentId());
-            employeeDto.setSubDepartmentName(employeeDepartmentMaster.getEmpDepartmentName());
+            EmployeeDepartmentMaster employeeDepartmentMasterSubDept = employeeDepartmentRepository.findByOrgIdAndEmpDepartmentId(userSession.getOrganizationId(), employeeMovementLogs.getSubDepartmentId());
+            employeeDto.setSubDepartmentName(employeeDepartmentMasterSubDept.getEmpDepartmentName());
         }
         employeeDto.setSubDepartmentId(employeeMovementLogs.getSubDepartmentId());
         employeeDto.setDesignationType(employeeMovementLogs.getDesignationType());
-        employeeDto.setDesignationName(employeeMovementLogs.getEmployeeDesignationMaster() != null ? employeeMovementLogs.getEmployeeDesignationMaster().getEmpDesignationName() : "");
+        EmployeeDesignationMaster employeeDesignationMaster = employeeMovementLogs.getEmployeeDesignationMaster();
+        employeeDto.setDesignationName(employeeDesignationMaster != null ? employeeDesignationMaster.getEmpDesignationName() : "");
         employeeDto.setDesignationId(employeeMovementLogs.getDesignationId());
         if (employeeMovementLogs.getFunctionalTitleId() != null) {
             try {
@@ -86,6 +89,7 @@ public class EmployeeAssembler {
                 log.error("Exception occurred due to {}", e.getMessage());
             }
         }
+        employeeDto.setMobileNumber(employeeMovementLogs.getMobileNumber());
         employeeDto.setUpdatedBy(employeeMovementLogs.getUpdatedBy());
         employeeDto.setInsertedBy(employeeMovementLogs.getInsertedBy());
         employeeDto.setInsertedOn(DateTimeUtil.dateTimeToString(employeeMovementLogs.getInsertedOn()));
