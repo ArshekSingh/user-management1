@@ -40,6 +40,10 @@ public class EmployeeAssembler {
         employeeMovementLogs.setSubDepartmentId(request.getSubDepartmentId());
         employeeMovementLogs.setDesignationType(request.getDesignationType());
         employeeMovementLogs.setDesignationId(request.getDesignationId());
+        employeeMovementLogs.setBranchId(Long.valueOf(request.getBranchId()));
+        employeeMovementLogs.setBranchJoiningDate(DateTimeUtil.stringToDate(request.getBranchJoinDate()));
+        employeeMovementLogs.setConfirmationDate(DateTimeUtil.stringToDate(request.getConfirmationDate()));
+        employeeMovementLogs.setRelievingDate(DateTimeUtil.stringToDate(request.getRelievingDate()));
         employeeMovementLogs.setMobileNumber(request.getPersonalMob() != null ? String.valueOf(request.getPersonalMob()) : "");
         employeeMovementLogs.setInsertedBy(userSession.getUserId());
         employeeMovementLogs.setInsertedOn(LocalDateTime.now());
