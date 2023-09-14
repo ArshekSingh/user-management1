@@ -9,6 +9,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+
 @Slf4j
 @RestController
 @AllArgsConstructor
@@ -17,8 +19,11 @@ public class AnnouncementController {
 
     private final AnnouncementService announcementService;
 
+    /*
+    API for sending Push Notification
+     */
     @PostMapping("/admin/announcement")
-    public Response createAnnouncement(@RequestBody UserAnnouncementRequest userAnnouncementRequest) throws FirebaseMessagingException {
+    public Response createAnnouncement(@RequestBody UserAnnouncementRequest userAnnouncementRequest) throws FirebaseMessagingException, IOException {
         log.info("Request initiated to create announcement");
         return announcementService.createAnnouncement(userAnnouncementRequest);
     }
@@ -48,9 +53,8 @@ public class AnnouncementController {
     }
 
     @PutMapping("/announcement/{announcementId}")
-    public Response readAnnouncement(@PathVariable("announcementId") String announcementId) {
+    public Response readAnnouncement(@PathVariable("announcementId") Long announcementId, @RequestBody UserAnnouncementRequest request) {
         log.info("Request initiated to update announcement status with id : {}", announcementId);
-        return announcementService.readAnnouncement(announcementId);
+        return announcementService.readAnnouncement(announcementId,request);
     }
-
 }

@@ -6,6 +6,7 @@ import com.sts.finncub.core.dto.MenuButtonRequest;
 import com.sts.finncub.core.entity.MenuButtonMapping;
 import com.sts.finncub.core.entity.UserSession;
 import com.sts.finncub.core.repository.ButtonMenuMapRepository;
+import com.sts.finncub.core.repository.ButtonRoleMappingRepository;
 import com.sts.finncub.core.repository.dao.ButtonMenuMappingDao;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.core.service.UserCredentialService;
@@ -29,6 +30,7 @@ import static com.sts.finncub.core.constants.Constant.SUCCESS;
 @Slf4j
 @AllArgsConstructor
 public class ButtonMenuMappingServiceImpl implements ButtonMenuMappingService {
+    private final ButtonRoleMappingRepository buttonRoleMappingRepository;
 
     private final ButtonMenuMapRepository buttonMenuMapRepository;
     private final UserCredentialService userCredentialService;
@@ -87,6 +89,7 @@ public class ButtonMenuMappingServiceImpl implements ButtonMenuMappingService {
         try {
             if (request.getMenuId() != null && StringUtils.hasText(request.getButtonName())) {
                 buttonMenuMapRepository.deleteByOrgIdAndMenuIdAndButtonName(userSession.getOrganizationId(), request.getMenuId(), request.getButtonName().toUpperCase());
+                buttonRoleMappingRepository.deleteByOrgIdAndMenuIdAndButtonNameContainingIgnoreCase(userSession.getOrganizationId(), request.getMenuId(), request.getButtonName());
                 return new Response(SUCCESS, HttpStatus.OK);
             } else {
                 return new Response("Please enter the valid menu id and button name", HttpStatus.BAD_REQUEST);

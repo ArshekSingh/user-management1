@@ -43,8 +43,7 @@ public class UserAnnouncementAssembler {
         return userAnnouncement;
     }
 
-    public UserAnnouncement prepareUpdateRequest(UserAnnouncement userAnnouncement, UserAnnouncementRequest userAnnouncementRequest, UserSession userSession) {
-        UserAnnouncement announcement = userAnnouncement;
+    public UserAnnouncement prepareUpdateRequest(UserAnnouncement announcement, UserAnnouncementRequest userAnnouncementRequest, UserSession userSession) {
         if (StringUtils.hasText(userAnnouncementRequest.getTitle()))
             announcement.setTitle(userAnnouncementRequest.getTitle());
         if (StringUtils.hasText(userAnnouncementRequest.getMessage()))
@@ -65,7 +64,8 @@ public class UserAnnouncementAssembler {
         UserAnnouncementResponse userAnnouncementResponse = new UserAnnouncementResponse();
         userAnnouncementResponse.setAnnouncementId(Long.parseLong(String.valueOf(userAnnouncementObject[0])));
         userAnnouncementResponse.setMessage((String) userAnnouncementObject[1]);
-        userAnnouncementResponse.setAttachment((String) userAnnouncementObject[2]);
+        if (userAnnouncementObject[2] != null)
+            userAnnouncementResponse.setAttachment((String) userAnnouncementObject[2]);
         userAnnouncementResponse.setStatus((String) userAnnouncementObject[3]);
         userAnnouncementResponse.setStartDate(String.valueOf(DateTimeUtil.dateToString(((Timestamp) userAnnouncementObject[4]).toLocalDateTime().toLocalDate())));
         userAnnouncementResponse.setEndDate(String.valueOf(DateTimeUtil.dateToString(((Timestamp) userAnnouncementObject[5]).toLocalDateTime().toLocalDate())));

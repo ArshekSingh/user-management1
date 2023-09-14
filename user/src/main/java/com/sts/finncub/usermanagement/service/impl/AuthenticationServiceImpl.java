@@ -2,6 +2,7 @@ package com.sts.finncub.usermanagement.service.impl;
 
 import com.google.gson.Gson;
 import com.sts.finncub.core.components.SmsProperties;
+import com.sts.finncub.core.constants.Constant;
 import com.sts.finncub.core.constants.RestMappingConstants;
 import com.sts.finncub.core.entity.*;
 import com.sts.finncub.core.exception.BadRequestException;
@@ -20,6 +21,7 @@ import com.sts.finncub.usermanagement.request.SignupRequest;
 import com.sts.finncub.usermanagement.response.LoginResponse;
 import com.sts.finncub.usermanagement.response.SignupResponse;
 import com.sts.finncub.usermanagement.service.AuthenticationService;
+import com.sts.finncub.usermanagement.util.MaintainPasswordHistory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,15 +40,15 @@ import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-
-@Service
 @Slf4j
-public class AuthenticationServiceImpl implements AuthenticationService {
+@Service
+public class AuthenticationServiceImpl implements AuthenticationService, Constant {
 
     private static final String KEY = "USER_SESSION";
     private final RedisTemplate<String, Object> template;
@@ -72,6 +74,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Autowired
     private JavaMailSender mailSender;
+    @Autowired
+    MaintainPasswordHistory maintainPasswordHistory;
 
     @Autowired
     public AuthenticationServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserRedisRepository userRedisRepository, UserRoleMappingRepository userRoleMappingRepository, UserCredentialService userCredentialService, UserOrganizationMappingRepository userOrganizationMappingRepository, BranchMasterRepository branchMasterRepository, UserLoginLogRepository userLoginLogRepository, EmployeeRepository employeeRepository, MiscellaneousServiceRepository miscellaneousServiceRepository, MobileAppConfig mobileAppConfig, RedisTemplate<String, Object> template, OrganizationRepository organizationRepository, VendorSmsLogRepository vendorSmsLogRepository, SmsProperties smsProperties, SmsUtil smsUtil) {
@@ -115,6 +119,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             if ("N".equalsIgnoreCase(user.getIsActive())) {
                 log.error("User is not active , userId : {}", loginRequest.getUserId());
                 throw new BadRequestException("User is not active.", HttpStatus.BAD_REQUEST);
+            }
+            if("Y".equalsIgnoreCase(user.getIsPasswordExpired())){
+                log.error("User password has been expired, userId :{}",loginRequest.getUserId());
+                throw new BadRequestException("Your password has been expired. Please reset your password",HttpStatus.BAD_REQUEST);
             }
 //            if(StringUtils.hasText(user.getImeiNumber()) && !user.getImeiNumber().equals(loginRequest.getImeiNumber1())){
 //                log.error("User {} not authorized due to IMEI Number ", loginRequest.getUserId());
@@ -372,12 +380,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             log.error("Incorrect password supplied , userId : {}", request.getUserId());
             throw new BadRequestException("Invalid current password", HttpStatus.BAD_REQUEST);
         }
+        // check confirm password
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            log.error("Confirm password is not same as new password for userId : {} ", request.getUserId());
+            throw new BadRequestException("Confirm password is not same as new password", HttpStatus.BAD_REQUEST);
+        }
+        String newPassword = passwordEncoder.encode(request.getNewPassword());
 //      check new password with 5 old password
         String oldPassword = user.getOldPassword();
         if (oldPassword == null) {
             oldPassword = user.getPassword();
         } else {
-            String PASSWORD_SEPARATOR = ",,";
             String[] oldPasswordList = oldPassword.split(PASSWORD_SEPARATOR);
             for (String pass : oldPasswordList) {
                 if (BCrypt.checkpw(request.getNewPassword(), pass)) {
@@ -386,26 +399,16 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 }
             }
 //          Maintain old passwords
-            if (oldPasswordList.length < oldPasswordCount) {
-                oldPassword = oldPassword + PASSWORD_SEPARATOR + user.getPassword();
-            } else {
-                StringBuilder updatedOldPassword = new StringBuilder();
-                for (int i = 1; i < oldPasswordList.length; i++) {
-                    if (updatedOldPassword.length() == 0) {
-                        updatedOldPassword = new StringBuilder(oldPasswordList[i]);
-                    } else {
-                        updatedOldPassword.append(PASSWORD_SEPARATOR).append(oldPasswordList[i]);
-                    }
-                }
-                oldPassword = updatedOldPassword + PASSWORD_SEPARATOR + user.getPassword();
-            }
+            String oldPasswordUpdated = maintainPasswordHistory.maintainOldPasswordHistory(oldPasswordList, oldPassword, PASSWORD_SEPARATOR, newPassword);
+            oldPassword = (new StringBuilder()).append(oldPasswordUpdated).toString();
         }
 //      update new password
         user.setOldPassword(oldPassword);
-        user.setPassword(passwordEncoder, request.getNewPassword());
+        user.setPassword(newPassword);
         user.setIsTemporaryPassword("N");
         user.setUpdatedOn(LocalDateTime.now());
         user.setUpdatedBy(userSession.getUserId());
+        user.setPasswordResetDate(LocalDate.now());
         userRepository.save(user);
 //        userRedisRepository.deleteById(userSession.g);
         log.info("Password updated successfully , userId : {}", request.getUserId());
@@ -432,7 +435,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         user.setPassword(passwordEncoder, loginRequest.getPassword());
         user.setIsTemporaryPassword("Y");
         user.setIsPasswordActive("Y");
+        user.setIsPasswordExpired(null);
         user.setLoginAttempt(0);
+        user.setPasswordResetDate(LocalDate.now());
         user.setUpdatedOn(LocalDateTime.now());
         user.setUpdatedBy(userSession.getUserId());
         userRepository.save(user);
@@ -512,6 +517,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
+    @Transactional
     public ResponseEntity<Response> verifyForgetPasswordOtp(String otp, String userId) throws ObjectNotFoundException, BadRequestException {
         if (!StringUtils.hasText(otp) && !StringUtils.hasText(userId)) {
             log.error("otp cannot be empty.");
@@ -547,29 +553,46 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public ResponseEntity<Response> updatePassword(CreateNewPasswordRequest createNewPasswordRequest) throws NullPointerException, ObjectNotFoundException, BadRequestException {
         if (!createNewPasswordRequest.getNewPassword().equals(createNewPasswordRequest.getConfirmPassword())) {
-            log.error("New password is not same as confirm password for userId : {} ", createNewPasswordRequest.getUserId());
-            throw new BadRequestException("New password is not same as confirm password ", HttpStatus.BAD_REQUEST);
-        }
-        if(StringUtils.hasText(createNewPasswordRequest.getNewPassword()) && createNewPasswordRequest.getNewPassword().length() < 8){
-            log.error("Password length should at least 8 character  for user: {} ", createNewPasswordRequest.getUserId());
-            throw new BadRequestException("Password length should at least 8 character", HttpStatus.BAD_REQUEST);
+            log.error("Confirm password is not same as new password for userId : {} ", createNewPasswordRequest.getUserId());
+            throw new BadRequestException("Confirm password is not same as new password ", HttpStatus.BAD_REQUEST);
         }
         if (createNewPasswordRequest.getUserId().equalsIgnoreCase(createNewPasswordRequest.getNewPassword())) {
             log.error("New password can't be userId  for user: {} ", createNewPasswordRequest.getUserId());
             throw new BadRequestException("New password can't be userId", HttpStatus.BAD_REQUEST);
         }
-        if (createNewPasswordRequest.getNewPassword().length() < 5) {
-            log.error("Minimum length of new password should be at least 5 characters");
-            throw new BadRequestException("Minimum length of new password should be at least 5 characters", HttpStatus.BAD_REQUEST);
+        if(StringUtils.hasText(createNewPasswordRequest.getNewPassword()) && createNewPasswordRequest.getNewPassword().length() < 8){
+            log.error("Password length should at least 8 character  for user: {} ", createNewPasswordRequest.getUserId());
+            throw new BadRequestException("Password length should at least 8 character", HttpStatus.BAD_REQUEST);
         }
         User user = getUser(createNewPasswordRequest.getUserId());
+        String newPassword = passwordEncoder.encode(createNewPasswordRequest.getNewPassword());
+        //      check new password with 5 old password
+        String oldPassword = user.getOldPassword();
+        if (oldPassword == null) {
+            oldPassword = user.getPassword();
+        } else {
+            String[] oldPasswordList = oldPassword.split(PASSWORD_SEPARATOR);
+            for (String pass : oldPasswordList) {
+                if (BCrypt.checkpw(createNewPasswordRequest.getNewPassword(), pass)) {
+                    log.error("New password matches with recent passwords  , userId : {}", createNewPasswordRequest.getUserId());
+                    throw new BadRequestException("New password matches with recent passwords ", HttpStatus.BAD_REQUEST);
+                }
+            }
+//          Maintain old passwords
+            String oldPasswordUpdated = maintainPasswordHistory.maintainOldPasswordHistory(oldPasswordList, oldPassword, PASSWORD_SEPARATOR, newPassword);
+            oldPassword = (new StringBuilder()).append(oldPasswordUpdated).toString();
+        }
         String mobileNumber = user.getMobileNumber();
         Long activeOrgId = getActiveOrgId(user.getUserId());
         Optional<VendorSmsLog> vendorSmsLog = vendorSmsLogRepository.findTop1BySmsMobileAndOrgIdAndStatusAndSmsTypeAndInsertedOnGreaterThanOrderBySmsIdDesc(mobileNumber, activeOrgId, "U", "FORGET", LocalDateTime.now().minusMinutes(smsProperties.getOtpExpiryTime()));
         if (vendorSmsLog.isPresent() && createNewPasswordRequest.getOtp().equalsIgnoreCase(vendorSmsLog.get().getSmsOtp())) {
-            user.setPassword(passwordEncoder, createNewPasswordRequest.getNewPassword());
+//            user.setPassword(passwordEncoder, createNewPasswordRequest.getNewPassword());
+            user.setPassword(newPassword);
             user.setIsTemporaryPassword("N");
             user.setIsPasswordActive("Y");
+            user.setIsPasswordExpired(null);
+            user.setPasswordResetDate(LocalDate.now());
+            user.setOldPassword(oldPassword);
             user.setUpdatedOn(LocalDateTime.now());
             user.setUpdatedBy(createNewPasswordRequest.getUserId());
             userRepository.save(user);
@@ -622,5 +645,4 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
         return true;
     }
-
 }

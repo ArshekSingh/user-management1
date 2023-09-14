@@ -5,9 +5,11 @@ import com.sts.finncub.core.request.UserAnnouncementFilterRequest;
 import com.sts.finncub.core.request.UserAnnouncementRequest;
 import com.sts.finncub.core.response.Response;
 
+import java.io.IOException;
+
 public interface AnnouncementService {
 
-    Response createAnnouncement(UserAnnouncementRequest userAnnouncementRequest) throws FirebaseMessagingException;
+    Response createAnnouncement(UserAnnouncementRequest userAnnouncementRequest) throws FirebaseMessagingException, IOException;
 
     Response getAdminAnnouncements(UserAnnouncementFilterRequest userAnnouncementFilterRequest);
 
@@ -17,6 +19,6 @@ public interface AnnouncementService {
 
     Response getAnnouncements();
 
-    Response readAnnouncement(String announcementId);
+    Response readAnnouncement(Long announcementId, UserAnnouncementRequest request);
 
 }

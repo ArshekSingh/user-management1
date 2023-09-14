@@ -105,4 +105,6 @@ public class EmployeeRequest {
     private Long validationAttempts;
     private String isNameVerified;
     private String nameInBank;
+    private String relativeName;
+    private String mobileNumber;
 }
