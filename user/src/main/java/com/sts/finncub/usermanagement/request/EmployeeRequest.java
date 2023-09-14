@@ -106,4 +106,5 @@ public class EmployeeRequest {
     private String isNameVerified;
     private String nameInBank;
     private String relativeName;
+    private String mobileNumber;
 }
