@@ -45,7 +45,7 @@ public class ButtonRoleMappingServiceImpl implements ButtonRoleMappingService {
         try {
             Optional<ButtonRoleMapping> buttonRoleMappingOptional = buttonRoleMappingRepository.findByOrgIdAndMenuIdAndButtonNameContainingIgnoreCase(userSession.getOrganizationId(), request.getMenuId(), request.getButtonName());
             if (buttonRoleMappingOptional.isPresent()) {
-                buttonRoleMappingRepository.deleteAll();
+                buttonRoleMappingRepository.deleteByOrgIdAndMenuIdAndButtonNameContainingIgnoreCase(userSession.getOrganizationId(), request.getMenuId(), request.getButtonName());
             }
             List<RoleMasterDto> assignedRoles = request.getAssignedRoles();
             List<Long> roleIds = assignedRoles.stream().map(RoleMasterDto::getId).collect(Collectors.toList());
