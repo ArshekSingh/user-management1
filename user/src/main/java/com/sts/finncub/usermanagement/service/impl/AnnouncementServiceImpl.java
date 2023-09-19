@@ -61,7 +61,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         if (!CollectionUtils.isEmpty(userAnnouncementRequest.getUserId())) {
             List<User> users = userRepository.findByIsActiveAndUserIdIn("Y", userAnnouncementRequest.getUserId());
             userAnnouncementBranchMapping.insertUserAnnouncementBranchMapping(userAnnouncement, null, userAnnouncementRequest, users);
-        } else if (CollectionUtils.isEmpty(userAnnouncementRequest.getBranchId())) {
+        } else if (!CollectionUtils.isEmpty(userAnnouncementRequest.getBranchId())) {
             List<UserBranchMapping> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_OrgIdAndUserBranchMappingPK_BranchIdIn(userSession.getOrganizationId(), userAnnouncementRequest.getBranchId());
             if (userBranchMappingList.isEmpty()) {
                 log.info("No users are found for branch : {}", userAnnouncementRequest.getBranchId());
