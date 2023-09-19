@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
 
 @Component
 public class UserAnnouncementAssembler {
@@ -26,8 +25,8 @@ public class UserAnnouncementAssembler {
         userAnnouncementResponse.setEndDate(DateTimeUtil.dateToString(userAnnouncement.getEndDate()));
         userAnnouncementResponse.setInsertedBy(userAnnouncement.getInsertedBy());
         userAnnouncementResponse.setUpdatedBy(userAnnouncement.getUpdatedBy());
-        userAnnouncementResponse.setInsertedOn(DateTimeUtil.dateTimeToString(userAnnouncement.getInsertedOn()));
-        userAnnouncementResponse.setUpdatedOn(DateTimeUtil.dateTimeToString(userAnnouncement.getUpdatedOn()));
+        userAnnouncementResponse.setInsertedOn(userAnnouncement.getInsertedOn());
+        userAnnouncementResponse.setUpdatedOn(userAnnouncement.getUpdatedOn());
         return userAnnouncementResponse;
     }
 
@@ -70,13 +69,11 @@ public class UserAnnouncementAssembler {
         userAnnouncementResponse.setStatus((String) userAnnouncementObject[3]);
         userAnnouncementResponse.setStartDate(String.valueOf(DateTimeUtil.dateToString(((Timestamp) userAnnouncementObject[4]).toLocalDateTime().toLocalDate())));
         userAnnouncementResponse.setEndDate(String.valueOf(DateTimeUtil.dateToString(((Timestamp) userAnnouncementObject[5]).toLocalDateTime().toLocalDate())));
-        if(userAnnouncementObject[6]!=null) {
-            LocalDateTime localDateTime = ((Timestamp) userAnnouncementObject[6]).toLocalDateTime();
-            userAnnouncementResponse.setInsertedOn(DateTimeUtil.dateTimeToString(localDateTime));
+        if (userAnnouncementObject[6] != null) {
+            userAnnouncementResponse.setInsertedOn(((Timestamp) userAnnouncementObject[6]).toLocalDateTime());
         }
-        if(userAnnouncementObject[8]!=null) {
-            LocalDateTime localDateTime = ((Timestamp) userAnnouncementObject[8]).toLocalDateTime();
-            userAnnouncementResponse.setUpdatedOn(DateTimeUtil.dateTimeToString(localDateTime));
+        if (userAnnouncementObject[8] != null) {
+            userAnnouncementResponse.setUpdatedOn(((Timestamp) userAnnouncementObject[8]).toLocalDateTime());
         }
         userAnnouncementResponse.setInsertedBy((String) userAnnouncementObject[7]);
         userAnnouncementResponse.setUpdatedBy((String) userAnnouncementObject[9]);
