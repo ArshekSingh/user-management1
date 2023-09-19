@@ -452,7 +452,7 @@ public class UserServiceImpl implements UserService, Constant {
             log.info("NO Branch filter is passed by : {}", userSession.getUserId());
             return new Response("Pass at-least one branch", HttpStatus.NOT_FOUND);
         }
-        List<UserBranchMapping> userBranchMapping = userBranchMappingRepository.findByUserBranchMappingPK_OrgIdAndStatusAndUserBranchMappingPK_BranchIdIn(userSession.getOrganizationId(), "A", request.getBranchId());
+        List<UserBranchMapping> userBranchMapping = userBranchMappingRepository.findByUserBranchMappingPK_OrgIdAndUserBranchMappingPK_BranchIdIn(userSession.getOrganizationId(), request.getBranchId());
         if (userBranchMapping.isEmpty()) {
             log.info("No users mapped on any branches : {}", request.getBranchId());
             return new Response("No users mapped on any branches", HttpStatus.NOT_FOUND);
