@@ -8,6 +8,7 @@ import com.sts.finncub.usermanagement.service.AwsService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.Date;
 
@@ -26,22 +27,25 @@ public class AwsServiceImpl implements AwsService {
 
     @Override
     public String signedDocumentUrl(String fileName) {
-       try {
-           if (!amazonS3.doesObjectExist(cloudProperties.getBucketName(), fileName)) {
-               log.info("File doesn't exist on specified path {}", fileName);
-               return "";
-           }
-           log.info("Generating signed URL for file {}", fileName);
-           return generateSignedUrl(fileName, HttpMethod.GET);
-       } catch (Exception exception) {
-           log.info("Exception occurred while generating signed URL for document {}", fileName);
-           return null;
-       }
+        try {
+            if (!amazonS3.doesObjectExist(cloudProperties.getBucketName(), fileName)) {
+                log.info("File doesn't exist on specified path {}", fileName);
+                return "";
+            }
+            log.info("Generating signed URL for file {}", fileName);
+            return generateSignedUrl(fileName, HttpMethod.GET);
+        } catch (Exception exception) {
+            log.info("Exception occurred while generating signed URL for document {}", fileName);
+            return null;
+        }
     }
 
     private String generateSignedUrl(String filePath, HttpMethod httpMethod) {
-        Date expiration = new Date();
-        expiration.setTime(expiration.getTime() + 1000 * 60 * cloudProperties.getSignedUrlExpiryTime());
-        return amazonS3.generatePresignedUrl(new GeneratePresignedUrlRequest(cloudProperties.getBucketName(), filePath).withMethod(httpMethod).withExpiration(expiration)).toString();
+        if (StringUtils.hasText(filePath)) {
+            Date expiration = new Date();
+            expiration.setTime(expiration.getTime() + 1000 * 60 * cloudProperties.getSignedUrlExpiryTime());
+            return amazonS3.generatePresignedUrl(new GeneratePresignedUrlRequest(cloudProperties.getBucketName(), filePath).withMethod(httpMethod).withExpiration(expiration)).toString();
+        }
+        return "";
     }
 }
