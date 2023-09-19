@@ -48,7 +48,7 @@ public class UserAnnouncementBranchMapping {
             }
         } else {
             log.info("Going to create user notification for branches {}", userAnnouncementRequest.getBranchId());
-            if (CollectionUtils.isEmpty(userBranchMappingList)) {
+            if (!CollectionUtils.isEmpty(userBranchMappingList)) {
                 for (UserBranchMapping userBranchMapping : userBranchMappingList) {
                     UserAnnouncementMapping userAnnouncementMapping = new UserAnnouncementMapping();
                     userAnnouncementMapping.setAnnouncementId(userAnnouncement.getAnnouncementId());
