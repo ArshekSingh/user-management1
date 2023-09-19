@@ -11,10 +11,12 @@ import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.*;
 import com.sts.finncub.core.repository.dao.UserDao;
 import com.sts.finncub.core.request.FilterRequest;
+import com.sts.finncub.core.request.UserFilterRequest;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.assembler.RamsonUserSchedulerAssembler;
+import com.sts.finncub.usermanagement.assembler.UserAssembler;
 import com.sts.finncub.usermanagement.request.*;
 import com.sts.finncub.usermanagement.service.UserService;
 import lombok.AllArgsConstructor;
@@ -52,6 +54,7 @@ public class UserServiceImpl implements UserService, Constant {
     private final Gson gson;
     private final VwFoUserExportRepository vwFoUserExportRepository;
     private final RamsonUserSchedulerAssembler ramsonUserSchedulerAssembler;
+    private final UserAssembler userAssembler;
 
     @Override
     public Response getAllUserDetailsByFilterRequest(FilterRequest request) throws BadRequestException {
@@ -440,5 +443,20 @@ public class UserServiceImpl implements UserService, Constant {
             }
         }
         return ramsonUserRequestList;
+    }
+
+    @Override
+    public Response getUsersOnBranches(UserFilterRequest request) {
+        UserSession userSession = userCredentialService.getUserSession();
+        if(CollectionUtils.isEmpty(request.getBranchId())){
+            log.info("NO Branch filter is passed by : {}", userSession.getUserId());
+            return new Response("Pass at-least one branch", HttpStatus.NOT_FOUND);
+        }
+        List<UserBranchMapping> userBranchMapping = userBranchMappingRepository.findByUserBranchMappingPK_OrgIdAndStatusAndUserBranchMappingPK_BranchIdIn(userSession.getOrganizationId(), "A", request.getBranchId());
+        if (userBranchMapping.isEmpty()) {
+            log.info("No users mapped on any branches : {}", request.getBranchId());
+            return new Response("No users mapped on any branches", HttpStatus.NOT_FOUND);
+        }
+        return new Response(SUCCESS,userAssembler.assembleUser(userBranchMapping),HttpStatus.OK);
     }
 }

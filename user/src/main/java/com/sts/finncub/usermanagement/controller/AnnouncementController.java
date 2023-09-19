@@ -35,7 +35,7 @@ public class AnnouncementController {
     }
 
     @GetMapping("/admin/announcement/{announcementId}")
-    public Response getAdminAnnouncement(@PathVariable("announcementId") Long announcementId) {
+    public Response getAdminAnnouncementDetails(@PathVariable("announcementId") Long announcementId) {
         log.info("Request initiated to fetch announcement with id : {}", announcementId);
         return announcementService.getAdminAnnouncement(announcementId);
     }
