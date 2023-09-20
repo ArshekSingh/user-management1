@@ -31,6 +31,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -364,6 +365,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
             loginLog.setLogoutTime(LocalDateTime.now());
             userLoginLogRepository.save(loginLog);
             log.info("Token marked expired in db for TOKEN {}", token);
+            revokePassword(userSession.getOrganizationId(),userSession.getUserId());
         }
         return ResponseEntity.ok(response);
     }
@@ -410,6 +412,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         user.setUpdatedBy(userSession.getUserId());
         user.setPasswordResetDate(LocalDate.now());
         userRepository.save(user);
+        revokePassword(userSession.getOrganizationId(),userSession.getUserId());
 //        userRedisRepository.deleteById(userSession.g);
         log.info("Password updated successfully , userId : {}", request.getUserId());
         response.setCode(HttpStatus.OK.value());
@@ -596,11 +599,21 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
             user.setUpdatedOn(LocalDateTime.now());
             user.setUpdatedBy(createNewPasswordRequest.getUserId());
             userRepository.save(user);
+            revokePassword(activeOrgId,user.getUserId());
             log.info("Password reset was successful, userId : {}", createNewPasswordRequest.getUserId());
             return new ResponseEntity<>(new Response("Password reset was successful", HttpStatus.OK), HttpStatus.OK);
         } else {
             log.error("Otp is not verified.");
             return new ResponseEntity<>(new Response("Otp is not verified.", HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Async
+    public void revokePassword(Long orgId, String userId) {
+        List<UserSession> userSessions = userRedisRepository.findByOrganizationIdAndUserId(orgId, userId);
+        if (!CollectionUtils.isEmpty(userSessions)) {
+            userRedisRepository.deleteAll(userSessions);
+            log.info("User session cleared from redis for userId {}", userId);
         }
     }
 
