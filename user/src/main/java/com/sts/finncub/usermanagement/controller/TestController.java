@@ -2,6 +2,8 @@ package com.sts.finncub.usermanagement.controller;
 
 import com.sts.finncub.core.response.Response;
 import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,6 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -35,16 +39,14 @@ public class TestController {
                 "HTTP_FORWARDED",
                 "HTTP_VIA", "REMOTE_ADDR"
         };
-        StringBuffer stringBuffer = new StringBuffer();
+        List<IPDetails> response = new ArrayList<>();
         for (String header : IP_HEADER_CANDIDATES) {
-            log.info(header + " : " + request.getHeader(header));
-            stringBuffer.append(request.getHeader(header));
+            response.add(new IPDetails(header, request.getHeader(header)));
         }
-        log.info("REMOTE_ADDR: " + request.getAttribute("REMOTE_ADDR"));
-        stringBuffer.append(request.getAttribute("REMOTE_ADDR"));
+
+        response.add(new IPDetails("REMOTE_ADDR", request.getRemoteAddr()));
         log.info(request.getRemoteAddr());
-        stringBuffer.append(request.getRemoteAddr());
-        return new Response("OK",stringBuffer,HttpStatus.OK);
+        return new Response("OK", response, HttpStatus.OK);
     }
 
     @GetMapping("/getIP")
@@ -57,4 +59,12 @@ public class TestController {
         }
         return new Response("OK", HttpStatus.OK);
     }
+}
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+class IPDetails {
+    private String type;
+    private String ip;
 }
