@@ -5,6 +5,7 @@ import com.sts.finncub.core.dto.UserRoleMappingDto;
 import com.sts.finncub.core.entity.User;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.request.FilterRequest;
+import com.sts.finncub.core.request.UserFilterRequest;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.request.FirebaseTokenRequest;
 import com.sts.finncub.usermanagement.request.GeoLocationRequest;
@@ -42,4 +43,6 @@ public interface UserService {
     void deleteTokenByUserId(User userDetail);
 
     List<RamsonUserRequest> getFoForRamson();
+
+    Response getUsersOnBranches(UserFilterRequest request);
 }

@@ -7,11 +7,13 @@ import com.sts.finncub.core.entity.UserAnnouncementMapping;
 import com.sts.finncub.core.entity.UserBranchMapping;
 import com.sts.finncub.core.repository.UserAnnouncementMappingRepository;
 import com.sts.finncub.core.repository.UserRepository;
+import com.sts.finncub.core.request.UserAnnouncementRequest;
 import com.sts.finncub.core.service.impl.FirebaseMessagingService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
@@ -22,27 +24,44 @@ import java.util.Optional;
 @AllArgsConstructor
 public class UserAnnouncementBranchMapping {
 
+    private final UserRepository userRepository;
+
     private final FirebaseMessagingService firebaseMessagingService;
 
     private final UserAnnouncementMappingRepository userAnnouncementMappingRepository;
 
-    private final UserRepository userRepository;
-
     @Async
-    public void insertUserAnnouncementBranchMapping(List<UserBranchMapping> userBranchMappingList, UserAnnouncement userAnnouncement, Long announcementId, List<Long> branchId) throws FirebaseMessagingException {
-        log.info("Going to create user notification for branches {}", branchId);
-        for (UserBranchMapping userBranchMapping : userBranchMappingList) {
-            UserAnnouncementMapping userAnnouncementMapping = new UserAnnouncementMapping();
-            userAnnouncementMapping.setAnnouncementId(announcementId);
-            userAnnouncementMapping.setUserId(userBranchMapping.getUser().getUserId());
-            userAnnouncementMapping.setIsRead("N");
-            userAnnouncementMapping.setBranchId(userBranchMapping.getUserBranchMappingPK().getBranchId());
-            userAnnouncementMapping.setInsertedBy(userAnnouncement.getInsertedBy());
-            userAnnouncementMapping.setOrgId(userAnnouncement.getOrgId());
-            userAnnouncementMappingRepository.saveAndFlush(userAnnouncementMapping);
-            Optional<User> user = userRepository.findByUserId(userBranchMapping.getUser().getUserId());
-            if (user.isPresent() && StringUtils.hasText(user.get().getFbToken())) {
-                firebaseMessagingService.sendNotification(userAnnouncement.getTitle(), userAnnouncement.getMessage(), user.get().getFbToken(), userAnnouncement.getAttachment());
+    public void insertUserAnnouncementBranchMapping(UserAnnouncement userAnnouncement, List<UserBranchMapping> userBranchMappingList, UserAnnouncementRequest userAnnouncementRequest, List<User> users) throws FirebaseMessagingException {
+        if (!CollectionUtils.isEmpty(users)) {
+            log.info("Going to create user notification for users {}", userAnnouncementRequest.getUserId());
+            for (User user : users) {
+                UserAnnouncementMapping userAnnouncementMapping = new UserAnnouncementMapping();
+                userAnnouncementMapping.setAnnouncementId(userAnnouncement.getAnnouncementId());
+                userAnnouncementMapping.setUserId(user.getUserId());
+                userAnnouncementMapping.setIsRead("N");
+                userAnnouncementMapping.setInsertedBy(userAnnouncement.getInsertedBy());
+                userAnnouncementMapping.setOrgId(userAnnouncement.getOrgId());
+                userAnnouncementMappingRepository.saveAndFlush(userAnnouncementMapping);
+                if (StringUtils.hasText(user.getFbToken())) {
+                    firebaseMessagingService.sendNotification(userAnnouncement.getTitle(), userAnnouncement.getMessage(), user.getFbToken(), userAnnouncement.getAttachment());
+                }
+            }
+        } else {
+            log.info("Going to create user notification for branches {}", userAnnouncementRequest.getBranchId());
+            if (!CollectionUtils.isEmpty(userBranchMappingList)) {
+                for (UserBranchMapping userBranchMapping : userBranchMappingList) {
+                    UserAnnouncementMapping userAnnouncementMapping = new UserAnnouncementMapping();
+                    userAnnouncementMapping.setAnnouncementId(userAnnouncement.getAnnouncementId());
+                    userAnnouncementMapping.setUserId(userBranchMapping.getUser().getUserId());
+                    userAnnouncementMapping.setIsRead("N");
+                    userAnnouncementMapping.setInsertedBy(userAnnouncement.getInsertedBy());
+                    userAnnouncementMapping.setOrgId(userAnnouncement.getOrgId());
+                    userAnnouncementMappingRepository.saveAndFlush(userAnnouncementMapping);
+                    Optional<User> user = userRepository.findByUserId(userBranchMapping.getUser().getUserId());
+                    if (user.isPresent() && StringUtils.hasText(user.get().getFbToken())) {
+                        firebaseMessagingService.sendNotification(userAnnouncement.getTitle(), userAnnouncement.getMessage(), user.get().getFbToken(), userAnnouncement.getAttachment());
+                    }
+                }
             }
         }
     }
