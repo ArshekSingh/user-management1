@@ -223,6 +223,7 @@ public class UserServiceImpl implements UserService, Constant {
         userDetail.setIsFrozenBookFlag(request.getIsFrozenBookFlag());
         userDetail.setUpdatedBy(userSession.getUserId());
         userDetail.setUpdatedOn(LocalDateTime.now());
+        userDetail.setIsPasswordActive(request.getIsPasswordActive());
         userRepository.save(userDetail);
     }
 
