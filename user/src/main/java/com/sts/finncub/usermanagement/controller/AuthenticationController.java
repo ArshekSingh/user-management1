@@ -58,34 +58,31 @@ public class AuthenticationController {
 
     @PostMapping("/api/logout")
     public ResponseEntity<Response> logout(HttpServletRequest request) {
-        Response response = new Response();
-        authenticationService.logout(request);
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setMessage(RestMappingConstants.LOGGED_OUT);
-        return ResponseEntity.ok(response);
+        Response response = authenticationService.logout(request);
+        return new ResponseEntity<>(response,response.getStatus());
     }
 
     @PostMapping("/api/changePassword")
     public ResponseEntity<Response> changePassword(HttpServletRequest httpServletRequest,@Valid @RequestBody LoginRequest request) throws ObjectNotFoundException, BadRequestException {
         log.info("changePassword request received , userId : {} ", request.getUserId());
-        ResponseEntity<Response> responseEntity = authenticationService.changePassword(request);
+        Response responseEntity = authenticationService.changePassword(request);
         authenticationService.logout(httpServletRequest);
-        return responseEntity;
+        return new ResponseEntity<>(responseEntity,responseEntity.getStatus());
     }
 
     @PostMapping("/api/resetPassword")
     public ResponseEntity<Response> resetPassword(@Valid @RequestBody LoginRequest loginRequest) throws ObjectNotFoundException, BadRequestException {
-        log.info("resetPassword request received , userId : {} ", loginRequest.getUserId());
-        ResponseEntity<Response> responseEntity = authenticationService.resetPassword(loginRequest);
-        return responseEntity;
+        log.info("Request initiated to reset password for userId {} ", loginRequest.getUserId());
+        Response responseEntity = authenticationService.resetPassword(loginRequest);
+        return new ResponseEntity<>(responseEntity,responseEntity.getStatus());
     }
 
 
     @PostMapping("/forgetPassword")
     public ResponseEntity<Response> forgetPassword(@RequestParam String userId) throws ObjectNotFoundException, InternalServerErrorException, BadRequestException {
         log.info("Request initiated to forgetPassword for userId : {}", userId);
-        return authenticationService.forgetPassword(userId);
+        Response response = authenticationService.forgetPassword(userId);
+        return new ResponseEntity<>(response, response.getStatus());
     }
 
     @PostMapping("/verifyOtp")
