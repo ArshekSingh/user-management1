@@ -97,6 +97,7 @@ public class UserServiceImpl implements UserService, Constant {
         userDetailDto.setInsertedOn(DateTimeUtil.dateTimeToString(user.get().getInsertedOn()));
         userDetailDto.setUpdatedOn(DateTimeUtil.dateTimeToString(user.get().getUpdatedOn()));
         userDetailDto.setImeiNumber(user.get().getImeiNumber());
+        userDetailDto.setIsPasswordActive(user.get().getIsPasswordActive());
         return new Response(SUCCESS, userDetailDto, HttpStatus.OK);
     }
 
