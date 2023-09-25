@@ -18,13 +18,13 @@ public interface AuthenticationService {
 
     Response verify(String authToken) throws ObjectNotFoundException;
 
-    ResponseEntity<Response> logout(HttpServletRequest request);
+    Response logout(HttpServletRequest request);
 
-    ResponseEntity<Response> changePassword(LoginRequest password) throws ObjectNotFoundException, BadRequestException;
+    Response changePassword(LoginRequest password) throws ObjectNotFoundException, BadRequestException;
 
-    ResponseEntity<Response> resetPassword(LoginRequest loginRequest) throws ObjectNotFoundException, BadRequestException;
+    Response resetPassword(LoginRequest loginRequest) throws ObjectNotFoundException, BadRequestException;
 
-    ResponseEntity<Response> forgetPassword(String userId) throws ObjectNotFoundException, InternalServerErrorException, BadRequestException;
+    Response forgetPassword(String userId) throws ObjectNotFoundException, InternalServerErrorException, BadRequestException;
 
     ResponseEntity<Response> verifyForgetPasswordOtp(String otp, String userId) throws ObjectNotFoundException, BadRequestException;
 

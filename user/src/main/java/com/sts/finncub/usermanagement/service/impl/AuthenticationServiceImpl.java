@@ -353,13 +353,12 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
     }
 
     @Override
-    public ResponseEntity<Response> logout(HttpServletRequest request) {
-        Response response = new Response();
+    public Response logout(HttpServletRequest request) {
         UserSession userSession = userCredentialService.getUserSession();
         String tokenString = request.getHeader("Authorization");
         String token = tokenString.split(" ")[1];
         template.delete(KEY + ":" + token);
-        log.info("Logout successful");
+        log.info("Logout successful with userId {}",userSession.getUserId());
         UserLoginLog loginLog = userLoginLogRepository.findByUserIdAndTokenId(userSession.getUserId(), token);
         if (loginLog != null) {
             loginLog.setLogoutTime(LocalDateTime.now());
@@ -367,25 +366,28 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
             log.info("Token marked expired in db for TOKEN {}", token);
             revokePassword(userSession.getOrganizationId(),userSession.getUserId());
         }
-        return ResponseEntity.ok(response);
+        return new Response(RestMappingConstants.LOGGED_OUT,HttpStatus.OK);
     }
 
     @Override
-    public ResponseEntity<Response> changePassword(LoginRequest request) throws ObjectNotFoundException, BadRequestException {
-        Response response = new Response();
+    public Response changePassword(LoginRequest request) throws ObjectNotFoundException, BadRequestException {
         log.info("Fetching userSession for changePassword request, userId : {} ", request.getUserId());
         UserSession userSession = userCredentialService.getUserSession();
 //      validate password(Regex)
-        User user = userRepository.findByUserIdIgnoreCase(userSession.getUserId()).orElseThrow(() -> new ObjectNotFoundException("Invalid userId - " + userSession.getUserId(), HttpStatus.NOT_FOUND));
+        Optional<User> userOptional = userRepository.findByUserIdIgnoreCase(userSession.getUserId());
+        if(userOptional.isEmpty()){
+            return new Response("Invalid userId - " + userSession.getUserId(), HttpStatus.NOT_FOUND);
+        }
+        User user = userOptional.get();
 //      check current password
         if (!user.isPasswordCorrect(request.getPassword())) {
             log.error("Incorrect password supplied , userId : {}", request.getUserId());
-            throw new BadRequestException("Invalid current password", HttpStatus.BAD_REQUEST);
+            return new Response("Invalid current password", HttpStatus.BAD_REQUEST);
         }
         // check confirm password
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             log.error("Confirm password is not same as new password for userId : {} ", request.getUserId());
-            throw new BadRequestException("Confirm password is not same as new password", HttpStatus.BAD_REQUEST);
+            return new Response("Confirm password is not same as new password", HttpStatus.BAD_REQUEST);
         }
         String newPassword = passwordEncoder.encode(request.getNewPassword());
 //      check new password with 5 old password
@@ -397,7 +399,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
             for (String pass : oldPasswordList) {
                 if (BCrypt.checkpw(request.getNewPassword(), pass)) {
                     log.error("New password matches with recent passwords  , userId : {}", request.getUserId());
-                    throw new BadRequestException("New password matches with recent passwords ", HttpStatus.BAD_REQUEST);
+                    return new Response("New password matches with recent passwords ", HttpStatus.BAD_REQUEST);
                 }
             }
 //          Maintain old passwords
@@ -415,27 +417,28 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         revokePassword(userSession.getOrganizationId(),userSession.getUserId());
 //        userRedisRepository.deleteById(userSession.g);
         log.info("Password updated successfully , userId : {}", request.getUserId());
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setMessage(RestMappingConstants.CHANGED_PASSWORD);
-        return ResponseEntity.ok(response);
+        return new Response(RestMappingConstants.CHANGED_PASSWORD,HttpStatus.OK);
     }
 
     @Override
-    public ResponseEntity<Response> resetPassword(LoginRequest loginRequest) throws ObjectNotFoundException, BadRequestException {
-        Response response = new Response();
-        log.info("Fetching userSession for resetPassword request, userId : {} ", loginRequest.getUserId());
+    public Response resetPassword(LoginRequest loginRequest) throws ObjectNotFoundException, BadRequestException {
         UserSession userSession = userCredentialService.getUserSession();
-        User user = userRepository.findByUserIdIgnoreCase(loginRequest.getUserId()).orElseThrow(() -> new ObjectNotFoundException("Invalid userId - " + userSession.getUserId(), HttpStatus.NOT_FOUND));
-        if (loginRequest.getUserId().equalsIgnoreCase(loginRequest.getPassword())) {
+        log.info("Request received to resetPassword for userId {} by userId : {} ", loginRequest.getUserId(), userSession.getUserId());
+        Optional<User> optionalUser = userRepository.findByUserIdIgnoreCase(loginRequest.getUserId());
+        if (optionalUser.isEmpty()) {
+            log.error("User not found in system for userId: {} ", loginRequest.getUserId());
+            return new Response("Invalid userId - " + loginRequest.getUserId(), HttpStatus.NOT_FOUND);
+        }
+        User user= optionalUser.get();
+        if (loginRequest.getUserId().equalsIgnoreCase(loginRequest.getNewPassword())) {
             log.error("New password can't be userId  for user: {} ", loginRequest.getUserId());
-            throw new BadRequestException("New password can't be userId", HttpStatus.BAD_REQUEST);
+            return new Response("New password can't be userId", HttpStatus.BAD_REQUEST);
         }
-        if(StringUtils.hasText(loginRequest.getPassword()) && loginRequest.getPassword().length() < 8){
+        if(StringUtils.hasText(loginRequest.getNewPassword()) && loginRequest.getNewPassword().length() < 8){
             log.error("Password length should at least 8 character  for user: {} ", loginRequest.getUserId());
-            throw new BadRequestException("Password length should at least 8 character", HttpStatus.BAD_REQUEST);
+            return new Response("Password length should at least 8 character", HttpStatus.BAD_REQUEST);
         }
-        user.setPassword(passwordEncoder, loginRequest.getPassword());
+        user.setPassword(passwordEncoder, loginRequest.getNewPassword());
         user.setIsTemporaryPassword("Y");
         user.setIsPasswordActive("Y");
         user.setIsPasswordExpired(null);
@@ -445,34 +448,37 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         user.setUpdatedBy(userSession.getUserId());
         userRepository.save(user);
         log.info("Password reset was successful, userId : {}", loginRequest.getUserId());
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setMessage(RestMappingConstants.CHANGED_PASSWORD);
-        return ResponseEntity.ok(response);
+        return new Response(RestMappingConstants.CHANGED_PASSWORD, HttpStatus.OK);
     }
 
 
     @Override
-    public ResponseEntity<Response> forgetPassword(String userId) throws ObjectNotFoundException, InternalServerErrorException, BadRequestException {
+    public Response forgetPassword(String userId) throws ObjectNotFoundException, InternalServerErrorException {
         if (!StringUtils.hasText(userId)) {
-            throw new BadRequestException("userId can't be null", HttpStatus.BAD_REQUEST);
+            return new Response("UserId can't be null", HttpStatus.BAD_REQUEST);
         }
         String otp = RandomStringUtils.randomNumeric(6);
         String message = "Use OTP " + otp + " to reset your SVCL-FINNCUB password. Do not share the OTP or your number with anyone-SV Creditline Ltd";
-        User user = getUser(userId);
-        if (user != null && StringUtils.hasText(user.getMobileNumber())) {
+
+        Optional<User> optionalUser= userRepository.findByUserIdIgnoreCase(userId);
+        if(optionalUser.isEmpty()){
+            log.info("User not found in system for UserId {}",userId);
+            return new Response("Invalid userId - " + userId, HttpStatus.NOT_FOUND);
+        }
+        User user= optionalUser.get();
+        if (StringUtils.hasText(user.getMobileNumber())) {
             String mobileNumber = user.getMobileNumber();
             Long orgId = getActiveOrgId(userId);
             if (orgId == null) {
                 log.error("User {} is not mapped with organization ", userId);
-                return new ResponseEntity<>(new Response("User is not mapped with organization", HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
+                new Response("User is not mapped with organization", HttpStatus.BAD_REQUEST);
             }
             getVendorSmsLog(otp, message, user, mobileNumber, orgId);
             log.info("Otp sent to the registered mobile number");
-            return new ResponseEntity<>(new Response("Otp sent to the registered mobile number", HttpStatus.OK), HttpStatus.OK);
+            return new Response("Otp sent to the registered mobile number", HttpStatus.OK);
         } else {
             log.error("User details not found for userId {}", userId);
-            return new ResponseEntity<>(new Response("Your mobile is not mapped correctly", HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
+            return new Response("Your mobile is not mapped correctly", HttpStatus.BAD_REQUEST);
         }
     }
 
