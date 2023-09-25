@@ -34,18 +34,12 @@ public class AuthenticationController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Response> login(@RequestBody LoginRequest loginRequest) throws BadRequestException, ObjectNotFoundException, InternalServerErrorException {
-        Response response = new Response();
+    public ResponseEntity<Response> login(@RequestBody LoginRequest loginRequest, HttpServletRequest httpServletRequest) throws BadRequestException, ObjectNotFoundException, InternalServerErrorException {
         if (!loginRequest.isValid()) {
             log.error("Invalid Login Request received , userId : {}", loginRequest.getUserId());
-            throw new BadRequestException("Invalid userId / password", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new Response("Invalid userId / password", HttpStatus.BAD_REQUEST), HttpStatus.OK);
         }
-        response.setData(authenticationService.login(loginRequest));
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setMessage(RestMappingConstants.SUCCESS);
-
-        return ResponseEntity.ok(response);
+        return new ResponseEntity<>(new Response(RestMappingConstants.SUCCESS, authenticationService.login(loginRequest,httpServletRequest), HttpStatus.OK), HttpStatus.OK);
     }
 
     // API replaces with User Controller Add user API
@@ -100,7 +94,7 @@ public class AuthenticationController {
     }
 
     @PostMapping(value = "/callback-mail")
-    public Response sendCallbackMail(@RequestBody CallbackMailRequest callbackMailRequest) throws BadRequestException {
+    public Response sendCallbackMail(@RequestBody CallbackMailRequest callbackMailRequest) {
         return authenticationService.sendCallbackMail(callbackMailRequest);
     }
 }
