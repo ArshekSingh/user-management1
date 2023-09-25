@@ -17,8 +17,8 @@ import java.math.BigDecimal;
 public class LoginRequest {
     private String userId;
     private String password;
-    @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]*$",message = "Password should contain alpha-numeric values")
-    @Size(min = 8,max = 16,message = "Password length should at least 8 and maximum of 16 characters")
+    @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]*$", message = "Password should contain at-least one upper case/lower case number and special character")
+    @Size(min = 8, max = 16, message = "Password length should at least 8 and maximum of 16 characters")
     private String newPassword;
     private String applicationVersion;
     private String ipAddress;
@@ -28,11 +28,13 @@ public class LoginRequest {
     private String loginMode;
     private BigDecimal latitude;
     private BigDecimal longitude;
+    @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]*$", message = "Password should contain at-least one upper case/lower case number and special character")
+    @Size(min = 8, max = 16, message = "Password length should at least 8 and maximum of 16 characters")
     private String confirmPassword;
 
     @JsonIgnore
     public boolean isValid(){
-        log.info("Validating signup request data");
+        log.info("Validating login request data");
         return (userId != null && !userId.isEmpty()) && (password != null && !password.isEmpty());
     }
 }
