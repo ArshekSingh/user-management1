@@ -4,7 +4,10 @@ import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.exception.InternalServerErrorException;
 import com.sts.finncub.core.exception.ObjectNotFoundException;
 import com.sts.finncub.core.response.Response;
-import com.sts.finncub.usermanagement.request.*;
+import com.sts.finncub.usermanagement.request.CallbackMailRequest;
+import com.sts.finncub.usermanagement.request.CreateNewPasswordRequest;
+import com.sts.finncub.usermanagement.request.LoginRequest;
+import com.sts.finncub.usermanagement.request.SignupRequest;
 import com.sts.finncub.usermanagement.response.LoginResponse;
 import com.sts.finncub.usermanagement.response.SignupResponse;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 import javax.servlet.http.HttpServletRequest;
 
 public interface AuthenticationService {
-    LoginResponse login(LoginRequest loginRequest) throws ObjectNotFoundException, BadRequestException, InternalServerErrorException;
+    LoginResponse login(LoginRequest loginRequest, HttpServletRequest httpServletRequest) throws ObjectNotFoundException, BadRequestException, InternalServerErrorException;
 
     SignupResponse signup(SignupRequest signupRequest) throws BadRequestException;
 

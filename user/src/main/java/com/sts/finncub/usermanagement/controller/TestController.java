@@ -1,9 +1,8 @@
 package com.sts.finncub.usermanagement.controller;
 
 import com.sts.finncub.core.response.Response;
+import com.sts.finncub.usermanagement.request.IPDetails;
 import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -59,12 +58,4 @@ public class TestController {
         }
         return new Response("OK", HttpStatus.OK);
     }
-}
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-class IPDetails {
-    private String type;
-    private String ip;
 }
