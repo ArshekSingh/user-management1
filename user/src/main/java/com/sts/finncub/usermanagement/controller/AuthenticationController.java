@@ -66,7 +66,9 @@ public class AuthenticationController {
     public ResponseEntity<Response> changePassword(HttpServletRequest httpServletRequest,@Valid @RequestBody LoginRequest request) throws ObjectNotFoundException, BadRequestException {
         log.info("changePassword request received , userId : {} ", request.getUserId());
         Response responseEntity = authenticationService.changePassword(request);
-        authenticationService.logout(httpServletRequest);
+        if(responseEntity.getStatus().is2xxSuccessful()) {
+            authenticationService.logout(httpServletRequest);
+        }
         return new ResponseEntity<>(responseEntity,responseEntity.getStatus());
     }
 
