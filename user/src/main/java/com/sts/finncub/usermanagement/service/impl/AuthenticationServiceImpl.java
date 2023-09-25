@@ -119,6 +119,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         response.add(new IPDetails("X-Forwarded-For", request.getHeader("X-Forwarded-For")));
         response.add(new IPDetails("REMOTE_ADDR", request.getRemoteAddr()));
         log.info("IP details => {} for userId {}", response, loginRequest.getUserId());
+        userLoginLog.setDeviceJson(new Gson().toJson(response));
         getIP(loginRequest.getUserId());
         try {
             Gson gson = new Gson();
