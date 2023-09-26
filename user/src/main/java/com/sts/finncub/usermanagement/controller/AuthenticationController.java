@@ -34,18 +34,12 @@ public class AuthenticationController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Response> login(@RequestBody LoginRequest loginRequest) throws BadRequestException, ObjectNotFoundException, InternalServerErrorException {
-        Response response = new Response();
+    public ResponseEntity<Response> login(@RequestBody LoginRequest loginRequest, HttpServletRequest httpServletRequest) throws BadRequestException, ObjectNotFoundException, InternalServerErrorException {
         if (!loginRequest.isValid()) {
             log.error("Invalid Login Request received , userId : {}", loginRequest.getUserId());
-            throw new BadRequestException("Invalid userId / password", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new Response("Invalid userId / password", HttpStatus.BAD_REQUEST), HttpStatus.OK);
         }
-        response.setData(authenticationService.login(loginRequest));
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setMessage(RestMappingConstants.SUCCESS);
-
-        return ResponseEntity.ok(response);
+        return new ResponseEntity<>(new Response(RestMappingConstants.SUCCESS, authenticationService.login(loginRequest,httpServletRequest), HttpStatus.OK), HttpStatus.OK);
     }
 
     // API replaces with User Controller Add user API
@@ -58,34 +52,33 @@ public class AuthenticationController {
 
     @PostMapping("/api/logout")
     public ResponseEntity<Response> logout(HttpServletRequest request) {
-        Response response = new Response();
-        authenticationService.logout(request);
-        response.setCode(HttpStatus.OK.value());
-        response.setStatus(HttpStatus.OK);
-        response.setMessage(RestMappingConstants.LOGGED_OUT);
-        return ResponseEntity.ok(response);
+        Response response = authenticationService.logout(request);
+        return new ResponseEntity<>(response,response.getStatus());
     }
 
     @PostMapping("/api/changePassword")
     public ResponseEntity<Response> changePassword(HttpServletRequest httpServletRequest,@Valid @RequestBody LoginRequest request) throws ObjectNotFoundException, BadRequestException {
         log.info("changePassword request received , userId : {} ", request.getUserId());
-        ResponseEntity<Response> responseEntity = authenticationService.changePassword(request);
-        authenticationService.logout(httpServletRequest);
-        return responseEntity;
+        Response responseEntity = authenticationService.changePassword(request);
+        if(responseEntity.getStatus().is2xxSuccessful()) {
+            authenticationService.logout(httpServletRequest);
+        }
+        return new ResponseEntity<>(responseEntity,responseEntity.getStatus());
     }
 
     @PostMapping("/api/resetPassword")
     public ResponseEntity<Response> resetPassword(@Valid @RequestBody LoginRequest loginRequest) throws ObjectNotFoundException, BadRequestException {
-        log.info("resetPassword request received , userId : {} ", loginRequest.getUserId());
-        ResponseEntity<Response> responseEntity = authenticationService.resetPassword(loginRequest);
-        return responseEntity;
+        log.info("Request initiated to reset password for userId {} ", loginRequest.getUserId());
+        Response responseEntity = authenticationService.resetPassword(loginRequest);
+        return new ResponseEntity<>(responseEntity,responseEntity.getStatus());
     }
 
 
     @PostMapping("/forgetPassword")
     public ResponseEntity<Response> forgetPassword(@RequestParam String userId) throws ObjectNotFoundException, InternalServerErrorException, BadRequestException {
         log.info("Request initiated to forgetPassword for userId : {}", userId);
-        return authenticationService.forgetPassword(userId);
+        Response response = authenticationService.forgetPassword(userId);
+        return new ResponseEntity<>(response, response.getStatus());
     }
 
     @PostMapping("/verifyOtp")
@@ -101,7 +94,7 @@ public class AuthenticationController {
     }
 
     @PostMapping(value = "/callback-mail")
-    public Response sendCallbackMail(@RequestBody CallbackMailRequest callbackMailRequest) throws BadRequestException {
+    public Response sendCallbackMail(@RequestBody CallbackMailRequest callbackMailRequest) {
         return authenticationService.sendCallbackMail(callbackMailRequest);
     }
 }
