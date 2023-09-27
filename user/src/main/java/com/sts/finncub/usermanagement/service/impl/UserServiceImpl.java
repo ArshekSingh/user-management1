@@ -465,4 +465,43 @@ public class UserServiceImpl implements UserService, Constant {
         }
         return new Response(SUCCESS, userAssembler.assembleUser(userBranchMapping), HttpStatus.OK);
     }
+
+    @Override
+    public Response updateUserForEmployee(UserRequest request) {
+        UserSession userSession = userCredentialService.getUserSession();
+        if (!StringUtils.hasText(request.getUserId())) {
+            return new Response("Invalid User Id", HttpStatus.BAD_REQUEST);
+        }
+        Optional<User> user = userRepository.findByUserId(request.getUserId());
+        if (user.isEmpty()) {
+            return new Response("User Not Found", HttpStatus.BAD_REQUEST);
+        }
+        userDetailsUpdate(request, userSession, user.get());
+        return new Response(SUCCESS, HttpStatus.OK);
+    }
+
+    private void userDetailsUpdate(UserRequest request, UserSession userSession, User userDetail) {
+        userDetail.setName(request.getName());
+        userDetail.setMobileNumber(request.getMobileNumber());
+        userDetail.setType(request.getType());
+        if (!userDetail.getIsActive().equalsIgnoreCase(request.getIsActive())) {
+            if ("Y".equalsIgnoreCase(request.getIsActive())) {
+                userDetail.setDisabledOn(null);
+            } else {
+                userDetail.setDisabledOn(LocalDateTime.now());
+            }
+        }
+        userDetail.setBcId(StringUtils.hasText(request.getBcId()) ? request.getBcId() : "");
+        if (StringUtils.hasText(request.getIsActive())) {
+            if (request.getIsActive().equals("N")) {
+                userDetail.setIsActive(request.getIsActive());
+                deleteTokenByUserId(userDetail);
+            } else {
+                userDetail.setIsActive(request.getIsActive());
+            }
+        }
+        userDetail.setUpdatedBy(userSession.getUserId());
+        userDetail.setUpdatedOn(LocalDateTime.now());
+        userRepository.save(userDetail);
+    }
 }

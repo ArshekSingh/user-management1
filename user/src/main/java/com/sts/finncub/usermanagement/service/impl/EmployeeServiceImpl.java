@@ -612,7 +612,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             }
         }
         request.setBcId(stringBuilder.toString());
-        userService.updateUserDetails(request);
+        userService.updateUserForEmployee(request);
     }
 
     private static boolean isFieldsUpdated(EmployeeRequest request, Employee employee) {
