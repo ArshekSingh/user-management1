@@ -54,7 +54,7 @@ public class RequestFilter implements Filter {
                         setSecurityContext(userSession);
                     } else throw new UnauthorizedException(RestMappingConstants.AUTHENTICATION_FAILED);
                 } catch (Exception exception) {
-                    log.warn("Request is not valid - exception {}" + exception.getMessage());
+                    log.warn("Request is not valid - exception {}", exception.getMessage());
                     isValidRequest = false;
                 }
             } else if (StringUtils.hasText(accessKey) && StringUtils.hasText(secretKey)) {
