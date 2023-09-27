@@ -593,7 +593,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     private void updateInUserMaster(String userId, EmployeeRequest employeeRequest, Boolean isActive) throws BadRequestException{
         UserRequest request = new UserRequest();
         request.setUserId(userId);
-        request.setName(employeeRequest.getFirstName());
+        request.setName(employeeRequest.getFirstName() + " "+employeeRequest.getMiddleName() + " " + employeeRequest.getLastName());
         request.setMobileNumber(employeeRequest.getPersonalMob() != null ? String.valueOf(employeeRequest.getPersonalMob()) : "");
         request.setType("EMP");
         if (Boolean.TRUE.equals(isActive)) {
