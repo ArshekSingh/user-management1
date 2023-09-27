@@ -695,22 +695,35 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         }
         if (StringUtils.hasText(request.getAadharCard())) {
             List<ClientMaster> clientMasterAadharNumber = clientMasterRepository.findByClientMasterPK_OrgIdAndAadharCardNumberOrig(userCredentialService.getUserSession().getOrganizationId(), request.getAadharCard());
-            if(!CollectionUtils.isEmpty(clientMasterAadharNumber)) {
+            if (!CollectionUtils.isEmpty(clientMasterAadharNumber)) {
                 List<String> clientNames = clientMasterAadharNumber.stream().map(o -> o.getClientMasterPK().getClientId() + o.getFirstName()).collect(Collectors.toList());
-                if(!CollectionUtils.isEmpty(clientNames)) {
+                if (!CollectionUtils.isEmpty(clientNames)) {
                     messages.add(EXISTING_CLIENT_MSG + ": " + clientNames + "and Aadhaar-" + request.getAadharCard() + s);
                 }
             }
-            List<ClientMasterDraft> clientMasterDraftAadhaarNumber =clientMasterDraftRepository.findByClientMasterDraftPK_OrgIdAndAadharCardNumberOrig(userCredentialService.getUserSession().getOrganizationId(), request.getAadharCard());
-            if(!CollectionUtils.isEmpty(clientMasterDraftAadhaarNumber)) {
-            List<String> clientNames = clientMasterDraftAadhaarNumber.stream().map(o-> o.getClientMasterDraftPK().getClientId() + o.getFirstName()).collect(Collectors.toList());
-            if(!CollectionUtils.isEmpty(clientNames)) {
-                messages.add(EXISTING_CLIENT_MSG + ": " + clientNames + "and Aadhaar-" + request.getAadharCard() + s);
-            }
+            List<ClientMasterDraft> clientMasterDraftAadhaarNumber = clientMasterDraftRepository.findByClientMasterDraftPK_OrgIdAndAadharCardNumberOrig(userCredentialService.getUserSession().getOrganizationId(), request.getAadharCard());
+            if (!CollectionUtils.isEmpty(clientMasterDraftAadhaarNumber)) {
+                List<String> clientNames = clientMasterDraftAadhaarNumber.stream().map(o -> o.getClientMasterDraftPK().getClientId() + o.getFirstName()).collect(Collectors.toList());
+                if (!CollectionUtils.isEmpty(clientNames)) {
+                    messages.add(EXISTING_CLIENT_MSG + ": " + clientNames + "and Aadhaar-" + request.getAadharCard() + s);
+                }
             }
         }
-        if(StringUtils.hasText(request.getPancardNo())) {
-//            clientMasterRepository.findByClientMasterPK_OrgIdAndKycId()
+        if (StringUtils.hasText(request.getPancardNo())) {
+            List<ClientMaster> clientMasterPanNo = clientMasterRepository.findByClientMasterPK_OrgIdAndKycId(userCredentialService.getUserSession().getOrganizationId(), request.getPancardNo());
+            if (!CollectionUtils.isEmpty(clientMasterPanNo)) {
+                List<String> clientNames = clientMasterPanNo.stream().map(o -> o.getClientMasterPK().getClientId() + o.getFirstName()).collect(Collectors.toList());
+                if (!CollectionUtils.isEmpty(clientNames)) {
+                    messages.add(EXISTING_CLIENT_MSG + ": " + clientNames + "and Pan-" + request.getPancardNo() + s);
+                }
+            }
+            List<ClientMasterDraft> clientMasterDraftPanNo = clientMasterDraftRepository.findByClientMasterDraftPK_OrgIdAndKycId(userCredentialService.getUserSession().getOrganizationId(), request.getPancardNo());
+            if (!CollectionUtils.isEmpty(clientMasterDraftPanNo)) {
+                List<String> clientNames = clientMasterDraftPanNo.stream().map(o -> o.getClientMasterDraftPK().getClientId() + o.getFirstName()).collect(Collectors.toList());
+                if (!CollectionUtils.isEmpty(clientNames)) {
+                    messages.add(EXISTING_CLIENT_MSG + ": " + clientNames + "and Pan-" + request.getPancardNo() + s);
+                }
+            }
         }
         if (!CollectionUtils.isEmpty(messages)) {
             return new Response(SUCCESS, messages, HttpStatus.OK);
