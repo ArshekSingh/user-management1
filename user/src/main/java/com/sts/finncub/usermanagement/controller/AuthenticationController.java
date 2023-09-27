@@ -54,7 +54,7 @@ public class AuthenticationController {
 
     @PostMapping("/api/changePassword")
     public ResponseEntity<Response> changePassword(HttpServletRequest httpServletRequest, @Valid @RequestBody LoginRequest request) throws BadRequestException {
-        log.info("changePassword request received , userId : {} ", request.getUserId());
+        log.info("Change password request received!");
         Response responseEntity = authenticationService.changePassword(request);
         if (responseEntity.getStatus().is2xxSuccessful()) {
             authenticationService.logout(httpServletRequest);
