@@ -224,6 +224,9 @@ public class UserServiceImpl implements UserService, Constant {
         userDetail.setUpdatedBy(userSession.getUserId());
         userDetail.setUpdatedOn(LocalDateTime.now());
         userDetail.setIsPasswordActive(request.getIsPasswordActive());
+        if("Y".equalsIgnoreCase(request.getIsPasswordActive())){
+            userDetail.setLoginAttempt(0);
+        }
         userRepository.save(userDetail);
     }
 
