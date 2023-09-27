@@ -69,9 +69,9 @@ public class UserServiceImpl implements UserService, Constant {
                 UserDetailDto userDetailDto = new UserDetailDto();
                 BeanUtils.copyProperties(user, userDetailDto);
                 userDetailDto.setBcId(user.getBcId());
-                userDetailDto.setPasswordResetDate(DateTimeUtil.dateToString(user.getPasswordResetDate()));
-                userDetailDto.setDisabledOn(DateTimeUtil.dateToString(user.getDisabledOn()));
-                userDetailDto.setApprovedOn(DateTimeUtil.dateToString(user.getApprovedOn()));
+                userDetailDto.setPasswordResetDate(DateTimeUtil.dateTimeToString(user.getPasswordResetDate()));
+                userDetailDto.setDisabledOn(DateTimeUtil.dateTimeToString(user.getDisabledOn()));
+                userDetailDto.setApprovedOn(DateTimeUtil.dateTimeToString(user.getApprovedOn()));
                 userDetailDto.setInsertedOn(DateTimeUtil.dateTimeToString(user.getInsertedOn()));
                 userDetailDto.setUpdatedOn(DateTimeUtil.dateTimeToString(user.getUpdatedOn()));
                 userDetailDtos.add(userDetailDto);
@@ -92,8 +92,8 @@ public class UserServiceImpl implements UserService, Constant {
         UserDetailDto userDetailDto = new UserDetailDto();
         BeanUtils.copyProperties(user.get(), userDetailDto);
         userDetailDto.setBcId(user.get().getBcId());
-        userDetailDto.setDisabledOn(DateTimeUtil.dateToString(user.get().getDisabledOn()));
-        userDetailDto.setApprovedOn(DateTimeUtil.dateToString(user.get().getApprovedOn()));
+        userDetailDto.setDisabledOn(DateTimeUtil.dateTimeToString(user.get().getDisabledOn()));
+        userDetailDto.setApprovedOn(DateTimeUtil.dateTimeToString(user.get().getApprovedOn()));
         userDetailDto.setInsertedOn(DateTimeUtil.dateTimeToString(user.get().getInsertedOn()));
         userDetailDto.setUpdatedOn(DateTimeUtil.dateTimeToString(user.get().getUpdatedOn()));
         userDetailDto.setImeiNumber(user.get().getImeiNumber());
@@ -118,7 +118,7 @@ public class UserServiceImpl implements UserService, Constant {
         User user = new User();
         BeanUtils.copyProperties(request, user);
         user.setBcId(request.getBcId());
-        user.setPasswordResetDate(LocalDate.now());
+        user.setPasswordResetDate(LocalDateTime.now());
         user.setType(request.getType());
         user.setUserId(request.getUserId());
         user.setIsPasswordActive("N");
@@ -186,11 +186,11 @@ public class UserServiceImpl implements UserService, Constant {
     public Response updateUserDetails(UserRequest request) throws BadRequestException {
         UserSession userSession = userCredentialService.getUserSession();
         if (!StringUtils.hasText(request.getUserId())) {
-            throw new BadRequestException("Invalid User Id", HttpStatus.BAD_REQUEST);
+            return new Response("Invalid User Id", HttpStatus.BAD_REQUEST);
         }
         Optional<User> user = userRepository.findByUserId(request.getUserId());
         if (user.isEmpty()) {
-            throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
+            return new Response("User Not Found", HttpStatus.BAD_REQUEST);
         }
         updateUser(request, userSession, user.get());
         return new Response(SUCCESS, HttpStatus.OK);
@@ -205,7 +205,7 @@ public class UserServiceImpl implements UserService, Constant {
             if ("Y".equalsIgnoreCase(request.getIsActive())) {
                 userDetail.setDisabledOn(null);
             } else {
-                userDetail.setDisabledOn(LocalDate.now());
+                userDetail.setDisabledOn(LocalDateTime.now());
             }
         }
         userDetail.setBcId(StringUtils.hasText(request.getBcId()) ? request.getBcId() : "");
