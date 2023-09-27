@@ -343,7 +343,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         final Long organizationId = userSession.getOrganizationId();
         //todo check in sign up
         if (isValid(signupRequest.getPassword())) {
-            if (isContainSpecificString(signupRequest.getPassword().toLowerCase(), "SVCL".toLowerCase())) {
+            if (isNotContainSpecificString(signupRequest.getPassword().toLowerCase(), "SVCL".toLowerCase())) {
                 newUser.setPassword(passwordEncoder, signupRequest.getPassword());
             } else {
 //                return new Response(passwordPolicyMsg, HttpStatus.BAD_REQUEST);
@@ -399,7 +399,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
 
     @Override
     public Response changePassword(LoginRequest request) throws BadRequestException {
-        log.info("Fetching userSession for changePassword request, userId : {} ", request.getUserId());
+        log.info("Fetching userSession for changePassword request");
         UserSession userSession = userCredentialService.getUserSession();
         Optional<User> userOptional = userRepository.findByUserIdIgnoreCase(userSession.getUserId());
         if (userOptional.isEmpty()) {
@@ -418,12 +418,15 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         }
         String newPassword;
         if (isValid(request.getNewPassword())) {
-            final String userName = user.getName().split(" ")[0];
-            if (isContainSpecificString(request.getNewPassword().toLowerCase(), userName.toLowerCase()) || isContainSpecificString(request.getNewPassword().toLowerCase(), "SVCL".toLowerCase())) {
-                newPassword = passwordEncoder.encode(request.getNewPassword());
-            } else {
-                return new Response(passwordPolicyMsg, HttpStatus.BAD_REQUEST);
+            String[] strSplit = user.getName().split(" ");
+            ArrayList<String> strList = new ArrayList<>(Arrays.asList(strSplit));
+            strList.add("SVCL");
+            for (String s : strList) {
+                if (!isNotContainSpecificString(request.getNewPassword().toLowerCase(), s.toLowerCase())) {
+                    return new Response(passwordPolicyMsg, HttpStatus.BAD_REQUEST);
+                }
             }
+            newPassword = passwordEncoder.encode(request.getNewPassword());
         } else {
             return new Response(passwordPolicyMsg, HttpStatus.BAD_REQUEST);
         }
@@ -463,7 +466,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         return result.isValid();
     }
 
-    public boolean isContainSpecificString(String password, String userName) {
+    public boolean isNotContainSpecificString(String password, String userName) {
         Rule rule = new UsernameRule();
         PasswordValidator validator = new PasswordValidator(Collections.singletonList(rule));
         PasswordData passwordToMatch = new PasswordData(password);
@@ -495,12 +498,15 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
             return new Response("Confirm password is not same as new password", HttpStatus.BAD_REQUEST);
         }
         if (isValid(loginRequest.getNewPassword())) {
-            final String userName = user.getName().split(" ")[0];
-            if (isContainSpecificString(loginRequest.getNewPassword().toLowerCase(), userName.toLowerCase()) || isContainSpecificString(loginRequest.getNewPassword().toLowerCase(), "SVCL".toLowerCase())) {
-                user.setPassword(passwordEncoder, loginRequest.getNewPassword());
-            } else {
-                return new Response(passwordPolicyMsg, HttpStatus.BAD_REQUEST);
+            String[] strSplit = user.getName().split(" ");
+            ArrayList<String> strList = new ArrayList<>(Arrays.asList(strSplit));
+            strList.add("SVCL");
+            for (String s : strList) {
+                if (!isNotContainSpecificString(loginRequest.getNewPassword().toLowerCase(), s.toLowerCase())) {
+                    return new Response(passwordPolicyMsg, HttpStatus.BAD_REQUEST);
+                }
             }
+            user.setPassword(passwordEncoder, loginRequest.getNewPassword());
         } else {
             return new Response(passwordPolicyMsg, HttpStatus.BAD_REQUEST);
         }
@@ -660,7 +666,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         String newPassword;
         if (isValid(createNewPasswordRequest.getNewPassword())) {
             final String userName = user.getName().split(" ")[0];
-            if (isContainSpecificString(createNewPasswordRequest.getNewPassword().toLowerCase(), userName.toLowerCase()) || isContainSpecificString(createNewPasswordRequest.getNewPassword().toLowerCase(), "SVCL".toLowerCase())) {
+            if (isNotContainSpecificString(createNewPasswordRequest.getNewPassword().toLowerCase(), userName.toLowerCase()) || isNotContainSpecificString(createNewPasswordRequest.getNewPassword().toLowerCase(), "SVCL".toLowerCase())) {
                 newPassword = passwordEncoder.encode(createNewPasswordRequest.getNewPassword());
             } else {
                 return new ResponseEntity<>(new Response(passwordPolicyMsg, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
