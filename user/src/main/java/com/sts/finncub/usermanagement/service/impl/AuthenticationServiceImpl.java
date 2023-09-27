@@ -436,8 +436,8 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
             if (!CollectionUtils.isEmpty(Arrays.asList(oldPasswordList))) {
                 for (String pass : oldPasswordList) {
                     if (StringUtils.hasText(pass) && (BCrypt.checkpw(request.getNewPassword(), pass))) {
-                        log.error("New password matches with recent passwords , userId : {}", request.getUserId());
-                        return new Response("New password matches with recent passwords ", HttpStatus.BAD_REQUEST);
+                        log.error("New password matches with recent passwords, userId : {}", request.getUserId());
+                        return new Response("New password matches with recent passwords", HttpStatus.BAD_REQUEST);
                     }
                 }
             }
@@ -473,7 +473,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
     }
 
     @Override
-    public Response resetPassword(LoginRequest loginRequest) {
+    public Response resetPassword(LoginRequest loginRequest) throws BadRequestException {
         UserSession userSession = userCredentialService.getUserSession();
         log.info("Request received to resetPassword for userId {} by userId : {} ", loginRequest.getUserId(), userSession.getUserId());
         Optional<User> optionalUser = userRepository.findByUserIdIgnoreCase(loginRequest.getUserId());
@@ -504,6 +504,22 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         } else {
             return new Response(passwordPolicyMsg, HttpStatus.BAD_REQUEST);
         }
+        //      check new password with 5 old password
+        String oldPassword = user.getOldPassword();
+        if (oldPassword == null) {
+            oldPassword = user.getPassword();
+        } else {
+            String[] oldPasswordList = oldPassword.split(PASSWORD_SEPARATOR);
+            for (String pass : oldPasswordList) {
+                if (BCrypt.checkpw(loginRequest.getNewPassword(), pass)) {
+                    log.error("New password matches with recent passwords, userId : {}", loginRequest.getUserId());
+                    return new Response("New password matches with recent passwords", HttpStatus.BAD_REQUEST);
+                }
+            }
+//          Maintain old passwords
+            oldPassword = maintainPasswordHistory.maintainOldPasswordHistory(oldPasswordList, oldPassword, PASSWORD_SEPARATOR, loginRequest.getPassword());
+        }
+        user.setOldPassword(oldPassword);
         user.setIsTemporaryPassword("Y");
         user.setIsPasswordActive("Y");
         user.setIsPasswordExpired(null);
@@ -635,10 +651,10 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
             log.error("New password can't be userId  for user: {} ", createNewPasswordRequest.getUserId());
             throw new BadRequestException("New password can't be userId", HttpStatus.BAD_REQUEST);
         }
-        if (StringUtils.hasText(createNewPasswordRequest.getNewPassword()) && createNewPasswordRequest.getNewPassword().length() < 8) {
-            log.error("Password length should at least 8 character  for user: {} ", createNewPasswordRequest.getUserId());
-            throw new BadRequestException("Password length should at least 8 character", HttpStatus.BAD_REQUEST);
-        }
+//        if (StringUtils.hasText(createNewPasswordRequest.getNewPassword()) && createNewPasswordRequest.getNewPassword().length() < 8) {
+//            log.error("Password length should at least 8 character  for user: {} ", createNewPasswordRequest.getUserId());
+//            throw new BadRequestException("Password length should at least 8 character", HttpStatus.BAD_REQUEST);
+//        }
         User user = getUser(createNewPasswordRequest.getUserId());
 
         String newPassword;
@@ -660,8 +676,8 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
             String[] oldPasswordList = oldPassword.split(PASSWORD_SEPARATOR);
             for (String pass : oldPasswordList) {
                 if (BCrypt.checkpw(createNewPasswordRequest.getNewPassword(), pass)) {
-                    log.error("New password matches with recent passwords  , userId : {}", createNewPasswordRequest.getUserId());
-                    throw new BadRequestException("New password matches with recent passwords ", HttpStatus.BAD_REQUEST);
+                    log.error("New password matches with recent passwords, userId : {}", createNewPasswordRequest.getUserId());
+                    throw new BadRequestException("New password matches with recent passwords", HttpStatus.BAD_REQUEST);
                 }
             }
 //          Maintain old passwords
