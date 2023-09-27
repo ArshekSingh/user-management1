@@ -693,6 +693,25 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + ": " + employeesWithBankNumber.getEmployeeCode() + ", employee Name : " + employeesWithBankNumber.getFirstName() + ", " + "bank_account_number : " + request.getBankAccNo() + " and ifsc_code : " + request.getIfscCode() + ", you cannot add existing employee");
             }
         }
+        if (StringUtils.hasText(request.getAadharCard())) {
+            List<ClientMaster> clientMasterAadharNumber = clientMasterRepository.findByClientMasterPK_OrgIdAndAadharCardNumberOrig(userCredentialService.getUserSession().getOrganizationId(), request.getAadharCard());
+            if(!CollectionUtils.isEmpty(clientMasterAadharNumber)) {
+                List<String> clientNames = clientMasterAadharNumber.stream().map(o -> o.getClientMasterPK().getClientId() + o.getFirstName()).collect(Collectors.toList());
+                if(!CollectionUtils.isEmpty(clientNames)) {
+                    messages.add(EXISTING_CLIENT_MSG + ": " + clientNames + "and Aadhaar-" + request.getAadharCard() + s);
+                }
+            }
+            List<ClientMasterDraft> clientMasterDraftAadhaarNumber =clientMasterDraftRepository.findByClientMasterDraftPK_OrgIdAndAadharCardNumberOrig(userCredentialService.getUserSession().getOrganizationId(), request.getAadharCard());
+            if(!CollectionUtils.isEmpty(clientMasterDraftAadhaarNumber)) {
+            List<String> clientNames = clientMasterDraftAadhaarNumber.stream().map(o-> o.getClientMasterDraftPK().getClientId() + o.getFirstName()).collect(Collectors.toList());
+            if(!CollectionUtils.isEmpty(clientNames)) {
+                messages.add(EXISTING_CLIENT_MSG + ": " + clientNames + "and Aadhaar-" + request.getAadharCard() + s);
+            }
+            }
+        }
+        if(StringUtils.hasText(request.getPancardNo())) {
+//            clientMasterRepository.findByClientMasterPK_OrgIdAndKycId()
+        }
         if (!CollectionUtils.isEmpty(messages)) {
             return new Response(SUCCESS, messages, HttpStatus.OK);
         }
