@@ -80,7 +80,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
 
     private final RestTemplate restTemplate;
 
-    private static final String passwordPolicyMsg = "Password Guidelines : <br> - Minimum 8 characters. <br> - Include uppercase, lowercase, numbers, and special characters. <br> - Avoid numerical or alphabetical sequences. <br> - Avoid common patterns like qwerty or whitespace. <br> - Don't use personal or organizational information.";
+    private static final String passwordPolicyMsg = "Password expectations failed!";
 
     @Autowired
     public AuthenticationServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserRedisRepository userRedisRepository, UserRoleMappingRepository userRoleMappingRepository, UserCredentialService userCredentialService, UserOrganizationMappingRepository userOrganizationMappingRepository, BranchMasterRepository branchMasterRepository, UserLoginLogRepository userLoginLogRepository, EmployeeRepository employeeRepository, MiscellaneousServiceRepository miscellaneousServiceRepository, MobileAppConfig mobileAppConfig, RedisTemplate<String, Object> template, OrganizationRepository organizationRepository, VendorSmsLogRepository vendorSmsLogRepository, SmsProperties smsProperties, SmsUtil smsUtil, JavaMailSender mailSender, MaintainPasswordHistory maintainPasswordHistory, RestTemplate restTemplate) {
