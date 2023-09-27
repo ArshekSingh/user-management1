@@ -512,7 +512,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         user.setUpdatedOn(LocalDateTime.now());
         user.setUpdatedBy(userSession.getUserId());
         userRepository.save(user);
-        revokeUserSessionFromRedis(userSession.getOrganizationId(), userSession.getUserId());
+        revokeUserSessionFromRedis(userSession.getOrganizationId(), loginRequest.getUserId());
         log.info("Password successfully reset for userId => {} by userId => {}", loginRequest.getUserId(), userSession.getUserId());
         return new Response(RestMappingConstants.CHANGED_PASSWORD, HttpStatus.OK);
     }
