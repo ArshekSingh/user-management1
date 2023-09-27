@@ -31,7 +31,7 @@ public class UserAnnouncementBranchMapping {
     private final UserAnnouncementMappingRepository userAnnouncementMappingRepository;
 
     @Async
-    public void insertUserAnnouncementBranchMapping(UserAnnouncement userAnnouncement, List<UserBranchMapping> userBranchMappingList, UserAnnouncementRequest userAnnouncementRequest, List<User> users) throws FirebaseMessagingException {
+    public void insertUserAnnouncementBranchMapping(UserAnnouncement userAnnouncement, List<Object[]> userBranchMappingList, UserAnnouncementRequest userAnnouncementRequest, List<User> users) throws FirebaseMessagingException {
         if (!CollectionUtils.isEmpty(users)) {
             log.info("Going to create user notification for users {}", userAnnouncementRequest.getUserId());
             for (User user : users) {
@@ -49,15 +49,15 @@ public class UserAnnouncementBranchMapping {
         } else {
             log.info("Going to create user notification for branches {}", userAnnouncementRequest.getBranchId());
             if (!CollectionUtils.isEmpty(userBranchMappingList)) {
-                for (UserBranchMapping userBranchMapping : userBranchMappingList) {
+                for (Object[] userBranchMapping : userBranchMappingList) {
                     UserAnnouncementMapping userAnnouncementMapping = new UserAnnouncementMapping();
                     userAnnouncementMapping.setAnnouncementId(userAnnouncement.getAnnouncementId());
-                    userAnnouncementMapping.setUserId(userBranchMapping.getUser().getUserId());
+                    userAnnouncementMapping.setUserId((String) userBranchMapping[0]);
                     userAnnouncementMapping.setIsRead("N");
                     userAnnouncementMapping.setInsertedBy(userAnnouncement.getInsertedBy());
                     userAnnouncementMapping.setOrgId(userAnnouncement.getOrgId());
                     userAnnouncementMappingRepository.saveAndFlush(userAnnouncementMapping);
-                    Optional<User> user = userRepository.findByUserId(userBranchMapping.getUser().getUserId());
+                    Optional<User> user = userRepository.findByUserId((String) userBranchMapping[0]);
                     if (user.isPresent() && StringUtils.hasText(user.get().getFbToken())) {
                         firebaseMessagingService.sendNotification(userAnnouncement.getTitle(), userAnnouncement.getMessage(), user.get().getFbToken(), userAnnouncement.getAttachment());
                     }

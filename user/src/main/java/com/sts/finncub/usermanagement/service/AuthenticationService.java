@@ -23,11 +23,11 @@ public interface AuthenticationService {
 
     Response logout(HttpServletRequest request);
 
-    Response changePassword(LoginRequest password) throws ObjectNotFoundException, BadRequestException;
+    Response changePassword(LoginRequest password) throws BadRequestException;
 
     Response resetPassword(LoginRequest loginRequest) throws ObjectNotFoundException, BadRequestException;
 
-    Response forgetPassword(String userId) throws ObjectNotFoundException, InternalServerErrorException, BadRequestException;
+    Response forgetPassword(String userId) throws InternalServerErrorException;
 
     ResponseEntity<Response> verifyForgetPasswordOtp(String otp, String userId) throws ObjectNotFoundException, BadRequestException;
 
