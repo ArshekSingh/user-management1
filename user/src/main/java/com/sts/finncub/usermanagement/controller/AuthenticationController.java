@@ -10,8 +10,8 @@ import com.sts.finncub.usermanagement.request.CreateNewPasswordRequest;
 import com.sts.finncub.usermanagement.request.LoginRequest;
 import com.sts.finncub.usermanagement.request.SignupRequest;
 import com.sts.finncub.usermanagement.service.AuthenticationService;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,14 +24,10 @@ import javax.validation.Valid;
 
 @Slf4j
 @RestController
+@AllArgsConstructor
 public class AuthenticationController {
 
     private final AuthenticationService authenticationService;
-
-    @Autowired
-    public AuthenticationController(AuthenticationService authenticationService) {
-        this.authenticationService = authenticationService;
-    }
 
     @PostMapping("/login")
     public ResponseEntity<Response> login(@RequestBody LoginRequest loginRequest, HttpServletRequest httpServletRequest) throws BadRequestException, ObjectNotFoundException, InternalServerErrorException {
@@ -39,7 +35,7 @@ public class AuthenticationController {
             log.error("Invalid Login Request received , userId : {}", loginRequest.getUserId());
             return new ResponseEntity<>(new Response("Invalid userId / password", HttpStatus.BAD_REQUEST), HttpStatus.OK);
         }
-        return new ResponseEntity<>(new Response(RestMappingConstants.SUCCESS, authenticationService.login(loginRequest,httpServletRequest), HttpStatus.OK), HttpStatus.OK);
+        return new ResponseEntity<>(new Response(RestMappingConstants.SUCCESS, authenticationService.login(loginRequest, httpServletRequest), HttpStatus.OK), HttpStatus.OK);
     }
 
     // API replaces with User Controller Add user API
@@ -53,29 +49,29 @@ public class AuthenticationController {
     @PostMapping("/api/logout")
     public ResponseEntity<Response> logout(HttpServletRequest request) {
         Response response = authenticationService.logout(request);
-        return new ResponseEntity<>(response,response.getStatus());
+        return new ResponseEntity<>(response, response.getStatus());
     }
 
     @PostMapping("/api/changePassword")
-    public ResponseEntity<Response> changePassword(HttpServletRequest httpServletRequest,@Valid @RequestBody LoginRequest request) throws ObjectNotFoundException, BadRequestException {
+    public ResponseEntity<Response> changePassword(HttpServletRequest httpServletRequest, @Valid @RequestBody LoginRequest request) throws BadRequestException {
         log.info("changePassword request received , userId : {} ", request.getUserId());
         Response responseEntity = authenticationService.changePassword(request);
-        if(responseEntity.getStatus().is2xxSuccessful()) {
+        if (responseEntity.getStatus().is2xxSuccessful()) {
             authenticationService.logout(httpServletRequest);
         }
-        return new ResponseEntity<>(responseEntity,responseEntity.getStatus());
+        return new ResponseEntity<>(responseEntity, responseEntity.getStatus());
     }
 
     @PostMapping("/api/resetPassword")
     public ResponseEntity<Response> resetPassword(@Valid @RequestBody LoginRequest loginRequest) throws ObjectNotFoundException, BadRequestException {
         log.info("Request initiated to reset password for userId {} ", loginRequest.getUserId());
         Response responseEntity = authenticationService.resetPassword(loginRequest);
-        return new ResponseEntity<>(responseEntity,responseEntity.getStatus());
+        return new ResponseEntity<>(responseEntity, responseEntity.getStatus());
     }
 
 
     @PostMapping("/forgetPassword")
-    public ResponseEntity<Response> forgetPassword(@RequestParam String userId) throws ObjectNotFoundException, InternalServerErrorException, BadRequestException {
+    public ResponseEntity<Response> forgetPassword(@RequestParam String userId) throws InternalServerErrorException {
         log.info("Request initiated to forgetPassword for userId : {}", userId);
         Response response = authenticationService.forgetPassword(userId);
         return new ResponseEntity<>(response, response.getStatus());

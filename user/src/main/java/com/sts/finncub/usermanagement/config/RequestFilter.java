@@ -34,7 +34,7 @@ public class RequestFilter implements Filter {
     RamsonProperties ramsonProperties;
 
     @Override
-    public void init(FilterConfig filterConfig) throws ServletException {
+    public void init(FilterConfig filterConfig) {
     }
 
     @Override
