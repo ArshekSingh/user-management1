@@ -80,7 +80,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
 
     private final RestTemplate restTemplate;
 
-    private static final String passwordPolicyMsg = "Password Guidelines :\n" + "- Minimum 8 characters.\n" + "- Include uppercase, lowercase, numbers, and special characters.\n" + "- Avoid numerical or alphabetical sequences.\n" + "- Avoid common patterns like qwerty or whitespace.\n" + "- Don't use personal or organizational information.";
+    private static final String passwordPolicyMsg = "Password Guidelines :" + "\n" + "- Minimum 8 characters.\n" + "- Include uppercase, lowercase, numbers, and special characters.\n" + "- Avoid numerical or alphabetical sequences.\n" + "- Avoid common patterns like qwerty or whitespace.\n" + "- Don't use personal or organizational information.";
 
     @Autowired
     public AuthenticationServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserRedisRepository userRedisRepository, UserRoleMappingRepository userRoleMappingRepository, UserCredentialService userCredentialService, UserOrganizationMappingRepository userOrganizationMappingRepository, BranchMasterRepository branchMasterRepository, UserLoginLogRepository userLoginLogRepository, EmployeeRepository employeeRepository, MiscellaneousServiceRepository miscellaneousServiceRepository, MobileAppConfig mobileAppConfig, RedisTemplate<String, Object> template, OrganizationRepository organizationRepository, VendorSmsLogRepository vendorSmsLogRepository, SmsProperties smsProperties, SmsUtil smsUtil, JavaMailSender mailSender, MaintainPasswordHistory maintainPasswordHistory, RestTemplate restTemplate) {
@@ -422,11 +422,9 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
             if (isContainSpecificString(request.getNewPassword().toLowerCase(), userName.toLowerCase()) || isContainSpecificString(request.getNewPassword().toLowerCase(), "SVCL".toLowerCase())) {
                 newPassword = passwordEncoder.encode(request.getNewPassword());
             } else {
-                log.info(passwordPolicyMsg);
                 return new Response(passwordPolicyMsg, HttpStatus.BAD_REQUEST);
             }
         } else {
-            log.info(passwordPolicyMsg);
             return new Response(passwordPolicyMsg, HttpStatus.BAD_REQUEST);
         }
 //      check new password with 5 old password
