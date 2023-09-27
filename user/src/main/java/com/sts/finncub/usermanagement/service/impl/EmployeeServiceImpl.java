@@ -576,9 +576,9 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 saveValueEmployeeMaster(request, employee, request.getEmployeeId(), userSession);
                 //save value in user master table
                 if (request.getStatus().equals("A") || request.getStatus().equals("Active")) {
-                    saveValueInUserMaster(request.getUserId(), request, true);
+                    updateInUserMaster(request.getUserId(), request, true);
                 } else if (request.getStatus().equals("X") || request.getStatus().equals("Inactive")) {
-                    saveValueInUserMaster(request.getUserId(), request, false);
+                    updateInUserMaster(request.getUserId(), request, false);
                     authenticationService.revokeUserSessionFromRedis(userSession.getOrganizationId(), request.getUserId());
                 }
                 return new Response(SUCCESS, HttpStatus.OK);
@@ -588,6 +588,31 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         } else {
             throw new BadRequestException("Invalid Request Parameters", HttpStatus.BAD_REQUEST);
         }
+    }
+
+    private void updateInUserMaster(String userId, EmployeeRequest employeeRequest, Boolean isActive) throws BadRequestException{
+        UserRequest request = new UserRequest();
+        request.setUserId(userId);
+        request.setName(employeeRequest.getFirstName());
+        request.setMobileNumber(employeeRequest.getPersonalMob() != null ? String.valueOf(employeeRequest.getPersonalMob()) : "");
+        request.setType("EMP");
+        if (Boolean.TRUE.equals(isActive)) {
+            request.setIsActive("Y");
+        } else {
+            request.setIsActive("N");
+        }
+        List<String> bcId = employeeRequest.getBcId();
+        StringBuilder stringBuilder = new StringBuilder();
+        if (!CollectionUtils.isEmpty(bcId)) {
+            for (String string : bcId) {
+                if (stringBuilder.length() != 0) {
+                    stringBuilder.append(",");
+                }
+                stringBuilder.append(string);
+            }
+        }
+        request.setBcId(stringBuilder.toString());
+        userService.updateUserDetails(request);
     }
 
     private static boolean isFieldsUpdated(EmployeeRequest request, Employee employee) {
