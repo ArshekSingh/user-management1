@@ -517,7 +517,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         } else {
             String[] oldPasswordList = oldPassword.split(PASSWORD_SEPARATOR);
             for (String pass : oldPasswordList) {
-                if (BCrypt.checkpw(loginRequest.getNewPassword(), pass)) {
+                if (!"null".equalsIgnoreCase(pass) && BCrypt.checkpw(loginRequest.getNewPassword(), pass)) {
                     log.error("New password matches with recent passwords, userId : {}", loginRequest.getUserId());
                     return new Response("New password matches with recent passwords", HttpStatus.BAD_REQUEST);
                 }
