@@ -666,7 +666,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         String newPassword;
         if (isValid(createNewPasswordRequest.getNewPassword())) {
             final String userName = user.getName().split(" ")[0];
-            if (isNotContainSpecificString(createNewPasswordRequest.getNewPassword().toLowerCase(), userName.toLowerCase()) || isNotContainSpecificString(createNewPasswordRequest.getNewPassword().toLowerCase(), "SVCL".toLowerCase())) {
+            if (isNotContainSpecificString(createNewPasswordRequest.getNewPassword().toLowerCase(), userName.toLowerCase()) && isNotContainSpecificString(createNewPasswordRequest.getNewPassword().toLowerCase(), "SVCL".toLowerCase())) {
                 newPassword = passwordEncoder.encode(createNewPasswordRequest.getNewPassword());
             } else {
                 return new ResponseEntity<>(new Response(passwordPolicyMsg, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
