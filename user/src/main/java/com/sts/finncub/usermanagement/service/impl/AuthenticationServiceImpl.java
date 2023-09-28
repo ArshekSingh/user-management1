@@ -438,7 +438,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
             String[] oldPasswordList = oldPassword.split(PASSWORD_SEPARATOR);
             if (!CollectionUtils.isEmpty(Arrays.asList(oldPasswordList))) {
                 for (String pass : oldPasswordList) {
-                    if (StringUtils.hasText(pass) && (BCrypt.checkpw(request.getNewPassword(), pass))) {
+                    if (!"null".equalsIgnoreCase(pass) && (BCrypt.checkpw(request.getNewPassword(), pass))) {
                         log.error("New password matches with recent passwords, userId : {}", request.getUserId());
                         return new Response("New password matches with recent passwords", HttpStatus.BAD_REQUEST);
                     }
@@ -517,13 +517,13 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         } else {
             String[] oldPasswordList = oldPassword.split(PASSWORD_SEPARATOR);
             for (String pass : oldPasswordList) {
-                if (BCrypt.checkpw(loginRequest.getNewPassword(), pass)) {
+                if (!"null".equalsIgnoreCase(pass) && BCrypt.checkpw(loginRequest.getNewPassword(), pass)) {
                     log.error("New password matches with recent passwords, userId : {}", loginRequest.getUserId());
                     return new Response("New password matches with recent passwords", HttpStatus.BAD_REQUEST);
                 }
             }
 //          Maintain old passwords
-            oldPassword = maintainPasswordHistory.maintainOldPasswordHistory(oldPasswordList, oldPassword, PASSWORD_SEPARATOR, loginRequest.getPassword());
+            oldPassword = maintainPasswordHistory.maintainOldPasswordHistory(oldPasswordList, oldPassword, PASSWORD_SEPARATOR, BCrypt.hashpw(loginRequest.getNewPassword(), BCrypt.gensalt()));
         }
         user.setOldPassword(oldPassword);
         user.setIsTemporaryPassword("Y");
