@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -30,11 +29,9 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class AnnouncementServiceImpl implements AnnouncementService {
 
-    private final BranchMasterRepository branchMasterRepository;
-
     private final UserAnnouncementRepository userAnnouncementRepository;
 
-    private final UserAnnouncementBranchMapping userAnnouncementBranchMapping;
+    private final UserAnnouncementBranchMappingServiceImpl userAnnouncementBranchMappingServiceImpl;
 
     private final UserAnnouncementMappingRepository userAnnouncementMappingRepository;
 
@@ -60,14 +57,14 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         userAnnouncement.setAttachment(awsService.signedDocumentUrl(userAnnouncement.getAttachment()));
         if (!CollectionUtils.isEmpty(userAnnouncementRequest.getUserId())) {
             List<User> users = userRepository.findByIsActiveAndUserIdIn("Y", userAnnouncementRequest.getUserId());
-            userAnnouncementBranchMapping.insertUserAnnouncementBranchMapping(userAnnouncement, null, userAnnouncementRequest, users);
+            userAnnouncementBranchMappingServiceImpl.insertUserAnnouncementBranchMapping(userAnnouncement, null, userAnnouncementRequest, users);
         } else if (!CollectionUtils.isEmpty(userAnnouncementRequest.getBranchId())) {
             List<Object[]> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_OrgIdAndUserBranchMappingPK_BranchIdIn(userSession.getOrganizationId(), userAnnouncementRequest.getBranchId());
             if (userBranchMappingList.isEmpty()) {
                 log.info("No users are found for branch : {}", userAnnouncementRequest.getBranchId());
                 return new Response("No users are found for branch : " + userAnnouncementRequest.getBranchId(), HttpStatus.NOT_FOUND);
             }
-            userAnnouncementBranchMapping.insertUserAnnouncementBranchMapping(userAnnouncement, userBranchMappingList, userAnnouncementRequest, null);
+            userAnnouncementBranchMappingServiceImpl.insertUserAnnouncementBranchMapping(userAnnouncement, userBranchMappingList, userAnnouncementRequest, null);
         }
 
         log.info("Announcement created successfully for branches {}", userAnnouncementRequest.getBranchId());
@@ -80,8 +77,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         List<UserAnnouncementResponse> userAnnouncementResponseList = new ArrayList<>();
         if (StringUtils.hasText(userAnnouncementFilterRequest.getStartDate()) && StringUtils.hasText(userAnnouncementFilterRequest.getEndDate()))
             userAnnouncementList = userAnnouncementRepository.findByStartDateBetweenOrderByAnnouncementIdDesc(DateTimeUtil.stringToDate(userAnnouncementFilterRequest.getStartDate()), DateTimeUtil.stringToDate(userAnnouncementFilterRequest.getEndDate()));
-        else
-            userAnnouncementList = userAnnouncementRepository.findAllByOrderByAnnouncementIdDesc();
+        else userAnnouncementList = userAnnouncementRepository.findAllByOrderByAnnouncementIdDesc();
         if (userAnnouncementList.isEmpty()) {
             log.info("No announcements are present");
             return new Response("No announcements are present", HttpStatus.NOT_FOUND);
