@@ -32,7 +32,7 @@ public class UserAnnouncementBranchMappingServiceImpl {
     @Async
     public void insertUserAnnouncementBranchMapping(UserAnnouncement userAnnouncement, List<Object[]> userBranchMappingList, UserAnnouncementRequest userAnnouncementRequest, List<User> users) throws FirebaseMessagingException {
         if (!CollectionUtils.isEmpty(users)) {
-            log.info("Going to create user notification for users {}", userAnnouncementRequest.getUserId());
+            log.info("Going to create user notification for users {}", userAnnouncementRequest.getUsers());
             for (User user : users) {
                 UserAnnouncementMapping userAnnouncementMapping = getUserAnnouncementMapping(userAnnouncement, user.getUserId());
                 userAnnouncementMappingRepository.saveAndFlush(userAnnouncementMapping);

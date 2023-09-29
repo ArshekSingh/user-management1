@@ -55,8 +55,8 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         UserAnnouncement userAnnouncement = userAnnouncementAssembler.convertToUserAnnouncement(userAnnouncementRequest, userSession);
         userAnnouncementRepository.saveAndFlush(userAnnouncement);
         userAnnouncement.setAttachment(awsService.signedDocumentUrl(userAnnouncement.getAttachment()));
-        if (!CollectionUtils.isEmpty(userAnnouncementRequest.getUserId())) {
-            List<User> users = userRepository.findByIsActiveAndUserIdIn("Y", userAnnouncementRequest.getUserId());
+        if (!CollectionUtils.isEmpty(userAnnouncementRequest.getUsers())) {
+            List<User> users = userRepository.findByIsActiveAndUserIdIn("Y", userAnnouncementRequest.getUsers());
             userAnnouncementBranchMappingServiceImpl.insertUserAnnouncementBranchMapping(userAnnouncement, null, userAnnouncementRequest, users);
         } else if (!CollectionUtils.isEmpty(userAnnouncementRequest.getBranchId())) {
             List<Object[]> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_OrgIdAndUserBranchMappingPK_BranchIdIn(userSession.getOrganizationId(), userAnnouncementRequest.getBranchId());
