@@ -15,7 +15,7 @@ public class SignUpConverter {
         user.setEmail(signupRequest.getEmail());
         user.setMobileNumber(signupRequest.getMobile());
         user.setType(signupRequest.getUserType());
-        user.setPasswordResetDate(LocalDate.now());
+        user.setPasswordResetDate(LocalDateTime.now());
         user.setInsertedOn(LocalDateTime.now());
         user.setInsertedBy(signupRequest.getName());
         return user;

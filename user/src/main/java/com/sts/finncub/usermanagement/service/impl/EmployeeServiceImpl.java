@@ -593,7 +593,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     private void updateInUserMaster(String userId, EmployeeRequest employeeRequest, Boolean isActive) throws BadRequestException{
         UserRequest request = new UserRequest();
         request.setUserId(userId);
-        request.setName(employeeRequest.getFirstName() + " "+employeeRequest.getMiddleName() + " " + employeeRequest.getLastName());
+        request.setName(constructName(employeeRequest));
         request.setMobileNumber(employeeRequest.getPersonalMob() != null ? String.valueOf(employeeRequest.getPersonalMob()) : "");
         request.setType("EMP");
         if (Boolean.TRUE.equals(isActive)) {
@@ -613,6 +613,19 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         }
         request.setBcId(stringBuilder.toString());
         userService.updateUserForEmployee(request);
+    }
+
+    public String constructName(EmployeeRequest employeeRequest) {
+        String employeeName = "";
+        if (employeeRequest != null) {
+            employeeName = employeeRequest.getFirstName();
+            if(StringUtils.hasText(employeeRequest.getMiddleName())){
+                employeeName += " " + employeeRequest.getMiddleName();
+            }
+            if (org.springframework.util.StringUtils.hasText(employeeRequest.getLastName()))
+                employeeName += " " + employeeRequest.getLastName();
+        }
+        return employeeName;
     }
 
     private static boolean isFieldsUpdated(EmployeeRequest request, Employee employee) {
