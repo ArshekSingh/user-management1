@@ -413,16 +413,16 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         User user = userOptional.get();
 //      check current password
         if (!user.isPasswordCorrect(request.getPassword())) {
-            log.error("Incorrect password supplied, userId : {}", request.getUserId());
+            log.error("Incorrect password supplied, userId : {}", user.getUserId());
             return new Response("Invalid current password", HttpStatus.BAD_REQUEST);
         }
         // check confirm password
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-            log.error("Confirm password is not same as new password for userId : {} ", request.getUserId());
+            log.error("Confirm password is not same as new password for userId : {} ", user.getUserId());
             return new Response("Confirm password is not same as new password", HttpStatus.BAD_REQUEST);
         }
-        if (request.getUserId().equalsIgnoreCase(request.getNewPassword())) {
-            log.error(PASSWORD_SAME_MSG + " {} ", request.getUserId());
+        if (user.getUserId().equalsIgnoreCase(request.getNewPassword())) {
+            log.error(PASSWORD_SAME_MSG + " {} ", user.getUserId());
             throw new BadRequestException(PASSWORD_CANT_BE_USER_ID, HttpStatus.BAD_REQUEST);
         }
         String newPassword;
