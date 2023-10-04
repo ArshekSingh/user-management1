@@ -605,17 +605,6 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         } else {
             request.setIsActive("N");
         }
-        List<String> bcId = employeeRequest.getBcId();
-        StringBuilder stringBuilder = new StringBuilder();
-        if (!CollectionUtils.isEmpty(bcId)) {
-            for (String string : bcId) {
-                if (stringBuilder.length() != 0) {
-                    stringBuilder.append(",");
-                }
-                stringBuilder.append(string);
-            }
-        }
-        request.setBcId(stringBuilder.toString());
         userService.updateUserForEmployee(request);
     }
 

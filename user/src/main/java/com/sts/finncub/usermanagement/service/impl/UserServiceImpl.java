@@ -18,6 +18,7 @@ import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.assembler.RamsonUserSchedulerAssembler;
 import com.sts.finncub.usermanagement.assembler.UserAssembler;
 import com.sts.finncub.usermanagement.request.*;
+import com.sts.finncub.usermanagement.service.AuthenticationService;
 import com.sts.finncub.usermanagement.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -55,6 +56,7 @@ public class UserServiceImpl implements UserService, Constant {
     private final VwFoUserExportRepository vwFoUserExportRepository;
     private final RamsonUserSchedulerAssembler ramsonUserSchedulerAssembler;
     private final UserAssembler userAssembler;
+    private final AuthenticationService authenticationService;
 
     @Override
     public Response getAllUserDetailsByFilterRequest(FilterRequest request) throws BadRequestException {
@@ -491,11 +493,10 @@ public class UserServiceImpl implements UserService, Constant {
                 userDetail.setDisabledOn(LocalDateTime.now());
             }
         }
-        userDetail.setBcId(StringUtils.hasText(request.getBcId()) ? request.getBcId() : "");
         if (StringUtils.hasText(request.getIsActive())) {
             if (request.getIsActive().equals("N")) {
                 userDetail.setIsActive(request.getIsActive());
-                deleteTokenByUserId(userDetail);
+                authenticationService.revokeUserSessionFromRedis(userSession.getOrganizationId(), userDetail.getUserId());
             } else {
                 userDetail.setIsActive(request.getIsActive());
             }
