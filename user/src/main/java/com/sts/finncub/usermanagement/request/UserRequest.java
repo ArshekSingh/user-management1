@@ -23,4 +23,5 @@ public class UserRequest {
     private String extUserId;
     private String isFrozenBookFlag;
     private String imeiNumber;
+    private String isPasswordActive;
 }

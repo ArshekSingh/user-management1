@@ -4,6 +4,7 @@ import com.sts.finncub.core.dto.UserBranchMappingDto;
 import com.sts.finncub.core.dto.UserRoleMappingDto;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.request.FilterRequest;
+import com.sts.finncub.core.request.UserFilterRequest;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.usermanagement.request.FirebaseTokenRequest;
 import com.sts.finncub.usermanagement.request.GeoLocationRequest;
@@ -12,6 +13,8 @@ import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -99,5 +102,14 @@ public class UserController {
     @GetMapping("/getFoForRamson")
     private List<RamsonUserRequest> getFoForRamson() {
         return userService.getFoForRamson();
+    }
+
+    /**
+     * THIS API IS USED TO LIST BRANCH MAPPED USER FROM NOTIFICATION SCREEN
+     */
+    @PostMapping("/getUsersOnBranches")
+    private ResponseEntity<Response> getUsersOnBranches(@RequestBody UserFilterRequest request) {
+        Response response = userService.getUsersOnBranches(request);
+        return new ResponseEntity<>(response,HttpStatus.OK);
     }
 }

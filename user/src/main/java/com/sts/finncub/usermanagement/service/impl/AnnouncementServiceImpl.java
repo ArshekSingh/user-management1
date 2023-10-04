@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -30,11 +29,9 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class AnnouncementServiceImpl implements AnnouncementService {
 
-    private final BranchMasterRepository branchMasterRepository;
-
     private final UserAnnouncementRepository userAnnouncementRepository;
 
-    private final UserAnnouncementBranchMapping userAnnouncementBranchMapping;
+    private final UserAnnouncementBranchMappingServiceImpl userAnnouncementBranchMappingServiceImpl;
 
     private final UserAnnouncementMappingRepository userAnnouncementMappingRepository;
 
@@ -50,18 +47,26 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
     private final ReferenceDetailRepository referenceDetailRepository;
 
+    private final UserRepository userRepository;
+
     @Override
-    public Response createAnnouncement(UserAnnouncementRequest userAnnouncementRequest) throws FirebaseMessagingException, IOException {
+    public Response createAnnouncement(UserAnnouncementRequest userAnnouncementRequest) throws FirebaseMessagingException {
         UserSession userSession = userCredentialService.getUserSession();
-        List<UserBranchMapping> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_OrgIdAndStatusAndUserBranchMappingPK_BranchIdIn(userSession.getOrganizationId(), "A", userAnnouncementRequest.getBranchId());
-        if (userBranchMappingList.isEmpty()) {
-            log.info("No users are found for branch : {}", userAnnouncementRequest.getBranchId());
-            return new Response("No users are found for branch : " + userAnnouncementRequest.getBranchId(), HttpStatus.NOT_FOUND);
-        }
         UserAnnouncement userAnnouncement = userAnnouncementAssembler.convertToUserAnnouncement(userAnnouncementRequest, userSession);
         userAnnouncementRepository.saveAndFlush(userAnnouncement);
         userAnnouncement.setAttachment(awsService.signedDocumentUrl(userAnnouncement.getAttachment()));
-        userAnnouncementBranchMapping.insertUserAnnouncementBranchMapping(userBranchMappingList, userAnnouncement, userAnnouncement.getAnnouncementId(), userAnnouncementRequest.getBranchId());
+        if (!CollectionUtils.isEmpty(userAnnouncementRequest.getUsers())) {
+            List<User> users = userRepository.findByIsActiveAndUserIdIn("Y", userAnnouncementRequest.getUsers());
+            userAnnouncementBranchMappingServiceImpl.insertUserAnnouncementBranchMapping(userAnnouncement, null, userAnnouncementRequest, users);
+        } else if (!CollectionUtils.isEmpty(userAnnouncementRequest.getBranchId())) {
+            List<Object[]> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_OrgIdAndUserBranchMappingPK_BranchIdIn(userSession.getOrganizationId(), userAnnouncementRequest.getBranchId());
+            if (userBranchMappingList.isEmpty()) {
+                log.info("No users are found for branch : {}", userAnnouncementRequest.getBranchId());
+                return new Response("No users are found for branch : " + userAnnouncementRequest.getBranchId(), HttpStatus.NOT_FOUND);
+            }
+            userAnnouncementBranchMappingServiceImpl.insertUserAnnouncementBranchMapping(userAnnouncement, userBranchMappingList, userAnnouncementRequest, null);
+        }
+
         log.info("Announcement created successfully for branches {}", userAnnouncementRequest.getBranchId());
         return new Response("Announcement created successfully", userAnnouncement.getAnnouncementId(), HttpStatus.OK);
     }
@@ -72,22 +77,17 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         List<UserAnnouncementResponse> userAnnouncementResponseList = new ArrayList<>();
         if (StringUtils.hasText(userAnnouncementFilterRequest.getStartDate()) && StringUtils.hasText(userAnnouncementFilterRequest.getEndDate()))
             userAnnouncementList = userAnnouncementRepository.findByStartDateBetweenOrderByAnnouncementIdDesc(DateTimeUtil.stringToDate(userAnnouncementFilterRequest.getStartDate()), DateTimeUtil.stringToDate(userAnnouncementFilterRequest.getEndDate()));
-        else
-            userAnnouncementList = userAnnouncementRepository.findAllByOrderByAnnouncementIdDesc();
+        else userAnnouncementList = userAnnouncementRepository.findAllByOrderByAnnouncementIdDesc();
         if (userAnnouncementList.isEmpty()) {
             log.info("No announcements are present");
             return new Response("No announcements are present", HttpStatus.NOT_FOUND);
         }
         for (UserAnnouncement userAnnouncement : userAnnouncementList) {
-            List<Long> branchIds = userAnnouncementMappingRepository.findDistinctBranchIdByAnnouncementId(userAnnouncement.getAnnouncementId().toString());
-            List<String> branchNames = branchMasterRepository.findByBranchName(userAnnouncement.getOrgId(), branchIds);
             UserAnnouncementResponse userAnnouncementResponse = userAnnouncementAssembler.convertToResponse(userAnnouncement);
             userAnnouncementResponse.setType(getType(userAnnouncementResponse.getAttachment()));
             if (StringUtils.hasText(userAnnouncementResponse.getAttachment())) {
                 userAnnouncementResponse.setAttachment(awsService.signedDocumentUrl(userAnnouncementResponse.getAttachment()));
             }
-            userAnnouncementResponse.setBranchId(branchIds);
-            userAnnouncementResponse.setBranchName(branchNames);
             userAnnouncementResponseList.add(userAnnouncementResponse);
         }
         log.info("Announcements fetched successfully");
@@ -104,35 +104,19 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         UserAnnouncementResponse userAnnouncementResponse = userAnnouncementAssembler.convertToResponse(userAnnouncement.get());
         userAnnouncementResponse.setType(getType(userAnnouncementResponse.getAttachment()));
         userAnnouncementResponse.setAttachment(awsService.signedDocumentUrl(userAnnouncementResponse.getAttachment()));
-        List<Long> branchIds = userAnnouncementMappingRepository.findDistinctBranchIdByAnnouncementId(announcementId.toString());
-        List<String> branchNames = branchMasterRepository.findByBranchName(userAnnouncementResponse.getOrgId(), branchIds);
-        userAnnouncementResponse.setBranchId(branchIds);
-        userAnnouncementResponse.setBranchName(branchNames);
         log.info("Announcement fetched successfully with id {}", announcementId);
         return new Response("Announcement fetched successfully", userAnnouncementResponse, HttpStatus.OK);
-    }
-
-    private String getType(String attachment) {
-        List<ReferenceDetail> rdNotificationType = referenceDetailRepository.findByReferenceDetailPK_ReferenceDomain("RD_NOTIFICATION_TYPE");
-        if (CollectionUtils.isEmpty(rdNotificationType)) {
-            return "";
-        }
-        Optional<ReferenceDetail> first = rdNotificationType.stream().filter(o -> o.getReferenceDetailPK().getKeyValue().equalsIgnoreCase(commonUtil.getExtention(attachment))).findFirst();
-        if (first.isPresent() && StringUtils.hasText(first.get().getValue1())) {
-            return first.get().getValue1();
-        }
-        return null;
     }
 
     @Override
     public Response updateAnnouncement(Long announcementId, UserAnnouncementRequest userAnnouncementRequest) {
         UserSession userSession = userCredentialService.getUserSession();
-        Optional<UserAnnouncement> userAnnouncementResponse = userAnnouncementRepository.findById(announcementId);
-        if (userAnnouncementResponse.isEmpty()) {
+        Optional<UserAnnouncement> userAnnouncement = userAnnouncementRepository.findById(announcementId);
+        if (userAnnouncement.isEmpty()) {
             log.info("No announcement is found with id : {}", announcementId);
             return new Response("No announcement is found with id : " + announcementId, HttpStatus.NOT_FOUND);
         }
-        UserAnnouncement announcement = userAnnouncementAssembler.prepareUpdateRequest(userAnnouncementResponse.get(), userAnnouncementRequest, userSession);
+        UserAnnouncement announcement = userAnnouncementAssembler.prepareUpdateRequest(userAnnouncement.get(), userAnnouncementRequest, userSession);
         userAnnouncementRepository.saveAndFlush(announcement);
         log.info("Announcement with id : {} updated", announcementId);
         return new Response("Announcement with id : " + announcementId + " updated", HttpStatus.OK);
@@ -159,7 +143,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
     }
 
     @Override
-    public Response readAnnouncement(Long announcementId,UserAnnouncementRequest request) {
+    public Response readAnnouncement(Long announcementId, UserAnnouncementRequest request) {
         UserSession userSession = userCredentialService.getUserSession();
         Optional<UserAnnouncementMapping> optional = userAnnouncementMappingRepository.findByOrgIdAndUserIdAndAnnouncementId(userSession.getOrganizationId(), userSession.getUserId(), announcementId);
         if (optional.isEmpty()) {
@@ -176,5 +160,17 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         map.put("isRead", userAnnouncementMapping.getIsRead());
         return new Response("Announcement with userId : " + userSession.getUserId() + " and announcementId : " + announcementId + " is marked as read", map, HttpStatus.OK);
     }
-    
+
+    private String getType(String attachment) {
+        List<ReferenceDetail> rdNotificationType = referenceDetailRepository.findByReferenceDetailPK_ReferenceDomain("RD_NOTIFICATION_TYPE");
+        if (CollectionUtils.isEmpty(rdNotificationType)) {
+            return "";
+        }
+        Optional<ReferenceDetail> first = rdNotificationType.stream().filter(o -> o.getReferenceDetailPK().getKeyValue().equalsIgnoreCase(commonUtil.getExtention(attachment))).findFirst();
+        if (first.isPresent() && StringUtils.hasText(first.get().getValue1())) {
+            return first.get().getValue1();
+        }
+        return null;
+    }
+
 }

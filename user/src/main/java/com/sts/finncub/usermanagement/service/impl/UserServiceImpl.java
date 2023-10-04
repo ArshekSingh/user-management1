@@ -11,10 +11,12 @@ import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.*;
 import com.sts.finncub.core.repository.dao.UserDao;
 import com.sts.finncub.core.request.FilterRequest;
+import com.sts.finncub.core.request.UserFilterRequest;
 import com.sts.finncub.core.response.Response;
 import com.sts.finncub.core.service.UserCredentialService;
 import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.assembler.RamsonUserSchedulerAssembler;
+import com.sts.finncub.usermanagement.assembler.UserAssembler;
 import com.sts.finncub.usermanagement.request.*;
 import com.sts.finncub.usermanagement.service.UserService;
 import lombok.AllArgsConstructor;
@@ -52,6 +54,7 @@ public class UserServiceImpl implements UserService, Constant {
     private final Gson gson;
     private final VwFoUserExportRepository vwFoUserExportRepository;
     private final RamsonUserSchedulerAssembler ramsonUserSchedulerAssembler;
+    private final UserAssembler userAssembler;
 
     @Override
     public Response getAllUserDetailsByFilterRequest(FilterRequest request) throws BadRequestException {
@@ -94,6 +97,7 @@ public class UserServiceImpl implements UserService, Constant {
         userDetailDto.setInsertedOn(DateTimeUtil.dateTimeToString(user.get().getInsertedOn()));
         userDetailDto.setUpdatedOn(DateTimeUtil.dateTimeToString(user.get().getUpdatedOn()));
         userDetailDto.setImeiNumber(user.get().getImeiNumber());
+        userDetailDto.setIsPasswordActive(user.get().getIsPasswordActive());
         return new Response(SUCCESS, userDetailDto, HttpStatus.OK);
     }
 
@@ -148,6 +152,12 @@ public class UserServiceImpl implements UserService, Constant {
         return new Response(SUCCESS, HttpStatus.OK);
     }
 
+    private void validateRequest(UserRequest request) throws BadRequestException {
+        if (request == null || !StringUtils.hasText(request.getName()) || request.getType() == null) {
+            throw new BadRequestException("Invalid Request Parameters", HttpStatus.BAD_REQUEST);
+        }
+    }
+
     private void saveValueInUserOrganizationMapping(String userId, UserSession userSession) {
         UserOrganizationLinkId userOrganizationLinkId = new UserOrganizationLinkId();
         userOrganizationLinkId.setOrganizationId(userSession.getOrganizationId());
@@ -170,12 +180,6 @@ public class UserServiceImpl implements UserService, Constant {
         userBranchMapping.setInsertedOn(LocalDateTime.now());
         userBranchMapping.setInsertedBy(userSession.getUserId());
         userBranchMappingRepository.save(userBranchMapping);
-    }
-
-    private void validateRequest(UserRequest request) throws BadRequestException {
-        if (request == null || !StringUtils.hasText(request.getName()) || request.getType() == null) {
-            throw new BadRequestException("Invalid Request Parameters", HttpStatus.BAD_REQUEST);
-        }
     }
 
     @Override
@@ -213,31 +217,17 @@ public class UserServiceImpl implements UserService, Constant {
                 userDetail.setIsActive(request.getIsActive());
             }
         }
-        if(StringUtils.hasText(request.getImeiNumber()))
-        {
+        if (StringUtils.hasText(request.getImeiNumber())) {
             userDetail.setImeiNumber(request.getImeiNumber());
         }
         userDetail.setIsFrozenBookFlag(request.getIsFrozenBookFlag());
         userDetail.setUpdatedBy(userSession.getUserId());
         userDetail.setUpdatedOn(LocalDateTime.now());
-        userRepository.save(userDetail);
-    }
-
-    @Override
-    public void deleteTokenByUserId(User userDetail) {
-        Iterable<UserSession> userSessionList = userRedisRepository.findAll();
-        for (UserSession userSessionCheckForUser : userSessionList) {
-            if (userSessionCheckForUser != null && userDetail != null) {
-                if (!StringUtils.hasText(userDetail.getUserId()) || !StringUtils.hasText(userSessionCheckForUser.getUserId())) {
-                    continue;
-                }
-                if (!userSessionCheckForUser.getUserId().equalsIgnoreCase(userDetail.getUserId())) {
-                    continue;
-                }
-                Optional<UserSession> userSessionForParticularUser = userRedisRepository.findById(userSessionCheckForUser.getId());
-                userSessionForParticularUser.ifPresent(userRedisRepository::delete);
-            }
+        userDetail.setIsPasswordActive(request.getIsPasswordActive());
+        if("Y".equalsIgnoreCase(request.getIsPasswordActive())){
+            userDetail.setLoginAttempt(0);
         }
+        userRepository.save(userDetail);
     }
 
     @Override
@@ -431,6 +421,23 @@ public class UserServiceImpl implements UserService, Constant {
     }
 
     @Override
+    public void deleteTokenByUserId(User userDetail) {
+        Iterable<UserSession> userSessionList = userRedisRepository.findAll();
+        for (UserSession userSessionCheckForUser : userSessionList) {
+            if (userSessionCheckForUser != null && userDetail != null) {
+                if (!StringUtils.hasText(userDetail.getUserId()) || !StringUtils.hasText(userSessionCheckForUser.getUserId())) {
+                    continue;
+                }
+                if (!userSessionCheckForUser.getUserId().equalsIgnoreCase(userDetail.getUserId())) {
+                    continue;
+                }
+                Optional<UserSession> userSessionForParticularUser = userRedisRepository.findById(userSessionCheckForUser.getId());
+                userSessionForParticularUser.ifPresent(userRedisRepository::delete);
+            }
+        }
+    }
+
+    @Override
     public List<RamsonUserRequest> getFoForRamson() {
         List<VwFoUserExport> vwFoUserExportList = vwFoUserExportRepository.findAll();
         List<RamsonUserRequest> ramsonUserRequestList = new ArrayList<>();
@@ -440,5 +447,22 @@ public class UserServiceImpl implements UserService, Constant {
             }
         }
         return ramsonUserRequestList;
+    }
+
+    @Override
+    public Response getUsersOnBranches(UserFilterRequest request) {
+        UserSession userSession = userCredentialService.getUserSession();
+        if (CollectionUtils.isEmpty(request.getBranchId())) {
+            log.info("NO Branch filter is passed by : {}", userSession.getUserId());
+            return new Response("Pass at-least one branch", HttpStatus.NOT_FOUND);
+        }
+        log.info("Request sent to db to fetch data for branches {}", request.getBranchId());
+        List<Object[]> userBranchMapping = userBranchMappingRepository.findByUserBranchMappingPK_OrgIdAndUserBranchMappingPK_BranchIdIn(userSession.getOrganizationId(), request.getBranchId());
+        log.info("Data fetched from db for branches {}", request.getBranchId());
+        if (userBranchMapping.isEmpty()) {
+            log.info("No users mapped on any branches : {}", request.getBranchId());
+            return new Response("No users mapped on any branches", HttpStatus.NOT_FOUND);
+        }
+        return new Response(SUCCESS, userAssembler.assembleUser(userBranchMapping), HttpStatus.OK);
     }
 }
