@@ -4,7 +4,6 @@ import com.google.firebase.messaging.FirebaseMessagingException;
 import com.sts.finncub.core.entity.User;
 import com.sts.finncub.core.entity.UserAnnouncement;
 import com.sts.finncub.core.entity.UserAnnouncementMapping;
-import com.sts.finncub.core.entity.UserBranchMapping;
 import com.sts.finncub.core.repository.UserAnnouncementMappingRepository;
 import com.sts.finncub.core.repository.UserRepository;
 import com.sts.finncub.core.request.UserAnnouncementRequest;
@@ -22,7 +21,7 @@ import java.util.Optional;
 @Service
 @Slf4j
 @AllArgsConstructor
-public class UserAnnouncementBranchMapping {
+public class UserAnnouncementBranchMappingServiceImpl {
 
     private final UserRepository userRepository;
 
@@ -33,14 +32,9 @@ public class UserAnnouncementBranchMapping {
     @Async
     public void insertUserAnnouncementBranchMapping(UserAnnouncement userAnnouncement, List<Object[]> userBranchMappingList, UserAnnouncementRequest userAnnouncementRequest, List<User> users) throws FirebaseMessagingException {
         if (!CollectionUtils.isEmpty(users)) {
-            log.info("Going to create user notification for users {}", userAnnouncementRequest.getUserId());
+            log.info("Going to create user notification for users {}", userAnnouncementRequest.getUsers());
             for (User user : users) {
-                UserAnnouncementMapping userAnnouncementMapping = new UserAnnouncementMapping();
-                userAnnouncementMapping.setAnnouncementId(userAnnouncement.getAnnouncementId());
-                userAnnouncementMapping.setUserId(user.getUserId());
-                userAnnouncementMapping.setIsRead("N");
-                userAnnouncementMapping.setInsertedBy(userAnnouncement.getInsertedBy());
-                userAnnouncementMapping.setOrgId(userAnnouncement.getOrgId());
+                UserAnnouncementMapping userAnnouncementMapping = getUserAnnouncementMapping(userAnnouncement, user.getUserId());
                 userAnnouncementMappingRepository.saveAndFlush(userAnnouncementMapping);
                 if (StringUtils.hasText(user.getFbToken())) {
                     firebaseMessagingService.sendNotification(userAnnouncement.getTitle(), userAnnouncement.getMessage(), user.getFbToken(), userAnnouncement.getAttachment());
@@ -50,12 +44,7 @@ public class UserAnnouncementBranchMapping {
             log.info("Going to create user notification for branches {}", userAnnouncementRequest.getBranchId());
             if (!CollectionUtils.isEmpty(userBranchMappingList)) {
                 for (Object[] userBranchMapping : userBranchMappingList) {
-                    UserAnnouncementMapping userAnnouncementMapping = new UserAnnouncementMapping();
-                    userAnnouncementMapping.setAnnouncementId(userAnnouncement.getAnnouncementId());
-                    userAnnouncementMapping.setUserId((String) userBranchMapping[0]);
-                    userAnnouncementMapping.setIsRead("N");
-                    userAnnouncementMapping.setInsertedBy(userAnnouncement.getInsertedBy());
-                    userAnnouncementMapping.setOrgId(userAnnouncement.getOrgId());
+                    UserAnnouncementMapping userAnnouncementMapping = getUserAnnouncementMapping(userAnnouncement, (String) userBranchMapping[0]);
                     userAnnouncementMappingRepository.saveAndFlush(userAnnouncementMapping);
                     Optional<User> user = userRepository.findByUserId((String) userBranchMapping[0]);
                     if (user.isPresent() && StringUtils.hasText(user.get().getFbToken())) {
@@ -64,5 +53,15 @@ public class UserAnnouncementBranchMapping {
                 }
             }
         }
+    }
+
+    private static UserAnnouncementMapping getUserAnnouncementMapping(UserAnnouncement userAnnouncement, String userBranchMapping) {
+        UserAnnouncementMapping userAnnouncementMapping = new UserAnnouncementMapping();
+        userAnnouncementMapping.setAnnouncementId(userAnnouncement.getAnnouncementId());
+        userAnnouncementMapping.setUserId(userBranchMapping);
+        userAnnouncementMapping.setIsRead("N");
+        userAnnouncementMapping.setInsertedBy(userAnnouncement.getInsertedBy());
+        userAnnouncementMapping.setOrgId(userAnnouncement.getOrgId());
+        return userAnnouncementMapping;
     }
 }

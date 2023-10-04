@@ -80,7 +80,11 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
 
     private final RestTemplate restTemplate;
 
-    private static final String passwordPolicyMsg = "Password guidelines violated !";
+    private static final String PASSWORD_POLICY_MSG = "Password guidelines violated !";
+
+    private static final String PASSWORD_SAME_MSG = "New password can't be userId for user:";
+
+    private static final String PASSWORD_CANT_BE_USER_ID = "New password can't be userId";
 
     @Autowired
     public AuthenticationServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserRedisRepository userRedisRepository, UserRoleMappingRepository userRoleMappingRepository, UserCredentialService userCredentialService, UserOrganizationMappingRepository userOrganizationMappingRepository, BranchMasterRepository branchMasterRepository, UserLoginLogRepository userLoginLogRepository, EmployeeRepository employeeRepository, MiscellaneousServiceRepository miscellaneousServiceRepository, MobileAppConfig mobileAppConfig, RedisTemplate<String, Object> template, OrganizationRepository organizationRepository, VendorSmsLogRepository vendorSmsLogRepository, SmsProperties smsProperties, SmsUtil smsUtil, JavaMailSender mailSender, MaintainPasswordHistory maintainPasswordHistory, RestTemplate restTemplate) {
@@ -200,7 +204,6 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
                 log.error("Exception occurred while login , userId : {} , message : {}", loginRequest.getUserId(), e.getMessage(), e);
                 throw new BadRequestException("Login error - " + e.getMessage(), HttpStatus.BAD_REQUEST);
             }
-
             //save user Login log
             userLoginLog.setTokenId(authToken);
             userLoginLogRepository.save(userLoginLog);
@@ -306,17 +309,19 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
                 Employee employee = employeeRepository.findByUserId(user.getUserId()).orElse(null);
                 if (employee != null) {
                     userSession.setBaseLocation(branchMasterRepository.findBranchName(getActiveOrganizationId(user), employee.getBranchId()));
-                    userSession.setDepartmentName(employee.getEmployeeDepartmentMaster() != null ? employee.getEmployeeDepartmentMaster().getEmpDepartmentName() : "");
-                    userSession.setDesignationName(employee.getEmployeeDesignationMaster() != null ? employee.getEmployeeDesignationMaster().getEmpDesignationName() : "");
+                    EmployeeDepartmentMaster employeeDepartmentMaster = employee.getEmployeeDepartmentMaster();
+                    userSession.setDepartmentName(employeeDepartmentMaster != null ? employeeDepartmentMaster.getEmpDepartmentName() : "");
+                    EmployeeDesignationMaster employeeDesignationMaster = employee.getEmployeeDesignationMaster();
+                    userSession.setDesignationName(employeeDesignationMaster != null ? employeeDesignationMaster.getEmpDesignationName() : "");
                     userSession.setDesignationType(employee.getDesignationType() != null ? employee.getDesignationType() : "");
                 } else {
                     userSession.setDesignationType("HO");
                 }
             } catch (Exception exception) {
-                log.error("Exception while fetching employee details for userId :{} , message : {}", userSession, exception.getMessage(), exception);
+                log.error("Exception while fetching employee details for userId : {}, message : {}", userSession, exception.getMessage(), exception);
             }
         } catch (Exception ex) {
-            log.error("Exception occurred while preparing BranchMap , DivisionMap and ZoneMap , message : {}", ex.getMessage(), ex);
+            log.error("Exception occurred while preparing BranchMap, DivisionMap and ZoneMap , message : {}", ex.getMessage(), ex);
             throw new InternalServerErrorException("Exception while set data in userSession object" + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return userSession;
@@ -343,7 +348,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         final Long organizationId = userSession.getOrganizationId();
         //todo check in sign up
         if (isValid(signupRequest.getPassword())) {
-            if (isContainSpecificString(signupRequest.getPassword().toLowerCase(), "SVCL".toLowerCase())) {
+            if (isNotContainSpecificString(signupRequest.getPassword().toLowerCase(), "SVCL".toLowerCase())) {
                 newUser.setPassword(passwordEncoder, signupRequest.getPassword());
             } else {
 //                return new Response(passwordPolicyMsg, HttpStatus.BAD_REQUEST);
@@ -399,7 +404,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
 
     @Override
     public Response changePassword(LoginRequest request) throws BadRequestException {
-        log.info("Fetching userSession for changePassword request, userId : {} ", request.getUserId());
+        log.info("Fetching userSession for changePassword request");
         UserSession userSession = userCredentialService.getUserSession();
         Optional<User> userOptional = userRepository.findByUserIdIgnoreCase(userSession.getUserId());
         if (userOptional.isEmpty()) {
@@ -408,24 +413,31 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         User user = userOptional.get();
 //      check current password
         if (!user.isPasswordCorrect(request.getPassword())) {
-            log.error("Incorrect password supplied , userId : {}", request.getUserId());
+            log.error("Incorrect password supplied, userId : {}", user.getUserId());
             return new Response("Invalid current password", HttpStatus.BAD_REQUEST);
         }
         // check confirm password
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-            log.error("Confirm password is not same as new password for userId : {} ", request.getUserId());
+            log.error("Confirm password is not same as new password for userId : {} ", user.getUserId());
             return new Response("Confirm password is not same as new password", HttpStatus.BAD_REQUEST);
+        }
+        if (user.getUserId().equalsIgnoreCase(request.getNewPassword())) {
+            log.error(PASSWORD_SAME_MSG + " {} ", user.getUserId());
+            throw new BadRequestException(PASSWORD_CANT_BE_USER_ID, HttpStatus.BAD_REQUEST);
         }
         String newPassword;
         if (isValid(request.getNewPassword())) {
-            final String userName = user.getName().split(" ")[0];
-            if (isContainSpecificString(request.getNewPassword().toLowerCase(), userName.toLowerCase()) || isContainSpecificString(request.getNewPassword().toLowerCase(), "SVCL".toLowerCase())) {
-                newPassword = passwordEncoder.encode(request.getNewPassword());
-            } else {
-                return new Response(passwordPolicyMsg, HttpStatus.BAD_REQUEST);
+            String[] strSplit = user.getName().split(" ");
+            ArrayList<String> strList = new ArrayList<>(Arrays.asList(strSplit));
+            strList.add("SVCL");
+            for (String s : strList) {
+                if (!isNotContainSpecificString(request.getNewPassword().toLowerCase(), s.toLowerCase())) {
+                    return new Response(PASSWORD_POLICY_MSG, HttpStatus.BAD_REQUEST);
+                }
             }
+            newPassword = passwordEncoder.encode(request.getNewPassword());
         } else {
-            return new Response(passwordPolicyMsg, HttpStatus.BAD_REQUEST);
+            return new Response(PASSWORD_POLICY_MSG, HttpStatus.BAD_REQUEST);
         }
 //      check new password with 5 old password
         String oldPassword = user.getOldPassword();
@@ -435,7 +447,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
             String[] oldPasswordList = oldPassword.split(PASSWORD_SEPARATOR);
             if (!CollectionUtils.isEmpty(Arrays.asList(oldPasswordList))) {
                 for (String pass : oldPasswordList) {
-                    if (StringUtils.hasText(pass) && (BCrypt.checkpw(request.getNewPassword(), pass))) {
+                    if (!"null".equalsIgnoreCase(pass) && (BCrypt.checkpw(request.getNewPassword(), pass))) {
                         log.error("New password matches with recent passwords, userId : {}", request.getUserId());
                         return new Response("New password matches with recent passwords", HttpStatus.BAD_REQUEST);
                     }
@@ -463,7 +475,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         return result.isValid();
     }
 
-    public boolean isContainSpecificString(String password, String userName) {
+    public boolean isNotContainSpecificString(String password, String userName) {
         Rule rule = new UsernameRule();
         PasswordValidator validator = new PasswordValidator(Collections.singletonList(rule));
         PasswordData passwordToMatch = new PasswordData(password);
@@ -483,26 +495,25 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         }
         User user = optionalUser.get();
         if (loginRequest.getUserId().equalsIgnoreCase(loginRequest.getNewPassword())) {
-            log.error("Password can't be  same as userId for user: {} ", loginRequest.getUserId());
-            return new Response("Password can't be same as UserId", HttpStatus.BAD_REQUEST);
+            log.error(PASSWORD_SAME_MSG + " {} ", loginRequest.getUserId());
+            throw new BadRequestException(PASSWORD_CANT_BE_USER_ID, HttpStatus.BAD_REQUEST);
         }
-//        if (StringUtils.hasText(loginRequest.getNewPassword()) && loginRequest.getNewPassword().length() < 8) {
-//            log.error("Password length should at least 8 character for userId: {} ", loginRequest.getUserId());
-//            return new Response("Password length should at least 8 character", HttpStatus.BAD_REQUEST);
-//        }
         if (!loginRequest.getNewPassword().equals(loginRequest.getConfirmPassword())) {
             log.error("Confirm password is not same as new password for userId : {} ", loginRequest.getUserId());
             return new Response("Confirm password is not same as new password", HttpStatus.BAD_REQUEST);
         }
         if (isValid(loginRequest.getNewPassword())) {
-            final String userName = user.getName().split(" ")[0];
-            if (isContainSpecificString(loginRequest.getNewPassword().toLowerCase(), userName.toLowerCase()) || isContainSpecificString(loginRequest.getNewPassword().toLowerCase(), "SVCL".toLowerCase())) {
-                user.setPassword(passwordEncoder, loginRequest.getNewPassword());
-            } else {
-                return new Response(passwordPolicyMsg, HttpStatus.BAD_REQUEST);
+            String[] strSplit = user.getName().split(" ");
+            ArrayList<String> strList = new ArrayList<>(Arrays.asList(strSplit));
+            strList.add("SVCL");
+            for (String s : strList) {
+                if (!isNotContainSpecificString(loginRequest.getNewPassword().toLowerCase(), s.toLowerCase())) {
+                    return new Response(PASSWORD_POLICY_MSG, HttpStatus.BAD_REQUEST);
+                }
             }
+            user.setPassword(passwordEncoder, loginRequest.getNewPassword());
         } else {
-            return new Response(passwordPolicyMsg, HttpStatus.BAD_REQUEST);
+            return new Response(PASSWORD_POLICY_MSG, HttpStatus.BAD_REQUEST);
         }
         //      check new password with 5 old password
         String oldPassword = user.getOldPassword();
@@ -511,13 +522,13 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         } else {
             String[] oldPasswordList = oldPassword.split(PASSWORD_SEPARATOR);
             for (String pass : oldPasswordList) {
-                if (BCrypt.checkpw(loginRequest.getNewPassword(), pass)) {
+                if (!"null".equalsIgnoreCase(pass) && BCrypt.checkpw(loginRequest.getNewPassword(), pass)) {
                     log.error("New password matches with recent passwords, userId : {}", loginRequest.getUserId());
                     return new Response("New password matches with recent passwords", HttpStatus.BAD_REQUEST);
                 }
             }
 //          Maintain old passwords
-            oldPassword = maintainPasswordHistory.maintainOldPasswordHistory(oldPasswordList, oldPassword, PASSWORD_SEPARATOR, loginRequest.getPassword());
+            oldPassword = maintainPasswordHistory.maintainOldPasswordHistory(oldPasswordList, oldPassword, PASSWORD_SEPARATOR, BCrypt.hashpw(loginRequest.getNewPassword(), BCrypt.gensalt()));
         }
         user.setOldPassword(oldPassword);
         user.setIsTemporaryPassword("Y");
@@ -648,8 +659,8 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
             throw new BadRequestException("Confirm password is not same as new password ", HttpStatus.BAD_REQUEST);
         }
         if (createNewPasswordRequest.getUserId().equalsIgnoreCase(createNewPasswordRequest.getNewPassword())) {
-            log.error("New password can't be userId  for user: {} ", createNewPasswordRequest.getUserId());
-            throw new BadRequestException("New password can't be userId", HttpStatus.BAD_REQUEST);
+            log.error(PASSWORD_SAME_MSG + " {} ", createNewPasswordRequest.getUserId());
+            throw new BadRequestException(PASSWORD_CANT_BE_USER_ID, HttpStatus.BAD_REQUEST);
         }
 //        if (StringUtils.hasText(createNewPasswordRequest.getNewPassword()) && createNewPasswordRequest.getNewPassword().length() < 8) {
 //            log.error("Password length should at least 8 character  for user: {} ", createNewPasswordRequest.getUserId());
@@ -660,13 +671,13 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         String newPassword;
         if (isValid(createNewPasswordRequest.getNewPassword())) {
             final String userName = user.getName().split(" ")[0];
-            if (isContainSpecificString(createNewPasswordRequest.getNewPassword().toLowerCase(), userName.toLowerCase()) || isContainSpecificString(createNewPasswordRequest.getNewPassword().toLowerCase(), "SVCL".toLowerCase())) {
+            if (isNotContainSpecificString(createNewPasswordRequest.getNewPassword().toLowerCase(), userName.toLowerCase()) && isNotContainSpecificString(createNewPasswordRequest.getNewPassword().toLowerCase(), "SVCL".toLowerCase())) {
                 newPassword = passwordEncoder.encode(createNewPasswordRequest.getNewPassword());
             } else {
-                return new ResponseEntity<>(new Response(passwordPolicyMsg, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>(new Response(PASSWORD_POLICY_MSG, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
             }
         } else {
-            return new ResponseEntity<>(new Response(passwordPolicyMsg, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new Response(PASSWORD_POLICY_MSG, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
         }
         //      check new password with 5 old password
         String oldPassword = user.getOldPassword();
@@ -675,7 +686,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         } else {
             String[] oldPasswordList = oldPassword.split(PASSWORD_SEPARATOR);
             for (String pass : oldPasswordList) {
-                if (BCrypt.checkpw(createNewPasswordRequest.getNewPassword(), pass)) {
+                if (!"null".equalsIgnoreCase(pass) && BCrypt.checkpw(createNewPasswordRequest.getNewPassword(), pass)) {
                     log.error("New password matches with recent passwords, userId : {}", createNewPasswordRequest.getUserId());
                     throw new BadRequestException("New password matches with recent passwords", HttpStatus.BAD_REQUEST);
                 }
