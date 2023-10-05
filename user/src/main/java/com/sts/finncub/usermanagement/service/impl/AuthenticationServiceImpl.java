@@ -606,7 +606,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
             String newPassword = passwordEncoder.encode(loginRequest.getNewPassword());
             Response responseLastOldPassword = checkLastOldPasswords(user, loginRequest);
             if (!responseLastOldPassword.getStatus().is2xxSuccessful()) {
-                return new ResponseEntity<>(new Response(response.getMessage(), responseLastOldPassword, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>(new Response(responseLastOldPassword.getMessage(), responseLastOldPassword, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
             }
             String oldPassword = (String) responseLastOldPassword.getData();
             // update user master in database
