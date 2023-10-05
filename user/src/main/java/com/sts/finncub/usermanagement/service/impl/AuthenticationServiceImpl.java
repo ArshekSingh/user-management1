@@ -369,7 +369,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
 
     private String saveToken(UserSession userSession) {
         Gson gson = new Gson();
-        log.info("saving user session, userId : {}", userSession.getUserId());
+        log.info("Saving user session, userId : {}", userSession.getUserId());
         userSession.setUserSessionJSON(gson.toJson(userSession));
         return userRedisRepository.save(userSession).getId();
     }
@@ -556,14 +556,14 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
     @Transactional
     public ResponseEntity<Response> verifyForgetPasswordOtp(String otp, String userId) throws ObjectNotFoundException, BadRequestException {
         if (!StringUtils.hasText(otp) && !StringUtils.hasText(userId)) {
-            log.error("otp cannot be empty.");
-            throw new BadRequestException("otp cannot be empty.", HttpStatus.BAD_REQUEST);
+            log.error("Otp cannot be empty.");
+            throw new BadRequestException("Otp cannot be empty.", HttpStatus.BAD_REQUEST);
         }
         // first check data is available in database
         User user = getUser(userId);
         if (user == null) {
-            log.error("user details not found for userId : {} ", userId);
-            throw new BadRequestException("user details not found ", HttpStatus.BAD_REQUEST);
+            log.error("User details not found for userId : {} ", userId);
+            throw new BadRequestException("User details not found ", HttpStatus.BAD_REQUEST);
         }
         String mobileNumber = user.getMobileNumber();
         Long activeOrgId = getActiveOrgId(userId);
