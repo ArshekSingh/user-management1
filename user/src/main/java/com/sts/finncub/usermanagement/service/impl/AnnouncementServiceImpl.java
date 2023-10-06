@@ -63,7 +63,6 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         } else if (!CollectionUtils.isEmpty(userAnnouncementRequest.getBranchId())) {
             List<Integer> branches = userAnnouncementRequest.getBranchId().stream().map(Long::intValue).collect(Collectors.toList());
             List<BranchEmployeeDto> branchEmployeeDto = employeeRepository.findByBranchIdsIn(branches);
-            List<Object[]> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_OrgIdAndUserBranchMappingPK_BranchIdIn(userSession.getOrganizationId(), userAnnouncementRequest.getBranchId());
             if (branchEmployeeDto.isEmpty()) {
                 log.info("No users are found for branch : {}", userAnnouncementRequest.getBranchId());
                 return new Response("No users are found for branch : " + userAnnouncementRequest.getBranchId(), HttpStatus.NOT_FOUND);
