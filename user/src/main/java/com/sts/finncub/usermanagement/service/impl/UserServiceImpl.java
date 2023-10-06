@@ -61,11 +61,11 @@ public class UserServiceImpl implements UserService, Constant {
     @Override
     public Response getAllUserDetailsByFilterRequest(FilterRequest request) throws BadRequestException {
         List<UserDetailDto> userDetailDtos = new ArrayList<>();
-        List<User> userList = userDao.getAllUserDetailsByFilterRequest(request);
-        long count = 0L;
-        if (!CollectionUtils.isEmpty(userList)) {
-            count = userList.size();
+        Long count = null;
+        if (request.getStart() == 0) {
+            count = userDao.findAllFilterUserDetailsCount(request);
         }
+        List<User> userList = userDao.getAllUserDetailsByFilterRequest(request);
         if (!CollectionUtils.isEmpty(userList)) {
             for (User user : userList) {
                 UserDetailDto userDetailDto = new UserDetailDto();
