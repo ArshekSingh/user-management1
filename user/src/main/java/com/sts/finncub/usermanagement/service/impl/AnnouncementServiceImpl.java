@@ -1,6 +1,7 @@
 package com.sts.finncub.usermanagement.service.impl;
 
 import com.google.firebase.messaging.FirebaseMessagingException;
+import com.sts.finncub.core.dto.BranchEmployeeDto;
 import com.sts.finncub.core.entity.*;
 import com.sts.finncub.core.repository.*;
 import com.sts.finncub.core.request.UserAnnouncementFilterRequest;
@@ -48,6 +49,7 @@ public class AnnouncementServiceImpl implements AnnouncementService {
     private final ReferenceDetailRepository referenceDetailRepository;
 
     private final UserRepository userRepository;
+    private final EmployeeRepository employeeRepository;
 
     @Override
     public Response createAnnouncement(UserAnnouncementRequest userAnnouncementRequest) throws FirebaseMessagingException {
@@ -59,12 +61,14 @@ public class AnnouncementServiceImpl implements AnnouncementService {
             List<User> users = userRepository.findByIsActiveAndUserIdIn("Y", userAnnouncementRequest.getUsers());
             userAnnouncementBranchMappingServiceImpl.insertUserAnnouncementBranchMapping(userAnnouncement, null, userAnnouncementRequest, users);
         } else if (!CollectionUtils.isEmpty(userAnnouncementRequest.getBranchId())) {
+            List<Integer> branches = userAnnouncementRequest.getBranchId().stream().map(Long::intValue).collect(Collectors.toList());
+            List<BranchEmployeeDto> branchEmployeeDto = employeeRepository.findByBranchIdsIn(branches);
             List<Object[]> userBranchMappingList = userBranchMappingRepository.findByUserBranchMappingPK_OrgIdAndUserBranchMappingPK_BranchIdIn(userSession.getOrganizationId(), userAnnouncementRequest.getBranchId());
-            if (userBranchMappingList.isEmpty()) {
+            if (branchEmployeeDto.isEmpty()) {
                 log.info("No users are found for branch : {}", userAnnouncementRequest.getBranchId());
                 return new Response("No users are found for branch : " + userAnnouncementRequest.getBranchId(), HttpStatus.NOT_FOUND);
             }
-            userAnnouncementBranchMappingServiceImpl.insertUserAnnouncementBranchMapping(userAnnouncement, userBranchMappingList, userAnnouncementRequest, null);
+            userAnnouncementBranchMappingServiceImpl.insertUserAnnouncementBranchMapping(userAnnouncement, branchEmployeeDto, userAnnouncementRequest, null);
         }
 
         log.info("Announcement created successfully for branches {}", userAnnouncementRequest.getBranchId());
