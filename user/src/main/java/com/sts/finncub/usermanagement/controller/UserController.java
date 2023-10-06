@@ -108,7 +108,7 @@ public class UserController {
      * THIS API IS USED TO LIST BRANCH MAPPED USER FROM NOTIFICATION SCREEN
      */
     @PostMapping("/getUsersOnBranches")
-    private ResponseEntity<Response> getUsersOnBranches(@RequestBody UserFilterRequest request) {
+    private ResponseEntity<Response> getUsersOnBranches(@RequestBody UserFilterRequest request) throws BadRequestException {
         Response response = userService.getUsersOnBranches(request);
         return new ResponseEntity<>(response,HttpStatus.OK);
     }

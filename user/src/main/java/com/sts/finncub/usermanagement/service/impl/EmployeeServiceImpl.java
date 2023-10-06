@@ -693,7 +693,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         List<String> messages = new ArrayList<>();
         String s = " you cannot add existing employee";
         String clientMsg = " you cannot add client as employee";
-        if (request.getAadharCard() != null) {
+        if (StringUtils.hasText(request.getAadharCard())) {
             List<Employee> employeesWithAadhaar = employeeRepository.findByAadharCardNumber(request.getAadharCard());
             if (!CollectionUtils.isEmpty(employeesWithAadhaar)) {
                 List<String> employeeWithAadhar = employeesWithAadhaar.stream().filter(o -> "A".equalsIgnoreCase(o.getStatus())).map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList());
