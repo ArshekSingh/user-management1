@@ -2,10 +2,7 @@ package com.sts.finncub.usermanagement.service.impl;
 
 import com.google.gson.Gson;
 import com.sts.finncub.core.constants.Constant;
-import com.sts.finncub.core.dto.ServerSideDropDownDto;
-import com.sts.finncub.core.dto.UserBranchMappingDto;
-import com.sts.finncub.core.dto.UserDetailDto;
-import com.sts.finncub.core.dto.UserRoleMappingDto;
+import com.sts.finncub.core.dto.*;
 import com.sts.finncub.core.entity.*;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.*;
