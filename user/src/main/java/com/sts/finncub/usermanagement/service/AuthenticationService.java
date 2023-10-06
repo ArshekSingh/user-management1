@@ -15,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 import javax.servlet.http.HttpServletRequest;
 
 public interface AuthenticationService {
-    LoginResponse login(LoginRequest loginRequest, HttpServletRequest httpServletRequest) throws ObjectNotFoundException, BadRequestException, InternalServerErrorException;
+    LoginResponse login(LoginRequest loginRequest,HttpServletRequest request) throws ObjectNotFoundException, BadRequestException, InternalServerErrorException;
 
     SignupResponse signup(SignupRequest signupRequest) throws BadRequestException;
 
@@ -34,4 +34,6 @@ public interface AuthenticationService {
     ResponseEntity<Response> updatePassword(CreateNewPasswordRequest createNewPasswordRequest) throws ObjectNotFoundException, BadRequestException;
 
     Response sendCallbackMail(CallbackMailRequest callbackMailRequest);
+
+    void revokeUserSessionFromRedis(Long orgId, String userId);
 }

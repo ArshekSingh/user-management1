@@ -44,5 +44,7 @@ public interface UserService {
 
     List<RamsonUserRequest> getFoForRamson();
 
-    Response getUsersOnBranches(UserFilterRequest request) throws BadRequestException;
+    Response getUsersOnBranches(UserFilterRequest request);
+
+    Response updateUserForEmployee(UserRequest request);
 }

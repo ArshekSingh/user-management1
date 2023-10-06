@@ -462,7 +462,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         user.setIsTemporaryPassword("N");
         user.setUpdatedOn(LocalDateTime.now());
         user.setUpdatedBy(userSession.getUserId());
-        user.setPasswordResetDate(LocalDate.now());
+        user.setPasswordResetDate(LocalDateTime.now());
         userRepository.save(user);
         revokeUserSessionFromRedis(userSession.getOrganizationId(), userSession.getUserId());
         log.info("Password updated successfully , userId : {}", request.getUserId());
@@ -535,7 +535,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         user.setIsPasswordActive("Y");
         user.setIsPasswordExpired(null);
         user.setLoginAttempt(0);
-        user.setPasswordResetDate(LocalDate.now());
+        user.setPasswordResetDate(LocalDateTime.now());
         user.setUpdatedOn(LocalDateTime.now());
         user.setUpdatedBy(userSession.getUserId());
         userRepository.save(user);
@@ -586,7 +586,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         vendorSmsLogData.setSmsVendor("SMSJUST");
         vendorSmsLogData.setInsertedBy(user.getUserId());
         vendorSmsLogData.setInsertedOn(LocalDateTime.now());
-        vendorSmsLogData = vendorSmsLogRepository.save(vendorSmsLogData);
+        vendorSmsLogRepository.save(vendorSmsLogData);
         // hit sms API
         String responseId = smsUtil.sendSms(user.getMobileNumber(), message);
         // update response id in VendorSmsLog returned from API
@@ -698,12 +698,11 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         Long activeOrgId = getActiveOrgId(user.getUserId());
         Optional<VendorSmsLog> vendorSmsLog = vendorSmsLogRepository.findTop1BySmsMobileAndOrgIdAndStatusAndSmsTypeAndInsertedOnGreaterThanOrderBySmsIdDesc(mobileNumber, activeOrgId, "U", "FORGET", LocalDateTime.now().minusMinutes(smsProperties.getOtpExpiryTime()));
         if (vendorSmsLog.isPresent() && createNewPasswordRequest.getOtp().equalsIgnoreCase(vendorSmsLog.get().getSmsOtp())) {
-//            user.setPassword(passwordEncoder, createNewPasswordRequest.getNewPassword());
             user.setPassword(newPassword);
             user.setIsTemporaryPassword("N");
             user.setIsPasswordActive("Y");
             user.setIsPasswordExpired(null);
-            user.setPasswordResetDate(LocalDate.now());
+            user.setPasswordResetDate(LocalDateTime.now());
             user.setOldPassword(oldPassword);
             user.setUpdatedOn(LocalDateTime.now());
             user.setUpdatedBy(createNewPasswordRequest.getUserId());
@@ -718,6 +717,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
     }
 
     @Async
+    @Override
     public void revokeUserSessionFromRedis(Long orgId, String userId) {
         List<UserSession> userSessions = userRedisRepository.findByOrganizationIdAndUserId(orgId, userId);
         if (!CollectionUtils.isEmpty(userSessions)) {
