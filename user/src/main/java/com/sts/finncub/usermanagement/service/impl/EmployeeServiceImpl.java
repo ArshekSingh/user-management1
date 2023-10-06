@@ -523,6 +523,10 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     @Transactional
     public Response updateEmployeeDetails(EmployeeRequest request) throws BadRequestException {
         validateRequest(request);
+        Response response = validateActiveAadhaarOrPanOrMobOrBankForSaveEmployee(request);
+        if (200 == response.getCode()) {
+            return new Response(response.getMessage(), response.getData(), response.getStatus());
+        }
         UserSession userSession = userCredentialService.getUserSession();
         // fetch employee detail using organizationId and employeeId
         Employee employee;
@@ -660,12 +664,20 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         //check dedupe by Aadhaar card/Pan card/mobile number
         List<String> messages = new ArrayList<>();
         String s = " you cannot add existing employee";
+        String clientMsg = " you cannot add client as employee";
         if (StringUtils.hasText(request.getAadharCard())) {
             List<Employee> employeesWithAadhaar = employeeRepository.findByAadharCardNumber(request.getAadharCard());
             if (!CollectionUtils.isEmpty(employeesWithAadhaar)) {
                 List<String> employeeWithAadhar = employeesWithAadhaar.stream().filter(o -> "A".equalsIgnoreCase(o.getStatus())).map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList());
-                if (!CollectionUtils.isEmpty(employeeWithAadhar)) {
+                if (!CollectionUtils.isEmpty(employeeWithAadhar) && request.getEmployeeId() == null) {
                     messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + employeeWithAadhar + " and Aadhaar-" + request.getAadharCard() + s);
+                }
+                else if (!CollectionUtils.isEmpty(employeeWithAadhar) && request.getEmployeeId() != null) {
+                    employeesWithAadhaar.forEach(o -> {
+                        if (!Objects.equals(request.getEmployeeId(), o.getEmployeeId()) && request.getAadharCard().equalsIgnoreCase(o.getAadharCard())) {
+                            messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + o.getEmployeeCode() + " and Aadhaar-" + request.getAadharCard() + s);
+                        }
+                    });
                 }
             }
         }
@@ -673,8 +685,15 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             List<Employee> employeesWithPan = employeeRepository.findByPancardNumber(request.getPancardNo());
             if (!CollectionUtils.isEmpty(employeesWithPan)) {
                 List<String> employeeWithPan = employeesWithPan.stream().filter(o -> "A".equalsIgnoreCase(o.getStatus())).map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList());
-                if (!CollectionUtils.isEmpty(employeeWithPan)) {
+                if (!CollectionUtils.isEmpty(employeeWithPan) && request.getEmployeeId() == null) {
                     messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + employeeWithPan + " and PAN-" + request.getPancardNo() + s);
+                }
+                else if (!CollectionUtils.isEmpty(employeeWithPan) && request.getEmployeeId() != null) {
+                    employeesWithPan.forEach(o -> {
+                        if (!Objects.equals(request.getEmployeeId(), o.getEmployeeId()) && request.getPancardNo().equalsIgnoreCase(o.getPancardNo())) {
+                            messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + o.getEmployeeCode() + " and PAN-" + request.getPancardNo() + s);
+                        }
+                    });
                 }
             }
         }
@@ -682,15 +701,59 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             List<Employee> employeesWithMobile = employeeRepository.findByPersonalMobileNumber(request.getPersonalMob());
             if (!CollectionUtils.isEmpty(employeesWithMobile)) {
                 List<String> employeeWithPersonalMob = employeesWithMobile.stream().filter(o -> "A".equalsIgnoreCase(o.getStatus())).map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList());
-                if (!CollectionUtils.isEmpty(employeeWithPersonalMob)) {
+                if (!CollectionUtils.isEmpty(employeeWithPersonalMob) && request.getEmployeeId() == null) {
                     messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + employeeWithPersonalMob + " and Mobile-" + request.getPersonalMob() + s);
+                }
+                else if (!CollectionUtils.isEmpty(employeeWithPersonalMob) && request.getEmployeeId() != null) {
+                    employeesWithMobile.forEach(o -> {
+                        if (!Objects.equals(request.getEmployeeId(), o.getEmployeeId()) && Objects.equals(request.getPersonalMob(), o.getPersonalMob())) {
+                            messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + o.getEmployeeCode() + " and Mobile-" + request.getPersonalMob() + s);
+                        }
+                    });
                 }
             }
         }
         if (StringUtils.hasText(request.getBankAccNo()) && StringUtils.hasText(request.getIfscCode())) {
             Employee employeesWithBankNumber = employeeRepository.findByOrganizationIdAndBankAccNoAndIfscCodeAndStatus(userCredentialService.getUserSession().getOrganizationId(), request.getBankAccNo(), request.getIfscCode(), "A");
-            if (employeesWithBankNumber != null) {
+            if (employeesWithBankNumber != null && request.getEmployeeId() == null) {
                 messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + ": " + employeesWithBankNumber.getEmployeeCode() + ", employee Name : " + employeesWithBankNumber.getFirstName() + ", " + "bank_account_number : " + request.getBankAccNo() + " and ifsc_code : " + request.getIfscCode() + ", you cannot add existing employee");
+            }
+            else if (employeesWithBankNumber != null && request.getEmployeeId() != null) {
+                if (!request.getEmployeeId().equals(employeesWithBankNumber.getEmployeeId()) && request.getBankAccNo().equalsIgnoreCase(employeesWithBankNumber.getBankAccNo())) {
+                    messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + employeesWithBankNumber.getEmployeeCode() + ", employee Name : " + employeesWithBankNumber.getFirstName() + ", " + "bank_account_number : " + request.getBankAccNo() + " and ifsc_code : " + request.getIfscCode() + ", you cannot add existing employee");
+                }
+            }
+        }
+        if (StringUtils.hasText(request.getAadharCard())) {
+            List<ClientMaster> clientMasterAadharNumber = clientMasterRepository.findByClientMasterPK_OrgIdAndAadharCardNumberOrig(userCredentialService.getUserSession().getOrganizationId(), request.getAadharCard());
+            if (!CollectionUtils.isEmpty(clientMasterAadharNumber)) {
+                List<String> clientNames = clientMasterAadharNumber.stream().map(o -> o.getClientMasterPK().getClientId() + " " + o.getFirstName()).collect(Collectors.toList());
+                if (!CollectionUtils.isEmpty(clientNames)) {
+                    messages.add(EXISTING_CLIENT_MSG + ": " + clientNames + "and Aadhaar-" + request.getAadharCard() + clientMsg);
+                }
+            }
+            List<ClientMasterDraft> clientMasterDraftAadhaarNumber = clientMasterDraftRepository.findByClientMasterDraftPK_OrgIdAndAadharCardNumberOrig(userCredentialService.getUserSession().getOrganizationId(), request.getAadharCard());
+            if (!CollectionUtils.isEmpty(clientMasterDraftAadhaarNumber)) {
+                List<String> clientNames = clientMasterDraftAadhaarNumber.stream().map(o -> o.getClientMasterDraftPK().getClientId() + " " + o.getFirstName()).collect(Collectors.toList());
+                if (!CollectionUtils.isEmpty(clientNames)) {
+                    messages.add(EXISTING_CLIENT_MSG + ": " + clientNames + "and Aadhaar-" + request.getAadharCard() + clientMsg);
+                }
+            }
+        }
+        if (StringUtils.hasText(request.getPancardNo())) {
+            List<ClientMaster> clientMasterPanNo = clientMasterRepository.findByClientMasterPK_OrgIdAndKycId(userCredentialService.getUserSession().getOrganizationId(), request.getPancardNo());
+            if (!CollectionUtils.isEmpty(clientMasterPanNo)) {
+                List<String> clientNames = clientMasterPanNo.stream().map(o -> o.getClientMasterPK().getClientId() + " " + o.getFirstName()).collect(Collectors.toList());
+                if (!CollectionUtils.isEmpty(clientNames)) {
+                    messages.add(EXISTING_CLIENT_MSG + ": " + clientNames + "and Pan-" + request.getPancardNo() + clientMsg);
+                }
+            }
+            List<ClientMasterDraft> clientMasterDraftPanNo = clientMasterDraftRepository.findByClientMasterDraftPK_OrgIdAndKycId(userCredentialService.getUserSession().getOrganizationId(), request.getPancardNo());
+            if (!CollectionUtils.isEmpty(clientMasterDraftPanNo)) {
+                List<String> clientNames = clientMasterDraftPanNo.stream().map(o -> o.getClientMasterDraftPK().getClientId() + " " + o.getFirstName()).collect(Collectors.toList());
+                if (!CollectionUtils.isEmpty(clientNames)) {
+                    messages.add(EXISTING_CLIENT_MSG + ": " + clientNames + "and Pan-" + request.getPancardNo() + clientMsg);
+                }
             }
         }
         if (!CollectionUtils.isEmpty(messages)) {
