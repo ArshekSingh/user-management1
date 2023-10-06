@@ -660,7 +660,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         //check dedupe by Aadhaar card/Pan card/mobile number
         List<String> messages = new ArrayList<>();
         String s = " you cannot add existing employee";
-        if (request.getAadharCard() != null) {
+        if (StringUtils.hasText(request.getAadharCard())) {
             List<Employee> employeesWithAadhaar = employeeRepository.findByAadharCardNumber(request.getAadharCard());
             if (!CollectionUtils.isEmpty(employeesWithAadhaar)) {
                 List<String> employeeWithAadhar = employeesWithAadhaar.stream().filter(o -> "A".equalsIgnoreCase(o.getStatus())).map(o -> o.getEmployeeCode() + "-" + o.getFirstName()).collect(Collectors.toList());
