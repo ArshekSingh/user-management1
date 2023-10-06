@@ -18,6 +18,7 @@ import com.sts.finncub.core.util.DateTimeUtil;
 import com.sts.finncub.usermanagement.assembler.RamsonUserSchedulerAssembler;
 import com.sts.finncub.usermanagement.assembler.UserAssembler;
 import com.sts.finncub.usermanagement.request.*;
+import com.sts.finncub.usermanagement.service.AuthenticationService;
 import com.sts.finncub.usermanagement.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -55,6 +56,7 @@ public class UserServiceImpl implements UserService, Constant {
     private final VwFoUserExportRepository vwFoUserExportRepository;
     private final RamsonUserSchedulerAssembler ramsonUserSchedulerAssembler;
     private final UserAssembler userAssembler;
+    private final AuthenticationService authenticationService;
 
     @Override
     public Response getAllUserDetailsByFilterRequest(FilterRequest request) throws BadRequestException {
@@ -69,9 +71,9 @@ public class UserServiceImpl implements UserService, Constant {
                 UserDetailDto userDetailDto = new UserDetailDto();
                 BeanUtils.copyProperties(user, userDetailDto);
                 userDetailDto.setBcId(user.getBcId());
-                userDetailDto.setPasswordResetDate(DateTimeUtil.dateToString(user.getPasswordResetDate()));
-                userDetailDto.setDisabledOn(DateTimeUtil.dateToString(user.getDisabledOn()));
-                userDetailDto.setApprovedOn(DateTimeUtil.dateToString(user.getApprovedOn()));
+                userDetailDto.setPasswordResetDate(DateTimeUtil.dateTimeToString(user.getPasswordResetDate()));
+                userDetailDto.setDisabledOn(DateTimeUtil.dateTimeToString(user.getDisabledOn()));
+                userDetailDto.setApprovedOn(DateTimeUtil.dateTimeToString(user.getApprovedOn()));
                 userDetailDto.setInsertedOn(DateTimeUtil.dateTimeToString(user.getInsertedOn()));
                 userDetailDto.setUpdatedOn(DateTimeUtil.dateTimeToString(user.getUpdatedOn()));
                 userDetailDtos.add(userDetailDto);
@@ -92,8 +94,8 @@ public class UserServiceImpl implements UserService, Constant {
         UserDetailDto userDetailDto = new UserDetailDto();
         BeanUtils.copyProperties(user.get(), userDetailDto);
         userDetailDto.setBcId(user.get().getBcId());
-        userDetailDto.setDisabledOn(DateTimeUtil.dateToString(user.get().getDisabledOn()));
-        userDetailDto.setApprovedOn(DateTimeUtil.dateToString(user.get().getApprovedOn()));
+        userDetailDto.setDisabledOn(DateTimeUtil.dateTimeToString(user.get().getDisabledOn()));
+        userDetailDto.setApprovedOn(DateTimeUtil.dateTimeToString(user.get().getApprovedOn()));
         userDetailDto.setInsertedOn(DateTimeUtil.dateTimeToString(user.get().getInsertedOn()));
         userDetailDto.setUpdatedOn(DateTimeUtil.dateTimeToString(user.get().getUpdatedOn()));
         userDetailDto.setImeiNumber(user.get().getImeiNumber());
@@ -118,7 +120,7 @@ public class UserServiceImpl implements UserService, Constant {
         User user = new User();
         BeanUtils.copyProperties(request, user);
         user.setBcId(request.getBcId());
-        user.setPasswordResetDate(LocalDate.now());
+        user.setPasswordResetDate(LocalDateTime.now());
         user.setType(request.getType());
         user.setUserId(request.getUserId());
         user.setIsPasswordActive("N");
@@ -186,11 +188,11 @@ public class UserServiceImpl implements UserService, Constant {
     public Response updateUserDetails(UserRequest request) throws BadRequestException {
         UserSession userSession = userCredentialService.getUserSession();
         if (!StringUtils.hasText(request.getUserId())) {
-            throw new BadRequestException("Invalid User Id", HttpStatus.BAD_REQUEST);
+            return new Response("Invalid User Id", HttpStatus.BAD_REQUEST);
         }
         Optional<User> user = userRepository.findByUserId(request.getUserId());
         if (user.isEmpty()) {
-            throw new BadRequestException("Data Not Found", HttpStatus.BAD_REQUEST);
+            return new Response("User Not Found", HttpStatus.BAD_REQUEST);
         }
         updateUser(request, userSession, user.get());
         return new Response(SUCCESS, HttpStatus.OK);
@@ -205,7 +207,7 @@ public class UserServiceImpl implements UserService, Constant {
             if ("Y".equalsIgnoreCase(request.getIsActive())) {
                 userDetail.setDisabledOn(null);
             } else {
-                userDetail.setDisabledOn(LocalDate.now());
+                userDetail.setDisabledOn(LocalDateTime.now());
             }
         }
         userDetail.setBcId(StringUtils.hasText(request.getBcId()) ? request.getBcId() : "");
@@ -464,5 +466,43 @@ public class UserServiceImpl implements UserService, Constant {
             return new Response("No users mapped on any branches", HttpStatus.NOT_FOUND);
         }
         return new Response(SUCCESS, userAssembler.assembleUser(userBranchMapping), HttpStatus.OK);
+    }
+
+    @Override
+    public Response updateUserForEmployee(UserRequest request) {
+        UserSession userSession = userCredentialService.getUserSession();
+        if (!StringUtils.hasText(request.getUserId())) {
+            return new Response("Invalid User Id", HttpStatus.BAD_REQUEST);
+        }
+        Optional<User> user = userRepository.findByUserId(request.getUserId());
+        if (user.isEmpty()) {
+            return new Response("User Not Found", HttpStatus.BAD_REQUEST);
+        }
+        userDetailsUpdate(request, userSession, user.get());
+        return new Response(SUCCESS, HttpStatus.OK);
+    }
+
+    private void userDetailsUpdate(UserRequest request, UserSession userSession, User userDetail) {
+        userDetail.setName(request.getName());
+        userDetail.setMobileNumber(request.getMobileNumber());
+        userDetail.setType(request.getType());
+        if (!userDetail.getIsActive().equalsIgnoreCase(request.getIsActive())) {
+            if ("Y".equalsIgnoreCase(request.getIsActive())) {
+                userDetail.setDisabledOn(null);
+            } else {
+                userDetail.setDisabledOn(LocalDateTime.now());
+            }
+        }
+        if (StringUtils.hasText(request.getIsActive())) {
+            if (request.getIsActive().equals("N")) {
+                userDetail.setIsActive(request.getIsActive());
+                authenticationService.revokeUserSessionFromRedis(userSession.getOrganizationId(), userDetail.getUserId());
+            } else {
+                userDetail.setIsActive(request.getIsActive());
+            }
+        }
+        userDetail.setUpdatedBy(userSession.getUserId());
+        userDetail.setUpdatedOn(LocalDateTime.now());
+        userRepository.save(userDetail);
     }
 }

@@ -520,7 +520,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         vendorSmsLogData.setSmsVendor("SMSJUST");
         vendorSmsLogData.setInsertedBy(user.getUserId());
         vendorSmsLogData.setInsertedOn(LocalDateTime.now());
-        vendorSmsLogData = vendorSmsLogRepository.save(vendorSmsLogData);
+        vendorSmsLogRepository.save(vendorSmsLogData);
         // hit sms API
         String responseId = smsUtil.sendSms(user.getMobileNumber(), message);
         // update response id in VendorSmsLog returned from API
@@ -636,6 +636,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
     }
 
     @Async
+    @Override
     public void revokeUserSessionFromRedis(Long orgId, String userId) {
         List<UserSession> userSessions = userRedisRepository.findByOrganizationIdAndUserId(orgId, userId);
         if (!CollectionUtils.isEmpty(userSessions)) {
