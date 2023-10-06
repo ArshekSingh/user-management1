@@ -83,7 +83,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/updatePassword")
-    public ResponseEntity<Response> createNewPassword(@Valid @RequestBody LoginRequest loginRequest) throws BadRequestException {
+    public Response createNewPassword(@Valid @RequestBody LoginRequest loginRequest) throws BadRequestException {
         log.info("Request initiated to updatePassword for userId : {}", loginRequest.getUserId());
         return authenticationService.updatePassword(loginRequest);
     }

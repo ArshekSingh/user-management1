@@ -42,7 +42,6 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
@@ -428,7 +427,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
             user.setIsTemporaryPassword("N");
             user.setUpdatedOn(LocalDateTime.now());
             user.setUpdatedBy(userSession.getUserId());
-            user.setPasswordResetDate(LocalDate.now());
+            user.setPasswordResetDate(LocalDateTime.now());
             userRepository.save(user);
             revokeUserSessionFromRedis(userSession.getOrganizationId(), userSession.getUserId());
             log.info("Password updated successfully, userId : {}", user.getUserId());
@@ -468,7 +467,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
             user.setIsPasswordActive("Y");
             user.setIsPasswordExpired(null);
             user.setLoginAttempt(0);
-            user.setPasswordResetDate(LocalDate.now());
+            user.setPasswordResetDate(LocalDateTime.now());
             user.setUpdatedOn(LocalDateTime.now());
             user.setUpdatedBy(userSession.getUserId());
             userRepository.save(user);
@@ -586,27 +585,26 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
     }
 
     @Override
-    public ResponseEntity<Response> updatePassword(LoginRequest loginRequest) throws BadRequestException {
+    public Response updatePassword(LoginRequest loginRequest) throws BadRequestException {
         // check confirm and new password
         Response response = checkNewAndConfirmPassword(loginRequest, loginRequest.getUserId());
         if (!response.getStatus().is2xxSuccessful()) {
-            return new ResponseEntity<>(new Response(response.getMessage(), HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
+            return new Response(response.getMessage(), HttpStatus.BAD_REQUEST);
         }
 
         // get user in database
         Optional<User> optionalUser = userRepository.findByUserIdIgnoreCase(loginRequest.getUserId());
         if (optionalUser.isEmpty()) {
             log.error("User not found in system for userId: {} ", loginRequest.getUserId());
-            return new ResponseEntity<>(new Response(INVALID_USER + loginRequest.getUserId(), HttpStatus.NOT_FOUND), HttpStatus.NOT_FOUND);
+            return new Response(INVALID_USER + loginRequest.getUserId(), HttpStatus.NOT_FOUND);
         }
         User user = optionalUser.get();
 
         // check strong password validations
         if (checkStrongPassword(user, loginRequest)) {
-            String newPassword = passwordEncoder.encode(loginRequest.getNewPassword());
             Response responseLastOldPassword = checkLastOldPasswords(user, loginRequest);
             if (!responseLastOldPassword.getStatus().is2xxSuccessful()) {
-                return new ResponseEntity<>(new Response(responseLastOldPassword.getMessage(), responseLastOldPassword, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
+                return responseLastOldPassword;
             }
             String oldPassword = (String) responseLastOldPassword.getData();
             // update user master in database
@@ -614,25 +612,25 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
             Long activeOrgId = getActiveOrgId(user.getUserId());
             Optional<VendorSmsLog> vendorSmsLog = vendorSmsLogRepository.findTop1BySmsMobileAndOrgIdAndStatusAndSmsTypeAndInsertedOnGreaterThanOrderBySmsIdDesc(mobileNumber, activeOrgId, "U", FORGET, LocalDateTime.now().minusMinutes(smsProperties.getOtpExpiryTime()));
             if (vendorSmsLog.isPresent() && loginRequest.getOtp().equalsIgnoreCase(vendorSmsLog.get().getSmsOtp())) {
-//            user.setPassword(passwordEncoder, createNewPasswordRequest.getNewPassword());
+                String newPassword = passwordEncoder.encode(loginRequest.getNewPassword());
                 user.setPassword(newPassword);
                 user.setIsTemporaryPassword("N");
                 user.setIsPasswordActive("Y");
                 user.setIsPasswordExpired(null);
-                user.setPasswordResetDate(LocalDate.now());
+                user.setPasswordResetDate(LocalDateTime.now());
                 user.setOldPassword(oldPassword);
                 user.setUpdatedOn(LocalDateTime.now());
                 user.setUpdatedBy(loginRequest.getUserId());
                 userRepository.save(user);
                 revokeUserSessionFromRedis(activeOrgId, user.getUserId());
                 log.info("Password reset was successful, userId : {}", loginRequest.getUserId());
-                return new ResponseEntity<>(new Response("Password reset was successful", HttpStatus.OK), HttpStatus.OK);
+                return new Response("Password reset was successful", HttpStatus.OK);
             } else {
                 log.error("Otp is not verified.");
-                return new ResponseEntity<>(new Response("Otp is not verified.", HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
+                return new Response("Otp is not verified.", HttpStatus.BAD_REQUEST);
             }
         }
-        return new ResponseEntity<>(new Response(PASSWORD_POLICY_MSG, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
+        return new Response(PASSWORD_POLICY_MSG, HttpStatus.BAD_REQUEST);
     }
 
     @Async
@@ -726,7 +724,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
             String[] oldPasswordList = oldPassword.split(PASSWORD_SEPARATOR);
             if (!CollectionUtils.isEmpty(Arrays.asList(oldPasswordList))) {
                 for (String pass : oldPasswordList) {
-                    if (!"null".equalsIgnoreCase(pass) && (BCrypt.checkpw(request.getNewPassword(), pass))) {
+                    if (BCrypt.checkpw(request.getNewPassword(), pass)) {
                         log.error(NEW_PASSWORD_MATCHES_WITH_RECENT_PASSWORDS + ", userId : {}", user.getUserId());
                         return new Response(NEW_PASSWORD_MATCHES_WITH_RECENT_PASSWORDS, HttpStatus.BAD_REQUEST);
                     }

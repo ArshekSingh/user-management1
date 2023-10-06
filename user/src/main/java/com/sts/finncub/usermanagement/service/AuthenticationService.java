@@ -30,7 +30,7 @@ public interface AuthenticationService {
 
     ResponseEntity<Response> verifyForgetPasswordOtp(String otp, String userId) throws ObjectNotFoundException, BadRequestException;
 
-    ResponseEntity<Response> updatePassword(LoginRequest loginRequest) throws BadRequestException;
+    Response updatePassword(LoginRequest loginRequest) throws BadRequestException;
 
     Response sendCallbackMail(CallbackMailRequest callbackMailRequest);
 
