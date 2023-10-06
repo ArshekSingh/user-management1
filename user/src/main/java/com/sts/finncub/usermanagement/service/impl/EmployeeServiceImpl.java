@@ -20,6 +20,7 @@ import com.sts.finncub.usermanagement.request.EmployeeRequest;
 import com.sts.finncub.usermanagement.request.UserRequest;
 import com.sts.finncub.usermanagement.response.EmployeeBankResponse;
 import com.sts.finncub.usermanagement.response.EmployeeResponse;
+import com.sts.finncub.usermanagement.service.AuthenticationService;
 import com.sts.finncub.usermanagement.service.EmployeeService;
 import com.sts.finncub.usermanagement.service.UserService;
 import lombok.AllArgsConstructor;
@@ -58,6 +59,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     private final EmployeeFunctionalTitleRepository employeeFunctionalTitleRepository;
     private final CenterMasterRepository centerMasterRepository;
     private final EmployeeAssembler employeeAssembler;
+    private final AuthenticationService authenticationService;
 
     @Override
     @Transactional
@@ -534,7 +536,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             try {
                 employee = employeeRepository.findByOrganizationIdAndEmployeeId(userSession.getOrganizationId(), request.getEmployeeId());
             } catch (Exception exception) {
-                throw new BadRequestException(exception.getMessage(), HttpStatus.BAD_REQUEST);
+                return new Response(exception.getMessage(), HttpStatus.BAD_REQUEST);
             }
             if (request.getEmployeeId() != null && (StringUtils.hasText(request.getStatus()) && !employee.getStatus().equalsIgnoreCase(request.getStatus()))) {
                 String id = Long.toString(request.getEmployeeId());
@@ -542,7 +544,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 List<CenterMaster> centerMasterList = centerMasterRepository.findByCenterMasterPK_OrgIdAndAssignedToAndStatusIn(userSession.getOrganizationId(), id, statusList);
                 if (!CollectionUtils.isEmpty(centerMasterList)) {
                     log.info("You can't mark this employee as Inactive because center is active for this employee {} ", employee.getEmployeeId());
-                    throw new BadRequestException("You can't mark this employee as Inactive ", HttpStatus.BAD_REQUEST);
+                    return new Response("You can't mark this employee as Inactive ", HttpStatus.BAD_REQUEST);
                 }
                 List<InventoryDetails> inventoryDetailsList = inventoryDetailsRepository.findByOrgIdAndInventoryStaffId(userSession.getOrganizationId(), employee.getEmployeeId());
                 if (!CollectionUtils.isEmpty(inventoryDetailsList)) {
@@ -578,11 +580,10 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
                 saveValueEmployeeMaster(request, employee, request.getEmployeeId(), userSession);
                 //save value in user master table
                 if (request.getStatus().equals("A") || request.getStatus().equals("Active")) {
-                    saveValueInUserMaster(request.getUserId(), request, true);
+                    updateInUserMaster(request.getUserId(), request, true);
                 } else if (request.getStatus().equals("X") || request.getStatus().equals("Inactive")) {
-                    saveValueInUserMaster(request.getUserId(), request, false);
-                    Optional<User> user = userRepository.findByUserId(request.getUserId());
-                    user.ifPresent(userService::deleteTokenByUserId);
+                    updateInUserMaster(request.getUserId(), request, false);
+                    authenticationService.revokeUserSessionFromRedis(userSession.getOrganizationId(), request.getUserId());
                 }
                 return new Response(SUCCESS, HttpStatus.OK);
             } else {
@@ -591,6 +592,33 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         } else {
             throw new BadRequestException("Invalid Request Parameters", HttpStatus.BAD_REQUEST);
         }
+    }
+
+    private void updateInUserMaster(String userId, EmployeeRequest employeeRequest, Boolean isActive) throws BadRequestException{
+        UserRequest request = new UserRequest();
+        request.setUserId(userId);
+        request.setName(constructName(employeeRequest));
+        request.setMobileNumber(employeeRequest.getPersonalMob() != null ? String.valueOf(employeeRequest.getPersonalMob()) : "");
+        request.setType("EMP");
+        if (Boolean.TRUE.equals(isActive)) {
+            request.setIsActive("Y");
+        } else {
+            request.setIsActive("N");
+        }
+        userService.updateUserForEmployee(request);
+    }
+
+    public String constructName(EmployeeRequest employeeRequest) {
+        String employeeName = "";
+        if (employeeRequest != null) {
+            employeeName = employeeRequest.getFirstName();
+            if(StringUtils.hasText(employeeRequest.getMiddleName())){
+                employeeName += " " + employeeRequest.getMiddleName();
+            }
+            if (org.springframework.util.StringUtils.hasText(employeeRequest.getLastName()))
+                employeeName += " " + employeeRequest.getLastName();
+        }
+        return employeeName;
     }
 
     private static boolean isFieldsUpdated(EmployeeRequest request, Employee employee) {
