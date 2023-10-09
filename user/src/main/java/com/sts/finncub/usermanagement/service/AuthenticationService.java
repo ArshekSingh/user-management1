@@ -14,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 import javax.servlet.http.HttpServletRequest;
 
 public interface AuthenticationService {
-    LoginResponse login(LoginRequest loginRequest,HttpServletRequest request) throws ObjectNotFoundException, BadRequestException, InternalServerErrorException;
+    LoginResponse login(LoginRequest loginRequest, HttpServletRequest request) throws ObjectNotFoundException, BadRequestException, InternalServerErrorException;
 
     SignupResponse signup(SignupRequest signupRequest) throws BadRequestException;
 
