@@ -2,10 +2,7 @@ package com.sts.finncub.usermanagement.service.impl;
 
 import com.google.gson.Gson;
 import com.sts.finncub.core.constants.Constant;
-import com.sts.finncub.core.dto.ServerSideDropDownDto;
-import com.sts.finncub.core.dto.UserBranchMappingDto;
-import com.sts.finncub.core.dto.UserDetailDto;
-import com.sts.finncub.core.dto.UserRoleMappingDto;
+import com.sts.finncub.core.dto.*;
 import com.sts.finncub.core.entity.*;
 import com.sts.finncub.core.exception.BadRequestException;
 import com.sts.finncub.core.repository.*;
@@ -34,6 +31,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -57,6 +55,7 @@ public class UserServiceImpl implements UserService, Constant {
     private final RamsonUserSchedulerAssembler ramsonUserSchedulerAssembler;
     private final UserAssembler userAssembler;
     private final AuthenticationService authenticationService;
+    private final EmployeeRepository employeeRepository;
 
     @Override
     public Response getAllUserDetailsByFilterRequest(FilterRequest request) throws BadRequestException {
@@ -452,20 +451,22 @@ public class UserServiceImpl implements UserService, Constant {
     }
 
     @Override
-    public Response getUsersOnBranches(UserFilterRequest request) {
+    public Response getUsersOnBranches(UserFilterRequest request) throws BadRequestException {
         UserSession userSession = userCredentialService.getUserSession();
-        if (CollectionUtils.isEmpty(request.getBranchId())) {
+        if (CollectionUtils.isEmpty(request.getIds())) {
             log.info("NO Branch filter is passed by : {}", userSession.getUserId());
             return new Response("Pass at-least one branch", HttpStatus.NOT_FOUND);
         }
-        log.info("Request sent to db to fetch data for branches {}", request.getBranchId());
-        List<Object[]> userBranchMapping = userBranchMappingRepository.findByUserBranchMappingPK_OrgIdAndUserBranchMappingPK_BranchIdIn(userSession.getOrganizationId(), request.getBranchId());
-        log.info("Data fetched from db for branches {}", request.getBranchId());
-        if (userBranchMapping.isEmpty()) {
-            log.info("No users mapped on any branches : {}", request.getBranchId());
+        log.info("Request sent to db to fetch data for branches {}", request.getIds());
+        List<Long> branchIds = userDao.findBranchesListByFilter(request, userSession);
+        List<Integer> branches = branchIds.stream().map(Long::intValue).collect(Collectors.toList());
+        List<BranchEmployeeDto> branchEmployeeDto = employeeRepository.findByBranchIdsIn(branches);
+        log.info("Data fetched from db for branches {}", request.getIds());
+        if (branchEmployeeDto.isEmpty()) {
+            log.info("No users mapped on any branches : {}", request.getIds());
             return new Response("No users mapped on any branches", HttpStatus.NOT_FOUND);
         }
-        return new Response(SUCCESS, userAssembler.assembleUser(userBranchMapping), HttpStatus.OK);
+        return new Response(SUCCESS, userAssembler.assembleUser(branchEmployeeDto), HttpStatus.OK);
     }
 
     @Override
