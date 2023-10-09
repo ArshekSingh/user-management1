@@ -337,7 +337,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         final Long organizationId = userSession.getOrganizationId();
         if (isValid(signupRequest.getPassword())) {
             if (isNotContainSpecificString(signupRequest.getPassword().toLowerCase(), SVCL.toLowerCase())) {
-                newUser.setPassword(passwordEncoder, signupRequest.getPassword());
+                newUser.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
             } else {
 //                return new Response(passwordPolicyMsg, HttpStatus.BAD_REQUEST);
             }
@@ -416,7 +416,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         // check strong password validations
         if (checkStrongPassword(user, request)) {
             String newPassword = passwordEncoder.encode(request.getNewPassword());
-            Response responseLastOldPassword = checkLastOldPasswords(user, request);
+            Response responseLastOldPassword = checkLastOldPasswords(user, request, newPassword);
             if (!responseLastOldPassword.getStatus().is2xxSuccessful()) {
                 return responseLastOldPassword;
             }
@@ -456,13 +456,15 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
 
         // check strong password validations
         if (checkStrongPassword(user, loginRequest)) {
-            Response responseLastOldPassword = checkLastOldPasswords(user, loginRequest);
+            String password = passwordEncoder.encode(loginRequest.getNewPassword());
+            Response responseLastOldPassword = checkLastOldPasswords(user, loginRequest, password);
             if (!responseLastOldPassword.getStatus().is2xxSuccessful()) {
                 return responseLastOldPassword;
             }
             String oldPassword = (String) responseLastOldPassword.getData();
             // update user master in database
             user.setOldPassword(oldPassword);
+            user.setPassword(password);
             user.setIsTemporaryPassword("Y");
             user.setIsPasswordActive("Y");
             user.setIsPasswordExpired(null);
@@ -602,7 +604,8 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
 
         // check strong password validations
         if (checkStrongPassword(user, loginRequest)) {
-            Response responseLastOldPassword = checkLastOldPasswords(user, loginRequest);
+            String newPassword = passwordEncoder.encode(loginRequest.getNewPassword());
+            Response responseLastOldPassword = checkLastOldPasswords(user, loginRequest, newPassword);
             if (!responseLastOldPassword.getStatus().is2xxSuccessful()) {
                 return responseLastOldPassword;
             }
@@ -612,7 +615,6 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
             Long activeOrgId = getActiveOrgId(user.getUserId());
             Optional<VendorSmsLog> vendorSmsLog = vendorSmsLogRepository.findTop1BySmsMobileAndOrgIdAndStatusAndSmsTypeAndInsertedOnGreaterThanOrderBySmsIdDesc(mobileNumber, activeOrgId, "U", FORGET, LocalDateTime.now().minusMinutes(smsProperties.getOtpExpiryTime()));
             if (vendorSmsLog.isPresent() && loginRequest.getOtp().equalsIgnoreCase(vendorSmsLog.get().getSmsOtp())) {
-                String newPassword = passwordEncoder.encode(loginRequest.getNewPassword());
                 user.setPassword(newPassword);
                 user.setIsTemporaryPassword("N");
                 user.setIsPasswordActive("Y");
@@ -715,7 +717,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
         return true;
     }
 
-    public Response checkLastOldPasswords(User user, LoginRequest request) throws BadRequestException {
+    public Response checkLastOldPasswords(User user, LoginRequest request, String newPassword) throws BadRequestException {
         // check new password with 5 old password
         String oldPassword = user.getOldPassword();
         if (oldPassword == null) {
@@ -731,7 +733,7 @@ public class AuthenticationServiceImpl implements AuthenticationService, Constan
                 }
             }
 //          Maintain old passwords
-            oldPassword = maintainPasswordHistory.maintainOldPasswordHistory(oldPasswordList, oldPassword, PASSWORD_SEPARATOR, user.getPassword());
+            oldPassword = maintainPasswordHistory.maintainOldPasswordHistory(oldPasswordList, oldPassword, PASSWORD_SEPARATOR, newPassword);
         }
         return new Response(SUCCESS, oldPassword, HttpStatus.OK);
     }
