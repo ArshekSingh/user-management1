@@ -260,6 +260,7 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
     private void validateRequest(EmployeeRequest request) throws BadRequestException {
         // validate employee add or update request
         UserSession userSession = userCredentialService.getUserSession();
+        String clientMsg = " you cannot add client as employee";
         if (request == null || !StringUtils.hasText(request.getStatus()) || !StringUtils.hasText(request.getFirstName()) || !StringUtils.hasText(request.getGender())) {
             assert request != null;
             log.warn("Request failed validation, these field are mandatory : Status {} , FirstName {} , Gender {} ", StringUtils.hasText(request.getStatus()), request.getFirstName(), request.getGender());
@@ -282,6 +283,39 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             if (!CollectionUtils.isEmpty(clientMaster)) {
                 log.warn("Mobile number {} is already registered with client ", request.getPersonalMob());
                 throw new BadRequestException("This mobile number already associated with another client", HttpStatus.BAD_REQUEST);
+            }
+        }
+        if (StringUtils.hasText(request.getAadharCard())) {
+            List<ClientMaster> clientMasterAadharNumber = clientMasterRepository.findByClientMasterPK_OrgIdAndAadharCardNumberOrig(userCredentialService.getUserSession().getOrganizationId(), request.getAadharCard());
+            if (!CollectionUtils.isEmpty(clientMasterAadharNumber)) {
+                List<String> clientNames = clientMasterAadharNumber.stream().map(o -> o.getClientMasterPK().getClientId() + " " + o.getFirstName()).collect(Collectors.toList());
+                if (!CollectionUtils.isEmpty(clientNames)) {
+                    log.info("Aadhaar number is already mapped with clients {}", clientNames);
+                    throw new BadRequestException(EXISTING_CLIENT_MSG + ": " + clientNames + "and Aadhaar-" + request.getAadharCard() + clientMsg, HttpStatus.BAD_REQUEST);
+                }
+            }
+            List<ClientMasterDraft> clientMasterDraftAadhaarNumber = clientMasterDraftRepository.findByClientMasterDraftPK_OrgIdAndAadharCardNumberOrig(userCredentialService.getUserSession().getOrganizationId(), request.getAadharCard());
+            if (!CollectionUtils.isEmpty(clientMasterDraftAadhaarNumber)) {
+                List<String> clientNames = clientMasterDraftAadhaarNumber.stream().map(o -> o.getClientMasterDraftPK().getClientId() + " " + o.getFirstName()).collect(Collectors.toList());
+                if (!CollectionUtils.isEmpty(clientNames)) {
+                    throw new BadRequestException(EXISTING_CLIENT_MSG + ": " + clientNames + "and Aadhaar-" + request.getAadharCard() + clientMsg, HttpStatus.BAD_REQUEST);
+                }
+            }
+        }
+        if (StringUtils.hasText(request.getPancardNo())) {
+            List<ClientMaster> clientMasterPanNo = clientMasterRepository.findByClientMasterPK_OrgIdAndKycId(userCredentialService.getUserSession().getOrganizationId(), request.getPancardNo());
+            if (!CollectionUtils.isEmpty(clientMasterPanNo)) {
+                List<String> clientNames = clientMasterPanNo.stream().map(o -> o.getClientMasterPK().getClientId() + " " + o.getFirstName()).collect(Collectors.toList());
+                if (!CollectionUtils.isEmpty(clientNames)) {
+                    throw new BadRequestException(EXISTING_CLIENT_MSG + ": " + clientNames + "and Pan-" + request.getPancardNo() + clientMsg, HttpStatus.BAD_REQUEST);
+                }
+            }
+            List<ClientMasterDraft> clientMasterDraftPanNo = clientMasterDraftRepository.findByClientMasterDraftPK_OrgIdAndKycId(userCredentialService.getUserSession().getOrganizationId(), request.getPancardNo());
+            if (!CollectionUtils.isEmpty(clientMasterDraftPanNo)) {
+                List<String> clientNames = clientMasterDraftPanNo.stream().map(o -> o.getClientMasterDraftPK().getClientId() + " " + o.getFirstName()).collect(Collectors.toList());
+                if (!CollectionUtils.isEmpty(clientNames)) {
+                    throw new BadRequestException(EXISTING_CLIENT_MSG + ": " + clientNames + "and Pan-" + request.getPancardNo() + clientMsg, HttpStatus.BAD_REQUEST);
+                }
             }
         }
     }
@@ -692,7 +726,6 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
         //check dedupe by Aadhaar card/Pan card/mobile number
         List<String> messages = new ArrayList<>();
         String s = " you cannot add existing employee";
-        String clientMsg = " you cannot add client as employee";
         if (StringUtils.hasText(request.getAadharCard())) {
             List<Employee> employeesWithAadhaar = employeeRepository.findByAadharCardNumber(request.getAadharCard());
             if (!CollectionUtils.isEmpty(employeesWithAadhaar)) {
@@ -749,38 +782,6 @@ public class EmployeeServiceImpl implements EmployeeService, Constant {
             else if (employeesWithBankNumber != null && request.getEmployeeId() != null) {
                 if (!request.getEmployeeId().equals(employeesWithBankNumber.getEmployeeId()) && request.getBankAccNo().equalsIgnoreCase(employeesWithBankNumber.getBankAccNo())) {
                     messages.add(EXISTING_ACTIVE_EMPLOYEE_MSG + employeesWithBankNumber.getEmployeeCode() + ", employee Name : " + employeesWithBankNumber.getFirstName() + ", " + "bank_account_number : " + request.getBankAccNo() + " and ifsc_code : " + request.getIfscCode() + ", you cannot add existing employee");
-                }
-            }
-        }
-        if (StringUtils.hasText(request.getAadharCard())) {
-            List<ClientMaster> clientMasterAadharNumber = clientMasterRepository.findByClientMasterPK_OrgIdAndAadharCardNumberOrig(userCredentialService.getUserSession().getOrganizationId(), request.getAadharCard());
-            if (!CollectionUtils.isEmpty(clientMasterAadharNumber)) {
-                List<String> clientNames = clientMasterAadharNumber.stream().map(o -> o.getClientMasterPK().getClientId() + " " + o.getFirstName()).collect(Collectors.toList());
-                if (!CollectionUtils.isEmpty(clientNames)) {
-                    messages.add(EXISTING_CLIENT_MSG + ": " + clientNames + "and Aadhaar-" + request.getAadharCard() + clientMsg);
-                }
-            }
-            List<ClientMasterDraft> clientMasterDraftAadhaarNumber = clientMasterDraftRepository.findByClientMasterDraftPK_OrgIdAndAadharCardNumberOrig(userCredentialService.getUserSession().getOrganizationId(), request.getAadharCard());
-            if (!CollectionUtils.isEmpty(clientMasterDraftAadhaarNumber)) {
-                List<String> clientNames = clientMasterDraftAadhaarNumber.stream().map(o -> o.getClientMasterDraftPK().getClientId() + " " + o.getFirstName()).collect(Collectors.toList());
-                if (!CollectionUtils.isEmpty(clientNames)) {
-                    messages.add(EXISTING_CLIENT_MSG + ": " + clientNames + "and Aadhaar-" + request.getAadharCard() + clientMsg);
-                }
-            }
-        }
-        if (StringUtils.hasText(request.getPancardNo())) {
-            List<ClientMaster> clientMasterPanNo = clientMasterRepository.findByClientMasterPK_OrgIdAndKycId(userCredentialService.getUserSession().getOrganizationId(), request.getPancardNo());
-            if (!CollectionUtils.isEmpty(clientMasterPanNo)) {
-                List<String> clientNames = clientMasterPanNo.stream().map(o -> o.getClientMasterPK().getClientId() + " " + o.getFirstName()).collect(Collectors.toList());
-                if (!CollectionUtils.isEmpty(clientNames)) {
-                    messages.add(EXISTING_CLIENT_MSG + ": " + clientNames + "and Pan-" + request.getPancardNo() + clientMsg);
-                }
-            }
-            List<ClientMasterDraft> clientMasterDraftPanNo = clientMasterDraftRepository.findByClientMasterDraftPK_OrgIdAndKycId(userCredentialService.getUserSession().getOrganizationId(), request.getPancardNo());
-            if (!CollectionUtils.isEmpty(clientMasterDraftPanNo)) {
-                List<String> clientNames = clientMasterDraftPanNo.stream().map(o -> o.getClientMasterDraftPK().getClientId() + " " + o.getFirstName()).collect(Collectors.toList());
-                if (!CollectionUtils.isEmpty(clientNames)) {
-                    messages.add(EXISTING_CLIENT_MSG + ": " + clientNames + "and Pan-" + request.getPancardNo() + clientMsg);
                 }
             }
         }
